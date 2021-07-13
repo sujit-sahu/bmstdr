@@ -1,0 +1,119 @@
+
+/*
+datatostan <- list(sn=sn, tn=tn, nT=nT, r=r, rT=r*tn, p=p, ntmiss=ntmiss, ntobs = ntobs, missing_flag=missing_flag,
+             data_miss_idx=data_miss_idx,  data_obs_idx =  data_obs_idx,
+               yobs=yobs,  X=yX$X,
+             phi_a=phi_a, phi_b=phi_b,
+             dist=s22)
+
+	       */
+
+data {
+int<lower=0> sn; // number of sites
+int<lower=0> tn; // number of times
+int<lower=0> nT;
+int<lower=0> p;
+int<lower=0> ntmiss;
+int<lower=0> ntobs;
+int missing_flag[nT];
+int data_miss_idx[ntmiss];
+int data_obs_idx[ntobs];
+real yobs[ntobs];
+matrix[nT, p] X;
+real<lower=0> sigma_prior_a;
+real<lower=0> sigma_prior_b;
+real<lower=0> tau_prior_a;
+real<lower=0> tau_prior_b;
+real <lower=0> phi_a;
+real <lower=0> phi_b;
+matrix[sn, sn] dist; // to hold sn by sn distance matrix
+}
+
+transformed data {
+  vector[sn] mu_0 = rep_vector(0, sn);
+}
+
+parameters {
+  // real beta[p];
+  vector[p] beta;
+  real<lower=phi_a, upper=phi_b> phi;
+  real<lower=0> sigma_sq;
+  real z_miss[ntmiss];
+  real<lower=0> tau_sq;
+}
+
+
+model {
+vector[nT] xbmodel;
+matrix[tn, sn] mus;
+matrix[tn, sn] dats;
+real z1[nT];
+matrix [sn, sn] L;
+matrix [sn, sn] Sigma;
+real u;
+
+
+ sigma_sq ~ inv_gamma(sigma_prior_a, sigma_prior_b);
+ tau_sq ~ inv_gamma(tau_prior_a, tau_prior_b);
+//  phi ~ gamma(2, 1);
+
+/*  tau_sq ~ cauchy(0, 5);
+ sigma_sq ~ cauchy(0, 5) ;
+ phi ~  cauchy(0, 5);
+*/
+
+
+for(i in 1:(sn-1)){
+for(j in (i+1):sn){
+     Sigma[i,j] = sigma_sq * exp((-1)*phi*dist[i,j]);
+   //  Sigma[i,j] = 0.0;
+     Sigma[j,i] = Sigma[i,j];
+   }
+ }
+for(i in 1:sn) Sigma[i, i] = sigma_sq + tau_sq;
+L = cholesky_decompose(Sigma);
+
+ xbmodel = X * beta;
+ /* 
+ for ( i in 1:nT) {
+   u =0.0;
+   for (j in 1:p) {
+     u += beta[j] * X[i, j];
+     }
+     xbmodel[i] = u;
+   }
+   */
+
+for (i in 1:ntobs)
+    z1[data_obs_idx[i]] = yobs[i];
+
+ for (k in 1:ntmiss)
+    z1[data_miss_idx[k]] = z_miss[k];
+
+for (i in 1:tn) {
+  for (j in 1:sn) {
+     dats[i, j] = z1[i + (j-1) * tn];
+     mus[i, j]=  xbmodel[i + (j-1) * tn];
+   }
+}
+
+
+ for (t  in 1:tn) {
+ dats[t] ~ multi_normal_cholesky(mus[t], L);
+
+ }
+
+}
+
+/*
+generated quantities {
+ vector[ntobs] log_lik;
+
+ for (i in 1:ntobs) {
+      log_lik[i] = normal_lpdf( z1[data_obs_idx[i]] | xbmodel[data_obs_idx[i]], sigma_e);
+
+ }
+
+ }
+
+*/

@@ -1,0 +1,64 @@
+Package: bmstdr
+Type: Package
+Title: Bayesian Modelling of Spatio-Temporal Data with R
+Version: 0.1.0
+Author: Sujit K. Sahu [aut, cre]
+Maintainer: Sujit K. Sahu <S.K.Sahu@soton.ac.uk>
+URL: https://www.soton.ac.uk/~sks/bmbook/
+Description: Fits, validates and compares a number of Bayesian models for spatial and spatio-temporal data. Software companion for the book with the same title 
+    written by the same author. 
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports: 
+    methods,
+    spTimer, 
+    ggplot2,
+    rstan, 
+    spBayes, 
+    INLA, 
+    CARBayes, 
+    CARBayesST
+Depends:
+    R (>= 3.4.0),
+    Rcpp (>= 0.12.0)
+Suggests: 
+    coda,
+    extraDistr, 
+    RcppParallel, 
+    maps, 
+    spTDyn, 
+    rstantools (>= 2.0.0),
+    xtable,
+    MASS,
+    mnormt,
+    loo,
+    cowplot,
+    googleway,
+    ggrepel,
+    ggspatial,
+    sf,
+    rnaturalearth,
+    rnaturalearthdata,
+    knitr, 
+    rmarkdown,
+    testthat, 
+    BiocStyle, 
+    ggsn, 
+    ggpubr,
+    Matrix, 
+    databmstdr, 
+    akima, 
+    tidyr
+Biarch: true
+VignetteBuilder: knitr
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+Remotes: github::sujit-sahu/databmstdr, 
+    github::inbo/INLA
+SystemRequirements: GNU make

@@ -1,0 +1,9 @@
+^doc$
+^Meta$
+^.*\.Rproj$
+^\.Rproj\.user$
+^.git/.*$
+^.*\.git/.*$
+^\.gitignore$
+^vignettes/.gitignore$
+^\.git$

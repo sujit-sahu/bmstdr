@@ -1,0 +1,372 @@
+#' Bayesian regression model fitting for point referenced spatial data. 
+#' Calculates parameter estimates, validation statistics, and 
+#' estimated values of several Bayesian model choice criteria. 
+#' @param formula An object of class "formula" (or one that can be coerced to that class):
+#' a symbolic description of the model to be fitted.
+#' @param data The data frame for which the model formula is to be fitted. 
+#' If a spatial model is to be fitted then the data frame should contain 
+#' two columns containing the locations of the coordinates. See the \code{coords} argument below. 
+#' @param package Which package is to be used in model fitting? Currently implemented 
+#' packages are: "spBayes", "stan",  "inla" and "none". In case, package is chosen as "none"
+#' then the argument  \code{model} must be specified either as "lm" or "spat". See below. 
+#' @param package Which package is to be used in model fitting? Currently available 
+#' packages are:
+#' \itemize{  
+#' \item{"spBayes" }{The model implemented is the marginal model with 
+#' nugget effect using the \code{spLM} function.}  
+#' \item{"stan" }{The model implemented is the full spatial random effect model 
+#' with nugget effect where the decay parameter has been assumed to be fixed. }
+#' \item{"inla" }{The model fitted is the spatial random effect model with the nugget effect.}
+#' \item{"none". } {In this case case, the argument  \code{model} must be 
+#' specified either as "lm" or "spat". See below}
+#' }
+#' @param model Only used when the package has been chosen to be "none". 
+#' It can take one of two values: either "lm" or "spat". The "lm" option is for an independent error 
+#' regression model while the "spat" option fits a  spatial model without any nugget effect.  
+#' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (supplied in meters) as the default. Distance will be calculated in units of kilometer
+#' if this argument is either utm or lonlat. Euclidean distance will be calculated 
+#' if this is given as the third type plain.  If  distance in meter is to be calculated 
+#' then coordtype should be passed on as plain although the coords are supplied in UTM. 
+#' @param coords A vector of size two identifying the two column numbers 
+#' of the data frame to take as coordinates. 
+#' Or this can be given as a  matrix of number of sites by 2 providing the coordinates of all the
+#' data locations. 
+#' @param validrows A vector of site indices which should be used for validation. 
+#' This function does not allow some sites to be used for both fitting and validation.
+#' The remaining observations will be used for model fitting. The default NULL value instructs that
+#' validation will not be performed.
+#' @param scale.transform Transformation of the response variable. It can take three values: SQRT, LOG or NONE.
+#' @param prior.beta0 A scalar value or a vector providing the prior mean for beta parameters.
+#' @param prior.M Prior precision value (or matrix) for beta.  Defaults to a diagonal 
+#' matrix with diagonal values 10^(-4).
+#' @param prior.sigma2 Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision. 
+#' @param prior.tau2 Shape and scale parameter value for the gamma prior on tau^2, the nugget effect. 
+#' @param phi The spatial decay parameter for the exponential covariance function. Only 
+#' used if the package is  Stan or the model is a spatial model "spat" without nugget effect when the 
+#' \code{package} is "none". 
+#' @param prior.phi.param Lower and upper limits of the uniform prior distribution for
+#' \eqn{\phi},  the spatial decay parameter when the package is \code{spBayes}. 
+#' If this is not specified the default values are chosen so that the effective range is
+#' uniformly distributed between 25\% and 100\% of the maximum distance between data locations.
+#' @param prior.range A length 2 vector, with (range0, Prange) specifying 
+#' that \eqn{P(\rho < \rho_0)=p_{\rho}}, where \eqn{\rho} is the spatial range of 
+#' the random field. If Prange is NA, then range0 is used as a fixed range value. 
+#' If this parameter is unspecified then range0=0.90 * maximum distance 
+#' and Prange =0.95. If instead a single value is specified then the range is set at the single value.
+#' @param prior.sigma A length 2 vector, with (sigma0, Psigma) specifying 
+#' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
+#' standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.
+#' @param cov.model Only relevant for the spBayes package.  Default is the exponential model. 
+#' See the documentation for \code{\link{spLM}} in the package spBayes. 
+#' @param N MCMC sample size. Default value 5000. 
+#' @param burn.in How many initial iterations to discard. Default value 1000. 
+#' Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.  
+#' @param rseed Random number seed that controls the starting point for the random numer stream.
+#' A set value is required to help reproduce the results.
+#' @param n.report  How many times to report in MCMC progress. This is used only when the package is spBayes. 
+#' @param no.chains Number of parallel chains to run in Stan. 
+#' @param ad.delta Adaptive delta controling the behaviour of Stan during fitting. 
+#' @param t.depth Maximum allowed tree depth in the fitting process of Stan. 
+#' @param s.size step size in the fitting process of Stan. 
+#' @param plotit  Logical scalar value: whether to plot the predictions against the observed values.
+#' @param verbose Logical scalar value: whether to print various estimates and statistics.
+#' @param mchoice Logical scalar value: whether model choice statistics should be calculated.
+#' @param ... Any additional arguments that may be passed on to the fitting package. 
+#' @return A list containing:
+#'  \itemize{
+#'    \item params -  A table of parameter estimates 
+#'    \item  fit -  The fitted model object. This is present only if a named 
+#'    package, e.g.   \code{spBayes}  has been used. 
+#'    \item  max.d -  Maximum distance between data locations. 
+#'    This is in unit of kilometers unless the \code{coordtype} argument 
+#'    is set as \code{plain}.     
+#'    \item  fitteds -  A vector of fitted values.   
+#'     \item  mchoice -  Calculated model choice statistics if those have been 
+#'     requested by the input argument \code{mchoice=T}. Not all model fits will contain 
+#'     all the model choice statistics. 
+#'     \item  stats -  The four validation statistics: rmse, mae, crps and coverage. 
+#'      This is present only if model validation has been performed. 
+#'    \item  yobs_preds -  A data frame containing the validation rows of the model 
+#'    fitting data  frame. The last five columns of this data frame contains 
+#'    the validation prediction summaries: mean, sd, median, and 95\% prediction interval. 
+#'    This is present only if model validation has been performed. 
+#'    \item  valpreds -  A matrix containing the MCMC samples of the validation predictions. 
+#'    The dimension of this matrix is the number of validations times the number of retained 
+#'    MCMC samples. This is present only if model validation has been performed.  
+#'    \item  residuals -  A vector of residual values.  
+#'    \item  sn -  The number of data locations used in fitting.
+#'    \item  tn  Defaults to 1. Used for plotting purposes. 
+#'    \item  phi -  If present this contains the fixed value of 
+#'    the spatial decay parameter \eqn{phi} used to fit the model. 
+#'    \item  prior.phi.param -   If present this contains the values of the hyperparameters 
+#'    of the prior distribution for the spatial decay parameter \eqn{phi}.  
+#'    \item  prior.range -   Present only if the \code{INLA} package has been used 
+#'    in model fitting.  This contains the values of the hyperparameters 
+#'    of the prior distribution for the range.  
+#'    \item  logliks -   A list containing the log-likelihood values used in calculation 
+#'    of the model choice statistics if those have been requested in the first place. 
+#'    \item  formula -  The input formula for the regression part of the model.  
+#'     \item  scale.transform -  The transformation adopted by the input argument with the 
+#'    same name.  
+#'    \item  package -  The name of the package used for model fitting.  
+#'    \item  model -  The name of the fitted model.   
+#'    \item  call -  The command used to call the model fitting function.  
+#'    \item  computation.time -  Computation time required to run the model fitting.  
+#' }
+#' @seealso \code{\link{Bsptime}} for Bayesian spatio-temporal model fitting.
+#' @examples
+#' a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm")
+#' a <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, validrows=c(8,11,12,14,18,21,24,28))
+#' \dontrun{
+#' ## Illustration with the nyspatial data set 
+#' head(nyspatial)
+#' ## Linear regression model fitting 
+#' M1 <- Bspatial(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, mchoice=T)
+#' print(M1)
+#' plot(M1)
+#' residuals(M1)
+#' summary(M1)
+#' ## Spatial model fitting
+#' M2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+#' coordtype="utm", coords=4:5, phi=0.4, mchoice=T)
+#' names(M2)
+#' print(M2)
+#' plot(M2)
+#' residuals(M2)
+#' summary(M2)
+#' ##
+#' ##
+#' # Drawing a map of New York 
+#' library(ggplot2)
+#' library(ggsn)
+#' nymap <- map_data(database="state",regions="new york")
+#' head(nymap)
+#' s <- c(8,11,12,14,18,21,24,28) # 8 validation sites
+#' fcoords <- nyspatial[-s, c("Longitude", "Latitude")]
+#' vcoords <- nyspatial[s,  c("Longitude", "Latitude")]
+#' library(tidyr)
+#' label <- tibble(long = -76.1, lat = 41.5,
+#' label = "20 fitted (circles) & 8  \n  validation (numbered) sites")
+#' vsites8 <- ggplot() +
+#' geom_polygon(data=nymap, aes(x=long, y=lat, group=group),
+#' color="black", size = 0.6, fill=NA) +
+#' geom_point(data =fcoords, aes(x=Longitude,y=Latitude)) +
+#' geom_text(data=vcoords, aes(x=Longitude,y=Latitude, label=s), col=4) +
+#' labs( title= "28 air pollution monitoring sites in New York", x="Longitude", y = "Latitude") +
+#' geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
+#' geom_rect(mapping=aes(xmin=-80.2, xmax=-77.3, ymin=41, ymax=41.6), color="black", fill=NA) + 
+#' geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
+#' ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
+#' st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+#' ggsn::north(data=nymap, location="topleft", symbol=12) 
+#' vsites8
+#' lmresults <- Bspatial(model="lm",formula=yo3~xmaxtemp+xwdsp+xrh, 
+#' data=nyspatial, coordtype="utm", coords=4:5, validrows= s) 
+#' phi1res <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#' data=nyspatial, coordtype="utm", coords=4:5,validrows= s) 
+#' phi2res <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#' data=nyspatial, coordtype="utm", coords=4:5,validrows= s, phi=2)
+#' phihalfres <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh,
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s, phi=0.5)
+#'  validation_results <- cbind(unlist(lmresults$stats), 
+#'  unlist(phihalfres$stats),unlist(phi1res$stats), unlist(phi2res$stats))
+#'  dimnames(validation_results)[[2]] <- c("lm", "phi=0.5", "phi=1", "phi=2")
+#'  round(validation_results, 3)
+#'  # Use grid search to find optimal phi for spatial model fitting (M2)
+#'  asave <- phichoice_sp()
+#'  # optimal phi = 0.4
+#'  # Fit model 2 on the square root scale 
+#'  M2root <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial,  coordtype="utm", coords=4:5, scale.transform = "SQRT")
+#'  plot(M2root)
+#'  ## Spatial model fitting using spBayes 
+#'  M3 <- Bspatial(package="spBayes", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5, prior.phi=c(0.005, 2), 
+#'  mchoice=T)
+#'  summary(M3)
+#'  # Spatial model fitting using stan (with a small number of iterations)
+#'  M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,phi=0.4, N=25, burn.in = 5, 
+#'  mchoice=T)
+#'  summary(M4)
+#'  # Spatial model fitting using INLA
+#'  M5  <- Bspatial(package="inla",formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5, mchoice=T)
+#'  summary(M5)
+#'  
+#'  ## K fold cross-validation for M2 only
+#'  set.seed(44)
+#'  x <- runif(n=28)
+#'  u <- order(x)
+#'  # Here are the four folds
+#'  s1 <- u[1:7]
+#'  s2 <- u[8:14]
+#'  s3 <- u[15:21]
+#'  s4 <- u[22:28]
+#'  summary((1:28) - sort(c(s1, s2, s3, s4))) ## check
+#'  v1 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s1, phi=0.4)
+#'  v2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s2,  phi=0.4)
+#'  v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5, validrows= s3, phi=0.4)
+#'  v4 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s4,  phi=0.4)
+#'  M2.val.table <- cbind(unlist(v1$stats), unlist(v2$stats), unlist(v3$stats), 
+#'  unlist(v4$stats))
+#'  dimnames(M2.val.table)[[2]] <- paste("Fold", 1:4, sep="")
+#'  round(M2.val.table, 3)
+#'  
+#'  ## Model validation
+#'  s <- c(8,11,12,14,18,21,24,28)
+#'  M1.v <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s)
+#'  M2.v <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s,  phi=0.4)
+#'  M3.v <- Bspatial(package="spBayes",formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5, validrows=s, 
+#'  prior.phi=c(0.005, 2))
+#'  M5.v <- Bspatial(package="inla", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5, validrows=s)
+#'  # Takes about 3 mins 
+#'  M4.v <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, 
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s, phi=0.4, 
+#'  N=500, burn.in = 250)
+#'  # Collect all the results 
+#'  Mall.table <- cbind(unlist(M1.v$stats), unlist(M2.v$stats), 
+#'  unlist(M3.v$stats), unlist(M4.v$stats), unlist(M5.v$stats))
+#'  colnames(Mall.table) <- paste("M", 1:5, sep="")
+#'  round(Mall.table, 3)
+#'  }
+#' @export
+Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh, 
+                   data, # =nyspatial,
+                   package="none", 
+                   model="lm",  
+                   coordtype=NULL, # "utm",  
+                   coords=NULL, # 4:5, 
+                   validrows=NULL, 
+                   scale.transform="NONE",
+                   prior.beta0=0, prior.M=0.0001, 
+                   prior.sigma2=c(2, 1),
+                   prior.tau2 = c(2, 0.1),  phi = NULL,
+                   prior.phi.param = NULL, 
+                   prior.range= c(1, 0.5),
+                   prior.sigma = c(1, 0.005),
+                   cov.model = "exponential",  
+                   N=5000, burn.in=1000, rseed =44, n.report = 500, 
+                   no.chains =1, ad.delta = 0.99, s.size=0.01,  t.depth=15, 
+                   verbose=TRUE, plotit=T, mchoice=FALSE, ...){
+  
+ start.time<-proc.time()[3]
+ set.seed(rseed)
+ data <- as.data.frame(data)
+ implemented <- c("inla", "spBayes", "stan")
+ a <- grepl(package, x=implemented, ignore.case = TRUE)
+ if (any(a)) { 
+   package <- implemented[which(a)]
+   } else { 
+  imodel <- c("lm", "spat")
+   b <-  grepl(model, x=imodel, ignore.case = TRUE)
+   if (any(b)) { 
+     model <- imodel[which(b)]
+     package <- "none"
+   } else { stop("Wrong package or model. Please see helpfile")}
+   }
+  
+ # cat("package=", package, "model=", model)
+ 
+
+  if (package=="none") { 
+     if (model=="lm") {
+          results <- Blm_sp(formula=formula, data=data,
+                      validrows=validrows, scale.transform=scale.transform,
+                      prior.beta0=prior.beta0, prior.M=prior.M, prior.sigma2=prior.sigma2,
+                      N=N, plotit=plotit, rseed =rseed,
+                      verbose=verbose, mchoice=mchoice)
+     } else if (model=="spat") { 
+      results <-  Bsp_sp(formula=formula, data=data,validrows=validrows,
+                        coordtype=coordtype, coords=coords, phi=phi, 
+                        scale.transform=scale.transform,
+                        prior.beta0=prior.beta0, prior.M=prior.M, 
+                        prior.sigma2=prior.sigma2,
+                        mchoice=mchoice, N=N, verbose =verbose, rseed =rseed,
+                        plotit=plotit)
+        
+     } else { stop("Model not implemented.") }
+  } else  if (package=="spBayes") { 
+     results <- BspBayes_sp(formula=formula, data=data,
+                        validrows=validrows, scale.transform =scale.transform,
+                            coordtype=coordtype, coords=coords,
+                            prior.beta0=prior.beta0, prior.M=prior.M,
+                            prior.sigma2 = prior.sigma2,
+                            prior.tau2 = prior.tau2,
+                            prior.phi.param=prior.phi.param, cov.model = cov.model,
+                            n.report = n.report,
+                            verbose = verbose,
+                            mchoice=mchoice,
+                            N=N, burn.in=burn.in, rseed =rseed, plotit=plotit)
+    
+    } else if (package=="stan") { 
+      results <- Bstan_sp(formula=formula, data=data,
+                    validrows=validrows, scale.transform =scale.transform,
+                           coordtype=coordtype, 
+                           coords=coords,
+                           # prior.beta0=0, prior.M=0.0001,
+                           phi=phi, prior.sigma2=prior.sigma2,
+                           prior.tau2=prior.tau2,
+                           verbose = verbose,
+                           mchoice=mchoice,
+                           no.chains =no.chains,
+                           rseed =rseed,  ad.delta =ad.delta, s.size=s.size,  t.depth=t.depth,
+                           N=N, burn.in=burn.in, plotit=plotit)
+    } else if (package=="inla") { 
+      results <- Binla_sp (formula=formula, data=data,
+                           validrows=validrows,
+                           scale.transform =scale.transform,
+                           coordtype=coordtype, coords=coords,
+                           verbose =verbose ,
+                           mchoice=mchoice,
+                           prior.tau2=prior.tau2,
+                           prior.range= prior.range,
+                           prior.sigma = prior.sigma,
+                           N=N, rseed=rseed,  plotit=plotit)
+    } else { 
+      cat("Implemented packages are none,", implemented, "\n")
+      cat("\n If package is none then the implemented models are lm and spat\n")
+      stop("But, sorry, the package or model opted for has not been implemented yet!")
+    } 
+ 
+ u <- getXy(formula=formula, data=data)
+ y <- u$y  
+ if (scale.transform == "SQRT") y <- sqrt(y)
+ if (scale.transform == "LOG") y <- log(y)
+ 
+#  k <- length(results$fitteds)
+#  if (k<nrow(data)) {
+#   allX <- u$X
+#   p <- ncol(allX)
+#   betastar <- results$params[1:p, 1]
+#   fits <- as.vector(allX %*% betastar)
+#   results$fitteds <- fits 
+# } 
+ 
+ results$residuals <- y - results$fitteds
+ results$sn <- nrow(data)
+ results$tn <- 1 
+ results$formula <- formula 
+ results$scale.transform <- scale.transform
+ results$package <- package
+ results$model <- model 
+ results$call <- match.call()
+ colnames(results$params) <- c("mean", "sd", "2.5%", "97.5%")
+ 
+ end.time <- proc.time()[3]
+ comp.time<-end.time-start.time
+ comp.time<-fancy.time(comp.time)
+ results$computation.time <- comp.time
+ print(comp.time)
+ class(results) <- "bmstdr"
+ results 
+}

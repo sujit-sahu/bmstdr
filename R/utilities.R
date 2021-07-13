@@ -1,0 +1,1209 @@
+#' @import spTimer
+#' @import spBayes
+#' @import rstan
+#' @import INLA
+#' @import CARBayes
+#' @import CARBayesST
+#' @import ggplot2
+#' @import Rcpp
+#' @import methods 
+#' @import graphics
+#' @import stats 
+#' @importFrom  utils combn
+#' @importFrom  utils head
+#' @importFrom rstan sampling 
+#' @useDynLib bmstdr
+NULL
+#if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)
+utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residvals", "up", "low"))
+utils::globalVariables(c("distance", "variogram", "preds", "inornot", "Time", "s.index", "x", "y", "f2"))
+NULL
+##
+## #' Find 2.5\%, 50\% and 97.5\% quantiles
+## #' @param x a vector
+## #' @return median and the 95\% credible interval
+## #' @examples
+## #' quant(rnorm(1000))
+## #' quant(runif(10000))
+quant <- function(x){
+  quantile(x, prob=c(0.025, 0.5, 0.975))
+}
+
+## 
+## #' Get X and y from formula and data 
+## #' @param formula A model formula
+## #' @param data A dataframe
+## #' @return Returns a list containing the design matrix X and the 
+## #' response data vector y.   
+## #' @export
+getXy <- function(formula, data) { 
+  # yX <- spTimer::Formula.matrix(formula=formula, data=data)
+  options(na.action='na.pass')
+  X <- model.matrix(formula, data=data)
+  a <- model.frame(formula=formula, data=data)
+  y <- as.vector(model.response(a))
+  options(na.action='na.omit')
+  list(X=X, y=y)
+}
+
+
+
+## Evaluate quadratic form a^T V a
+## @param a Vector of the quadratic form
+## @param V Matrix of the quadratic form 
+## @return Returns the value of the  qudratic form as a scalar
+quadform <- function(a, V) {
+  u <- t(a) %*% V %*% a
+  u[1,1]
+}
+
+#' Observed against predicted plot 
+#' @param yobs A vector containing the actual observations 
+#' @param predsums A data frame containing predictive summary 
+#' statistics with the same number of rows as the length of the vector yobs. 
+#' The data frame must have columns named as meanpred, medianpred, sd, low and up. 
+#' Ideally this argument should be the output of the command 
+#' \code{\link{get_validation_summaries}}.  
+#' @param segments Logical: whether to draw line segments for the prediction intervals. 
+#' @param summarystat Can take one of two values "median" (default) or "mean" 
+#' indicating which one to use for the plot.   
+#' @return Draws a plot only after removing the missing observations.  It also returns a list of two ggplot2 
+#' objects: (i) the plot with intervals drawn \code{pwithseg} and (ii) the plot without the segments drawn: 
+#' \code{pwithoutseg}. 
+#' @examples 
+#' set.seed(4)
+#' vrows <- sample(nrow(nysptime), 100)
+#' M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
+#' validrows=vrows, scale.transform = "SQRT")
+#' psums <-  get_validation_summaries(M1$valpreds)
+#' oplots <- obs_v_pred_plot(yobs=M1$yobs_preds$y8hrmax, predsum=psums)
+#' names(oplots)
+#' plot(oplots$pwithoutseg)
+#' plot(oplots$pwithseg)
+#' @export
+obs_v_pred_plot <- function(yobs, predsums, segments=T, summarystat="median") {
+## yobs is r by 1
+## predsums is r by 4 data frame where the four columns are mean, sd, up and low
+# par(mfrow=c(1,1))
+#
+  adat <- data.frame(yobs=as.numeric(yobs), predsums)
+  adat <- adat[!is.na(adat$yobs), ]
+  
+  if (summarystat=="median") {
+    adat$preds <- adat$medianpred
+  } else { 
+    adat$preds <- adat$meanpred
+  }
+  adat$inornot <- 1
+  adat$inornot[adat$yobs >= adat$low & adat$yobs <= adat$up] <- 8
+  coverage <- round(100*length(adat$inornot[adat$inornot=="8"])/length(adat$inornot), 1)
+  
+  # adat$inornot <- factor(adat$inornot)
+  adat$cols <-"red4"
+  adat$cols[adat$inornot>1] <-"grey1"
+  adat$inornot <- factor(adat$inornot, levels=c("1", "8"), labels=c("out", "in"))
+  
+  
+  # First draw a simple plot 
+  yr <- range(c(adat$yobs, adat$preds))
+  x1 <- seq(from=yr[1], to=yr[2], length=100)
+  ddat <- data.frame(x=x1, y=x1)
+  p1 <- ggplot() + 
+    xlim(yr) + 
+    ylim(yr) + 
+    geom_point(data=adat, aes(x=yobs, y=preds), col=adat$cols,  size=1) + 
+    #geom_abline(intercept=0, slope=1, col="blue") +
+    geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
+    labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) 
+  # plot(p1)
+  
+ yfullr <- range(c(adat$yobs, adat$preds, adat$low, adat$up))
+ arrow <- arrow(length = unit(0.03, "npc"))
+ x1 <- seq(from=yfullr[1], to=yfullr[2], length=100)
+ ddat <- data.frame(x=x1, y=x1)
+ 
+ p <- ggplot() + 
+  xlim(yfullr) + 
+  ylim(yfullr) + 
+  geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot),  col=adat$cols, size=3) + 
+  geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
+  #geom_abline(intercept=0, slope=1, col="blue") +
+  scale_shape_manual(values=c(1,8), guide = guide_legend(reverse=TRUE)) +
+  scale_color_manual(values=c("red4", "grey1")) +
+  labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
+  theme(legend.position=c(0.05, 0.9)) 
+ 
+  if (segments) {
+  p <- p + geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=up), col=adat$cols,  linetype=1, arrow=arrow) +
+    geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=low), col=adat$cols, linetype=1, arrow=arrow) 
+  plot(p)              
+  } else plot(p1)
+ return(list(pwithseg=p, pwithoutseg=p1))
+}
+#'  Obtains parameter estimates from MCMC samples 
+#' @param samps A matrix of N by p samples for the p parameters 
+#' @param level Desired confidence level - defaults to 95\%. 
+#' @return A data frame containing four columns: mean, sd, low (er limit), 
+#' and up (per limit) for the p parameters.   
+#' @examples 
+#' samps <- matrix(rnorm(10000), ncol= 10 )
+#' dim(samps)
+#' a <- get_parameter_estimates(samps)
+#' a
+#' b <- get_parameter_estimates(samps, level=98)
+#' b
+#' @export
+get_parameter_estimates <- function(samps, level=95) {
+## samps must be N (mcmc) by k parameters
+## Returns the parameter estimates from the samples
+  lowcut <- (1 - level/100)/2
+  upcut <- 1 - lowcut
+  means <- apply(samps, 2, mean)
+  sds <- apply(samps, 2, sd)
+  low <- apply(samps, 2, quantile, probs=lowcut)
+  up <- apply(samps, 2, quantile, probs=upcut)
+  paramstable <- data.frame(mean=means, sd=sds, low=low, up=up)
+ paramstable
+}
+
+#'  Obtains suitable validation summary statistics from MCMC samples 
+#'  obtained for  validation.   
+#' @param samps A matrix of N by p samples for the p parameters 
+#' @param level Desired confidence level - defaults to 95\%. 
+#' @return A data frame containing five columns: meanpred, 
+#' medianpred, sdpred, low (er limit), 
+#' and up (per limit) for the p parameters.   
+#' @examples 
+#' set.seed(4)
+#' vrows <- sample(nrow(nysptime), 100)
+#' M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
+#' validrows=vrows, scale.transform = "SQRT")
+#' samps<- M1$valpreds
+#' valsums <- get_validation_summaries(samps)
+#' head(valsums)  
+#' @export
+get_validation_summaries <- function(samps, level=95) {
+  ## samps must be N (mcmc) by k parameters
+  ## Returns the parameter estimates from the samples
+  lowcut <- (1 - level/100)/2
+  upcut <- 1 - lowcut
+  means <- apply(samps, 2, mean)
+  sds <- apply(samps, 2, sd)
+  medians <- apply(samps, 2, median)
+  low <- apply(samps, 2, quantile, probs=lowcut)
+  up <- apply(samps, 2, quantile, probs=upcut)
+  psums <- data.frame(meanpred=means,  sdpred=sds, medianpred=medians, low=low, up=up)
+  psums
+}
+#' Calculates the four validation statistics: RMSE, MAE, CRPS and coverage
+#' given the observed values and MCMC iterates. 
+#' @param yval A vector containing n observed values of the response 
+#' variable. 
+#' @param yits A n by N matrix of predictive samples from the 
+#' n observations contained in yval.   
+#' @param level The nominal coverage level, defaults to 95\%. 
+#' @param summarystat Summary statistics to use to calculate the validation 
+#' predictions from the samples. It should be a function like mean or 
+#' median which can be calculated by R. The default is mean. 
+#' @return A list giving the rmse, mae, crps and coverage. 
+#' @examples
+#' set.seed(4)
+#' vrows <- sample(nrow(nysptime), 100)
+#' M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
+#' validrows=vrows, scale.transform = "SQRT")
+#' valstats <- calculate_validation_statistics(M1$yobs_preds$y8hrmax, 
+#' yits=M1$valpreds)
+#' unlist(valstats)
+#' @export
+calculate_validation_statistics <- function(yval, yits, level=95, summarystat="mean"){
+  ## yits is the mcmc samples with dim n x N iteration
+  ## yval is the actual n observations
+  low <- (1 - level/100)/2
+  up <- 1 - low
+  yval <- as.numeric(yval)
+  # if (summarystat="mean") meanpred <- apply(X=yits, 1, mean)
+  # else meanpred <- apply(X=yits, 1, median)
+  meanpred <- apply(X=yits, 1, summarystat)
+  rmse  <- sqrt(mean((yval - meanpred)^2, na.rm=T))
+  mae <- mean(abs(yval - meanpred), na.rm=T)
+  zup <- apply(yits, 1, quantile, probs=up)
+  zlow <- apply(yits, 1, quantile, probs=low)
+  cvg <- cal_cvg(vdaty=yval, ylow=zlow, yup=zup)
+  # crpsres <- crpsR(yval, yits) ## crps can accept NA's
+   tmp <- cbind(yval,yits)
+   tmp <- na.omit(tmp)
+   crpsres <- crpscpp(tmp) # Use C++ to calculate CRPS
+   a <- list(rmse=rmse, mae=mae, crps =crpsres, cvg=cvg)
+   results <- list(stats=a)
+   results
+}
+
+cal_cvg <- function(vdaty, ylow, yup) {
+  ## Remove the NA's
+  u <- data.frame(vdaty=vdaty, low=ylow, up=yup)
+  u <- na.omit(u)
+  u$inornot <- 0
+  u$inornot[u$vdaty >= u$low & u$vdaty <= u$up] <- 1
+  100*sum(u$inornot)/length(u$inornot)
+}
+
+
+
+
+cal_valstats_from_summary <- function(yval, pred_summary, nsample, level=95) {
+  
+  ## yval is the actual n observations
+  ## pred_summary is summary  (n x 4) matrix of means, sds and intervals
+  
+  rmse  <- sqrt(mean((yval - pred_summary$mean)^2, na.rm=T))
+  mae <- mean(abs(yval - pred_summary$mean), na.rm=T)
+  cvg <- cal_cvg(vdaty=yval, ylow=pred_summary$low, yup=pred_summary$up)
+  
+  ## now sampling to get the crps
+  k <- nsample*length(yval)
+ 
+  # yits <- matrix(rnorm(k, mean=0, sd=1), ncol=nsample)
+  # use the t_8 distribution as an approximation for the predictive distribution 
+  yits <- matrix(rt(n=k, df=8), ncol=nsample)
+  sdmat <- matrix(rep(pred_summary$sd, nsample),  ncol=nsample)
+  means <- matrix(rep(pred_summary$mean, nsample), ncol=nsample)
+  yits <- yits*sdmat + means
+  # yits r by nsample
+   #crpsvalue  <- crps(yval, yits)
+  tmp <- cbind(yval,yits)
+  tmp <- na.omit(tmp)
+  crpsvalue <- crpscpp(tmp) # Use C++ to calculate CRPS
+  a <- list(rmse=rmse, mae=mae, crps=crpsvalue, cvg=cvg)
+  b <- list(stats=a, samples=yits)
+  b
+}
+
+#' Calculate DIC function.
+#' Has two arguments: (1) log full likelihood at thetahat and (2) vector of log-likelihood at the theta samples
+#' Calculate the DIC criteria values
+#' @param loglikatthetahat Log of the likelihood function at theta hat (Bayes). It is a scalar value.
+#' @param logliks A vector of log likelihood values at the theta samples
+#' @return a list containing four values p_dic, p_dic alt, dic and dic_alt
+## #' @export
+calculate_dic <- function(loglikatthetahat, logliks) {
+  expected_log_lik <- mean(logliks)
+ # expected_log_lik
+  pdic <- 2 * (loglikatthetahat -  expected_log_lik)
+  pdic_alt <- 2 * var(logliks)
+  dic_orig <- -2 * loglikatthetahat + 2*pdic
+  dic_alt <- -2 * loglikatthetahat + 2*pdic_alt
+  dic_results <- list(pdic=pdic, pdic_alt=pdic_alt, dic_orig=dic_orig, dic_alt=dic_alt)
+  dic_results
+}
+
+#' Calculate WAIC  function.
+#' Has the sole argument component wise likelihood at thetahat samples.
+#' v must be a matrix
+#' Calculate the WAIC criteria values
+#' @param v must be a N (MCMC) by n (data) sample size matrix
+#' of the log-likelihood evaluations
+#'
+#' @return a list containing four values p_waic, p_waic alt, waic and waic_alt
+## #' @export
+calculate_waic <- function(v) {
+  var_log_liks <-  apply(v, 2, var) ## Estimate of Var log( f(y_i| theta) from MCMC
+  pwaic2 <- sum(var_log_liks)
+  logmin <- min(v)  ## Remember the minimum
+  liks <- exp(v - logmin)  # Evaluate likelihood values upto the constant to avoid numerical problems
+  av_liks <- apply(liks, 2, mean) ## Estimate of f(y_i| y) from MCMC
+  log_av_liks <- log(av_liks) + logmin
+  sum_log_av_liks <-  sum(log_av_liks)
+  expected_log_liks <- apply(v, 2, mean) ## Estimate of Expected log f(y_i| theta) from MCMC
+  pwaic1 <- 2 * sum_log_av_liks - 2 * sum(expected_log_liks)
+  waic1 <- -2 * sum_log_av_liks + 2 * pwaic1
+  waic2 <- -2 * sum_log_av_liks + 2 * pwaic2
+  waic_results <- list(pwaic1=pwaic1, pwaic2=pwaic2, waic1=waic1, waic2=waic2)
+  waic_results
+}
+
+## Calculate CRPS statistics
+crps_check<-function(yval, yits){
+  ## xits is the mcmc samples with dim r x N iteration
+  ## xval is the actual r observations may include NA's
+  tmp <- cbind(yval, yits)
+  tmp <- na.omit(tmp) ## Get rid of the NA observations in yval
+  N <- ncol(yits)
+  r1 <- nrow(tmp) ## number of observations to validate excluding the NA's
+  nyts <- tmp[, -1] ## this is r1 by N
+  ## Calculate CRPS statistics
+  crps_fac <- function(yits) {
+    ## yits is a vector of N MCMC iterations
+    ## Calculates the estimate of E|Y-Y*|
+    ans <- mean(abs(outer(yits, yits, FUN="-")))
+    ans
+  }
+  facs <- as.vector (apply(nyts, 1, crps_fac)) ## r1 by 1
+  errs  <- abs(nyts - matrix(rep(tmp[,1], N), ncol=N) ) ## r1 by N observations
+  maes <- as.vector (apply(errs, 1, mean)) ## r1 by 1
+  mean(maes-0.5*facs)
+  }
+
+
+crpsR <- function(xval, xits){
+  ## xval is the actual n observations
+  ## xits is the mcmc samples with dim n x N iteration
+  tmp <- cbind(xval,xits)
+  tmp <- na.omit(tmp)
+  its <- length(tmp[1,])-1
+  fnc <- function(p,n){
+    out<-NULL
+    out1<-NULL
+    for(i in 1:n){
+      out[i]<-abs(p[i+1]-p[1])
+      #out1[i]<-abs(p[i+1]-sample(p[-c(1,i)],1))*abs(p[i+1]-sample(p[-c(1,i)],1))
+      out1[i]<-sum(abs(p[i+1]-p[-1]))
+    }
+    out<-sum(out)/n
+    out1<-sum(out1)/(2*n*n)
+    out<-out-out1
+    out
+  }
+  tmp <- apply(tmp,1,fnc,its)
+  tmp <- mean(tmp)
+  tmp
+}
+
+pred_samples_lm <- function(pars, Xmat) { ## likelihood value for a given theta sigma2 as first and second components of pars
+  p <- ncol(Xmat)
+  n <- nrow(Xmat)
+  fitmeans <- Xmat %*% as.vector(pars[1:p])
+  unlist(fitmeans+ sqrt(pars[p+1]) * rnorm(n, mean=0, sd=1))
+}
+pred_samples_sp <- function(pars, Xmat, H) { ##
+  p <- ncol(Xmat)
+  fitmeans <- Xmat %*% as.vector(pars[1:p])
+  u <- mnormt::rmnorm(n=1, mean=fitmeans, varcov=pars[p+1]*H)
+  u
+}
+
+pred_samples_sptime <- function(pars, y, Xmat, Sinv, Tinv) {
+  ## log likelihood value for a given beta sigma2 for WAIC
+  p <- ncol(Xmat)
+  sn <- nrow(Sinv)
+  tn <- nrow(Tinv)
+  fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
+
+  qii_inv <- 1/diag(Sinv)
+  Qsdiag_inv <- diag(qii_inv, sn, sn)
+  Qsdiag_Hinv <-  Qsdiag_inv %*% Sinv
+
+  qtt_inv <- 1/diag(Tinv)
+  Qtdiag_inv <- diag(qtt_inv, tn, tn)
+  Qtdiag_Tinv <-  Qtdiag_inv %*% Tinv
+
+  err <- y - fitmeans
+  materrbs <- matrix(err, byrow=T, ncol=tn) ## This is sn by tn
+  temp1 <- Qsdiag_Hinv %*% materrbs
+  temp <- temp1 %*% Qtdiag_Tinv ## This is sn by
+  cmu <- y - as.vector(t(temp))  ## paralls with y and is the conditional mean
+  csd <- sqrt(pars[p+1]*kronecker(qii_inv, qtt_inv))
+  cmu + rnorm(sn*tn) * csd
+}
+
+pred_samples_sptime2 <- function(pars, Xmat, Ls, Lt) { ## Ls and Lt are Cholesky factorisation of Sigma_s and Sigma_t
+  p <- ncol(Xmat)
+  fitmeans <- Xmat %*% as.vector(pars[1:p]) ## nT by 1
+  sn <- nrow(Ls)
+  tn <- nrow(Lt)
+  u <- matrix(rnorm(n=sn*tn, sd=sqrt(pars[p+1])), nrow=sn)
+  v <- Ls %*% u %*% t(Lt)
+  u <- as.vector(t(v)) + fitmeans
+  u
+}
+
+
+log_full_likelihood <- function(pars, y, Xmat) { ## log likelihood value for a given parameter value pars
+  ## pars is (p+1) by 1 with first p regression components and the last component is sigma^2
+  ## Assumes we have y and the X matrix in the current environment
+  p <- ncol(Xmat)
+  fitmeans <- Xmat %*% as.vector(pars[1:p])
+  logdens <- unlist(lapply(y - fitmeans, dnorm, mean=0, sd=sqrt(pars[p+1]), log=TRUE))
+  sum(logdens)
+}
+
+log_likelihoods_lm <- function(pars, y, Xmat) { ## likelihood values for a given theta sigma2 as first and second components of pars
+  ## output is n by 1 vector of log likelihood functions
+  p <- ncol(Xmat)
+  fitmeans <- Xmat %*% as.vector(pars[1:p])
+  logdens <- unlist(lapply(y-fitmeans, dnorm, mean=0, sd=sqrt(pars[p+1]), log=TRUE))
+  logdens
+}
+
+log_full_likelihood_sp <- function(pars, y, Xmat, H) { ## log likelihood value for a given beta sigma2
+  p <- ncol(Xmat)
+  fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
+  logden <- mnormt::dmnorm(y, mean=fitmeans, varcov =pars[p+1]*H, log=T)
+  logden
+}
+
+
+log_likelihoods_sp <- function(pars, y, Xmat, Hinv) {
+  ## log likelihood value for just one data point
+  ## for WAIC
+  p <- ncol(Xmat)
+  n <- nrow(Xmat)
+  fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
+  qii_inv <- 1/diag(Hinv)
+  Qdiag_inv <- diag(qii_inv, n, n)
+  Qdiag_Hinv <-  Qdiag_inv %*% Hinv
+  aivec <-  Qdiag_Hinv %*% fitmeans
+  Amat <- diag(1, n, n) - Qdiag_Hinv
+  Ay  <- Amat %*% y
+  cmu <- Ay + aivec
+  csd <- sqrt(pars[p+1]*qii_inv)
+  dnorm(y, mean=cmu, sd=csd, log=TRUE)
+}
+
+
+log_likelihoods_sptime <- function(pars, y, Xmat, Sinv, Tinv) {
+  ## log likelihood value for a given beta sigma2 for WAIC
+  p <- ncol(Xmat)
+  sn <- nrow(Sinv)
+  tn <- nrow(Tinv)
+  fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
+
+  qii_inv <- 1/diag(Sinv)
+  Qsdiag_inv <- diag(qii_inv, sn, sn)
+  Qsdiag_Hinv <-  Qsdiag_inv %*% Sinv
+
+  qtt_inv <- 1/diag(Tinv)
+  Qtdiag_inv <- diag(qtt_inv, tn, tn)
+  Qtdiag_Tinv <-  Qtdiag_inv %*% Tinv
+
+  err <- y - fitmeans
+  materrbs <- matrix(err, byrow=T, ncol=tn) ## This is sn by tn
+  temp1 <- Qsdiag_Hinv %*% materrbs
+  temp <- temp1 %*% Qtdiag_Tinv ## This is sn by
+  cmu <- y - as.vector(t(temp))  ## paralls with y and is the conditional mean
+  csd <- sqrt(pars[p+1]*kronecker(qii_inv, qtt_inv))
+  dnorm(y, mean=cmu, sd=csd, log=TRUE)
+}
+
+
+
+log_full_likelihood_sptime <- function(pars, y, Xmat, Sinv, Tinv, log_detSinv, log_detTinv) {
+  ## log full likelihood value for a given beta sigma2 for DIC
+  p <- ncol(Xmat)
+  sn <- nrow(Sinv)
+  tn <- nrow(Tinv)
+  fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
+  err <- y - fitmeans
+  Dmat <- matrix(err, ncol=tn, byrow=T) # sn by tn matrix
+  u1 <- Sinv %*% Dmat
+  u2 <- Dmat %*% Tinv
+  qform <- sum(u1*u2)
+  logden <- -0.5 * (sn*tn*log(2 * pi * pars[p+1]) - sn * log_detTinv - tn * log_detSinv + qform/pars[p+1])
+  logden
+}
+
+
+## convert seconds into min. hour. and day from spTimer
+##
+fancy.time<-function(t)
+{
+  ## convert seconds into min. hour. and day from spTimer
+  if(t < 60){
+    t <- round(t,2)
+    tt <- paste(t," - Sec.")
+    cat(paste("##\n# Elapsed time:",t,"Sec.\n##\n"))
+  }
+  #
+  if(t < (60*60) && t >= 60){
+    t1 <- as.integer(t/60)
+    t <- round(t-t1*60,2)
+    tt <- paste(t1," - Mins.",t," - Sec.")
+    cat(paste("##\n# Elapsed time:",t1,"Min.",t,"Sec.\n##\n"))
+  }
+  #
+  if(t < (60*60*24) && t >= (60*60)){
+    t2 <- as.integer(t/(60*60))
+    t <- t-t2*60*60
+    t1 <- as.integer(t/60)
+    t <- round(t-t1*60,2)
+    tt <- paste(t2," - Hour/s.",t1," - Mins.",t," - Sec.")
+    cat(paste("##\n# Elapsed time:",t2,"Hour/s.",t1,"Min.",t,"Sec.\n##\n"))
+  }
+  #
+  if(t >= (60*60*24)){
+    t3 <- as.integer(t/(60*60*24))
+    t <- t-t3*60*60*24
+    t2 <- as.integer(t/(60*60))
+    t <- t-t2*60*60
+    t1 <- as.integer(t/60)
+    t <- round(t-t1*60,2)
+    tt <- paste(t3," - Day/s.",t2," - Hour/s.",t1," - Mins.",t," - Sec.")
+    cat(paste("##\n# Elapsed time:",t3,"Day/s.",t2,"Hour/s.",t1,"Mins.",t,"Sec.\n##\n"))
+  }
+  #
+  tt
+}
+
+## Provides the likelihood evaluations for calculating DIC and WAIC
+## Provides the conditional log-likelihoods from the marginal
+## model. These are used to calculate WAIC.
+## Inputs are: y (on the modelling scale), sn, tn, and the stanfitted object
+## The output is a list of
+## (i)   log full likelihood at theta hat
+## (ii)  N (MCMC) dimensional vector of log full likelihood at N theta samples
+## (iii) matrix of N (MCMC) by n (observed data points)
+# #' @export
+logliks_from_gp_marginal_stanfit <- function(y, X, sn, tn,  distmat, stanfit) {
+
+  listofdraws <- rstan::extract(stanfit)
+  phi <- listofdraws$phi
+  itmax <- length(phi)
+  # xbeta <- listofdraws$xbmodel
+  
+  beta <- listofdraws$beta # N by p 
+  xbeta <- beta %*% t(X) # N by n 
+  
+  tau_sq <- listofdraws$tau_sq
+  sigma_sq <- listofdraws$sigma_sq
+  zmiss <- listofdraws$z_miss
+  ntobs <- length(y[!is.na(y)])
+  loglik <- matrix(NA, nrow=itmax, ncol=ntobs)
+  yrep <- matrix(NA, nrow=itmax, ncol=ntobs)
+  log_full_like_vec <- numeric()
+
+  for (it in 1:itmax) {
+    # it <- 1
+    sigma2 <- sigma_sq[it]
+    tau2   <- tau_sq[it]
+    phi_it <- phi[it]
+    yimputed  <- y
+    yimputed[is.na(y)] <- zmiss[it, ]
+    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_it * distmat)
+    Qmat <- solve(Sigma)
+    meanvec <- xbeta[it, ]
+    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
+    
+    condmean <- matrix(NA, nrow=sn, ncol=tn)
+    condvar <-  matrix(NA, nrow=sn, ncol=tn)
+    errs  <- ymat - meanmat
+    cvar <-  1/diag(Qmat)
+    tmp <- meanmult %*% errs
+    cmean <- ymat - tmp 
+    
+    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+    log_full_like_vec[it] <- sum(udens)
+    
+    condmean_vec <- as.vector(t(cmean))
+    condvar_vec <-  rep(cvar, each=tn)
+    yobs <- y[!is.na(y)]
+    ymean <-   condmean_vec[!is.na(y)]
+    yvar <- condvar_vec[!is.na(y)]
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    yrep[it, ] <- ymean + rnorm(ntobs) * sqrt(yvar)
+    
+  }
+  # print(calculate_waic(loglik))
+  
+  ## to calculate log full likelihood at theta hat
+  ## calculate theta hat first
+  
+  sigma2 <- mean(sigma_sq)
+  tau2   <- mean(tau_sq)
+  phi_mean <- mean(phi)
+  zmissmean <- apply(zmiss, 2, mean)
+  yimputed  <- y
+  yimputed[is.na(y)] <- zmissmean
+  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_mean * distmat)
+  meanxbeta <-  apply(xbeta, 2, mean)
+  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+  errs  <- ymat - meanmat
+  tmp <- meanmult %*% errs
+  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+  log_full_like_at_thetahat <- sum(udens)
+  
+
+  yrepmeans <- as.vector(apply(yrep, 2, mean))
+  yrepvars <- as.vector(apply(yrep, 2, var))
+  yobs <- y[!is.na(y)]
+  gof <-   sum((yobs-yrepmeans)^2)
+  penalty <- sum(yrepvars)
+  pmcc <- list(gof=gof, penalty=penalty, pmcc=gof+penalty)
+
+  list(log_full_like_at_thetahat=log_full_like_at_thetahat,  log_full_like_vec=log_full_like_vec,
+       loglik=loglik, pmcc=pmcc)
+}
+
+
+
+## Needs more work
+# #' @export
+logliks_from_full_gp_spTimer <- function(gpfit) {
+  
+  y <- as.vector(gpfit$Y)
+  
+  #u <- gpfit$Y
+  #u[1:5, 1] <- 1:5
+  #b <- as.vector(u)
+  
+  if (gpfit$scale.transform == "SQRT") y <- sqrt(y)
+  if (gpfit$scale.transform == "LOG") y <- log(y)
+  
+  X <- gpfit$X
+  sn <- gpfit$n
+  tn <- sum(gpfit$T)
+  distmat <- gpfit$Distance.matrix
+  
+  phi <- gpfit$phip
+  itmax <- length(phi)
+  betasamp <- gpfit$betap  # p by itmax
+  
+  xbeta <- t(X %*% betasamp)  # itmax by nT
+  
+  tau_sq <- gpfit$sig2ep
+  sigma_sq <- gpfit$sig2etap
+  #
+  nT <- sn*tn
+  missing_flag <- rep(0, nT)
+  missing_flag[is.na(y)] <- 1
+  ntmiss <- sum(missing_flag)
+  ntobs <- nT - ntmiss
+  
+  ##
+  ovalues <- gpfit$op
+  sig2eps <-  gpfit$sig2ep
+  omissing <- ovalues[missing_flag>0, ]
+  sige <- sqrt(sig2eps)
+  
+  sigemat <- matrix(rep(sige, each=ntmiss), byrow=F, ncol=itmax)
+  a <- matrix(rnorm(ntmiss*itmax), nrow=ntmiss, ncol=itmax)
+  yits <- omissing + a * sigemat
+  zmiss <- t(yits)
+  ###
+  
+  loglik <- matrix(NA, nrow=itmax, ncol=ntobs)
+  log_full_like_vec <- numeric()
+  
+  for (it in 1:itmax) {
+     # it <- 1
+    sigma2 <- sigma_sq[it]
+    tau2   <- tau_sq[it]
+    phi_it <- phi[it]
+    yimputed  <- y
+    yimputed[is.na(y)] <- zmiss[it, ]
+    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_it * distmat)
+    Qmat <- solve(Sigma)
+    meanvec <- xbeta[it, ]
+    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
+    
+    condmean <- matrix(NA, nrow=sn, ncol=tn)
+    condvar <-  matrix(NA, nrow=sn, ncol=tn)
+    errs  <- ymat - meanmat
+    cvar <-  1/diag(Qmat)
+    tmp <- meanmult %*% errs
+    cmean <- ymat - tmp 
+    
+    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+    log_full_like_vec[it] <- sum(udens)
+
+    condmean_vec <- as.vector(t(cmean))
+    condvar_vec <-  rep(cvar, each=tn)
+    yobs <- y[!is.na(y)]
+    ymean <-   condmean_vec[!is.na(y)]
+    yvar <- condvar_vec[!is.na(y)]
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    
+    
+  }
+  # print(calculate_waic(loglik))
+  
+  ## to calculate log full likelihood at theta hat
+  ## calculate theta hat first
+  
+  sigma2 <- mean(sigma_sq)
+  tau2   <- mean(tau_sq)
+  phi_mean <- mean(phi)
+  zmissmean <- apply(zmiss, 2, mean)
+  yimputed  <- y
+  yimputed[is.na(y)] <- zmissmean
+  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_mean * distmat)
+  meanxbeta <-  apply(xbeta, 2, mean)
+  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+  errs  <- ymat - meanmat
+  tmp <- meanmult %*% errs
+  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+  log_full_like_at_thetahat <- sum(udens)
+  
+
+  v <- list(log_full_like_at_thetahat=log_full_like_at_thetahat,  log_full_like_vec=log_full_like_vec, loglik=loglik)
+}
+
+
+
+# #' @export
+logliks_from_full_AR_spTimer <- function(gpfit) {
+
+  y <- as.vector(gpfit$Y)
+
+  if (gpfit$scale.transform == "SQRT") y <- sqrt(y)
+  if (gpfit$scale.transform == "LOG") y <- log(y)
+
+  X <- gpfit$X
+  sn <- gpfit$n
+  tn <- sum(gpfit$T)
+  distmat <- gpfit$Distance.matrix
+
+  phi <- gpfit$phip
+  rho <- gpfit$rhop
+  itmax <- length(phi)
+  betasamp <- gpfit$betap  # p by itmax
+
+  xbeta <- t(X %*% betasamp)  # itmax by nT
+
+  tau_sq <- gpfit$sig2ep
+  sigma_sq <- gpfit$sig2etap
+  #
+  nT <- sn*tn
+  missing_flag <- rep(0, nT)
+  missing_flag[is.na(y)] <- 1
+  ntmiss <- sum(missing_flag)
+  ntobs <- nT - ntmiss
+
+  ##
+  ovalues <- gpfit$op
+  sig2eps <-  gpfit$sig2ep
+  omissing <- ovalues[missing_flag>0, ]
+  sige <- sqrt(sig2eps)
+
+  sigemat <- matrix(rep(sige, each=ntmiss), byrow=F, ncol=itmax)
+  a <- matrix(rnorm(ntmiss*itmax), nrow=ntmiss, ncol=itmax)
+  yits <- omissing + a * sigemat
+  zmiss <- t(yits)
+  ###
+
+  loglik <- matrix(NA, nrow=itmax, ncol=ntobs)
+  log_full_like_vec <- numeric()
+
+  for (it in 1:itmax) {
+    #   it <- 1
+    sigma2 <- sigma_sq[it]
+    tau2   <- tau_sq[it]
+    phi_it <- phi[it]
+    yimputed  <- y
+    yimputed[is.na(y)] <- zmiss[it, ]
+    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    Sigma <- diag(tau2, nrow=sn, ncol=sn) # + sigma2 * exp(-phi_it * distmat)
+    Qmat <- solve(Sigma)
+    ##
+    omat <-  matrix(ovalues[, it], byrow=T, ncol=tn)
+    meanvec <- xbeta[it, ]
+    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
+
+    condmean <- matrix(NA, nrow=sn, ncol=tn)
+    condvar <-  matrix(NA, nrow=sn, ncol=tn)
+    u <- 0.0
+    for (k in 1:tn) {
+      if (k==1) oprev <- rep(0, sn)
+      else  oprev <- omat[, k-1]
+
+      meanvec <- meanmat[,k] + rho[it] * oprev
+
+      yvec <- ymat[, k]  # sn by 1
+      condmean[, k] <- yvec - meanmult %*% (yvec - meanvec)
+      condvar[, k] <- 1/diag(Qmat)
+      logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=T)
+      u <- u +  logden_contr
+    }
+    log_full_like_vec[it] <- u
+
+    condmean_vec <- as.vector(t(condmean))
+    condvar_vec <-  as.vector(t(condvar))
+    yobs <- y[!is.na(y)]
+    ymean <-   condmean_vec[!is.na(y)]
+    yvar <- condvar_vec[!is.na(y)]
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+  }
+  # print(calculate_waic(loglik))
+
+  ## to calculate log full likelihood at theta hat
+  ## calculate theta hat first
+
+  sigma2 <- mean(sigma_sq)
+  tau2   <- mean(tau_sq)
+  phi_mean <- mean(phi)
+  zmissmean <- apply(zmiss, 2, mean)
+  yimputed  <- y
+  yimputed[is.na(y)] <- zmissmean
+  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  Sigma <- diag(tau2, nrow=sn, ncol=sn) # + sigma2 * exp(-phi_mean * distmat)
+  meanxbeta <-  apply(xbeta, 2, mean)
+  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+
+  u <- 0.0
+  for (k in 1:tn) {
+    meanvec <- meanmat[,k]
+    yvec <- ymat[, k]  # sn by 1
+    logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=T)
+    u <- u +  logden_contr
+  }
+  log_full_like_at_thetahat <- u
+
+  v <- list(log_full_like_at_thetahat=log_full_like_at_thetahat,  log_full_like_vec=log_full_like_vec, loglik=loglik)
+
+  print(calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec))
+  print(calculate_waic(v$loglik))
+  v
+}
+
+# #
+#v <- logliks_from_full_gp_spTimer(arfit)
+#print(calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec))
+#print(calculate_waic(v$loglik))
+
+# v <- logliks_from_AR_spTimer(arfit)
+# v <- logliks_from_full_gp_spTimer(arfit)
+
+
+
+
+#' Calculates and plots the variogram cloud and an estimated variogram.
+#' @param formula Its a formula argument for the response and the coordinates. 
+#' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (supplied in meters) as the default. Distance will be calculated in units of kilometer
+#' if this argument is either utm or lonlat. Euclidean distance will be calculated 
+#' if this is given as the third type plain.  If  distance in meter is to be calculated 
+#' then coordtype should be passed on as plain although the coords are supplied in UTM. 
+#' @param data A data frame containing the response and the co-ordinates
+#' @param nbins Number of bins for the variogram. Default is 30. 
+#' @return  A list containing the variogram cloud, binned variogram values, and the 
+#' two plots: the variogram cloud plot and the variogram plot itself. In the variogram plot 
+#' a loess fit super is imposed.
+#' @examples 
+#' a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
+#' coordtype="utm", nb=50)
+#' names(a)
+#' library(ggpubr)
+#' ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
+#' @export
+bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=nyspatial, nbins=30)
+{
+  X <- model.matrix(formula, data=data)
+  a <- model.frame(formula=formula, data=data)
+  y <- model.response(a)
+  z <- data.frame(y=y, X)
+  z <- na.omit(z)
+  y <- z$y
+
+  xnames <- all.vars(formula)[-1]
+  kutmx <- z[,xnames[1]]
+  kutmy <- z[,xnames[2]]
+
+  n <- length(y)
+  nc2 <- t(combn(n, 2))
+  k <- nrow(nc2)
+  bigmat <- matrix(0, nrow=k, ncol=6)
+  bigmat[, 1] <- kutmx[nc2[,1]]
+  bigmat[, 2] <- kutmy[nc2[,1]]
+  bigmat[, 3] <- kutmx[nc2[,2]]
+  bigmat[, 4] <- kutmy[nc2[,2]]
+  bigmat[, 5] <- as.vector(apply(bigmat[, 1:4],  1,  vdist, coordtype)) #distances in kilometers
+  bigmat[, 6] <- ((y[nc2[,1]] - y[nc2[,2]])^2)/2.0 # variogram cloud
+
+  colnames(bigmat) <- c("p1.x", "p1.y", "p2.x", "p2.y", "distance", "variogram" )
+
+  # par(ask=T)
+  a <- cut(bigmat[,5], nbins)
+  mvar <- as.vector(tapply(bigmat[,6], a, mean))
+  mdis <- as.vector(tapply(bigmat[,5], a, mean))
+  z <- data.frame(distance = mdis, variogram= mvar)
+  z <- na.omit(z)
+  bigmat <- as.data.frame(bigmat)
+  bigmat <- na.omit(bigmat)
+  p1 <- ggplot(data=bigmat) + 
+    geom_point(aes(x=distance, y=variogram), shape=8)
+  plot(p1)
+  
+  p2 <- ggplot(data=z) + 
+    geom_point(aes(x=distance, y=variogram), shape=8) + 
+    geom_smooth(method = "loess", se=F, aes(x=distance, y=variogram))
+  plot(p2)
+  list(cloud=bigmat, variogram=z, cloudplot=p1, variogramplot=p2)
+}
+# 
+vdist <- function(points, coordtype)
+{
+  point1 <- c(points[1], points[2])
+  point2 <- c(points[3], points[4])
+  if (coordtype=="lonlat") d <- as.numeric(geodetic.distance(point1, point2))
+  else d <- dist(rbind(point1, point2))
+  if (coordtype=="utm") d <- d/1000
+  d
+}
+# 
+row_dists <- function(u, coordtype) { 
+  ## u has the rows of the form lon/lat, lon/lat or utmx/utmy utmx  
+  k <- length(u)/2 - 1
+  p0 <- u[1:2]
+  v <- matrix(u[-(1:2)], byrow=T, ncol=2)
+  d <- rep(NA, k)
+  for (i in 1:k) { 
+    pi <- v[i, ]
+    if (coordtype=="lonlat") { 
+      d[i] <- geodetic.distance(p0, pi)
+    } else { 
+      d[i]  <- dist(rbind(p0, pi))
+      if (coordtype=="utm")  d[i] <- d[i]/1000
+    }
+  }
+  d
+}
+
+
+
+#
+geodetic.distance <- function(point1, point2)
+{
+  #The following program computes the distance on the surface
+  #of the earth between two points point1 and point2.
+  #Both the points are of the form (Longitude, Latitude)
+  R <- 6371
+  p1rad <- point1 * pi/180
+  p2rad <- point2 * pi/180
+  d <- sin(p1rad[2])*sin(p2rad[2])+cos(p1rad[2])*cos(p2rad[2])*cos(abs(p1rad[1]-p2rad[1]))
+  d <- acos(d)
+  as.numeric(R*d)
+}
+## #' Calculates distance (in kilometer) matrix from either a matrix of long-lat 
+## #' pairs or UTM X-Y pairs  
+## #' @param coords A two column matrix of coordinates 
+## #' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
+## #' (supplied in meters) as the default. Distance will be calculated in kilometer
+## #' if this argument is either utm or lonlat. Euclidean distance will be calculated 
+## #' if this is given as the third type plain.  If  distance in meter is to be calculated 
+## #' then coordtype should be passed on as plain although the coords are supplied in UTM. 
+## #' @export
+dist_mat <- function(coords, coordtype) { 
+  n <- nrow(coords)
+  if (coordtype=="lonlat") { 
+    a <- 1:n 
+    b <- 1:n 
+    u <- expand.grid(a=a, b=b)
+    v <- u[u$a<u$b, ] 
+    w <- cbind(coords[v$a, ], coords[v$b, ])
+    dvec <- apply(w, 1, vdist, coordtype="lonlat")
+    v$dist <- as.vector(dvec)
+    vlow <- data.frame(a=v$b, b=v$a, dist=v$dist)
+    vdiag <- data.frame(a=1:n, b=1:n, dist=0)
+    dall <- rbind(v, vlow, vdiag)
+    u$index <- 1:nrow(u)
+    dord <- merge(u, dall)
+    dall <- dord[order(dord$index), ]
+    d <- matrix(dall$dist, n, n)
+  } else { 
+   d  <- as.matrix(dist(as.matrix(coords)))
+   if (coordtype=="utm")  d <- d/1000
+  }
+  as.matrix(d)
+}
+
+# 
+g.dist <- function(points)
+{
+  point1 <- c(points[1], points[2])
+  point2 <- c(points[3], points[4])
+  #The following program computes the distance on the surface
+  #The argument points is of the form (Long, Lat, Long, Lat)
+  R <- 6371
+  p1rad <- point1 * pi/180
+  p2rad <- point2 * pi/180
+  d <- sin(p1rad[2])*sin(p2rad[2])+cos(p1rad[2])*cos(p2rad[2])*cos(abs(p1rad[1]-p2rad[1]))
+  d <- acos(d)
+  as.numeric(R*d)
+}
+dist_mat_loop <- function(coords, coordtype) { 
+  m <- nrow(coords)
+  d <- matrix(0, nrow=m, ncol=m)
+  if (coordtype=="lonlat") { 
+    for (i in 1:(m-1)) { 
+      for (j in (i+1):m) {
+        # cat("i=", i, "j=", j, "\n")
+        d[i, j] <-   as.numeric(geodetic.distance(coords[i,], coords[j,]))
+        d[j, i] <- d[i, j]
+      }
+    } 
+  } else { 
+    d  <- as.matrix(dist(as.matrix(coords)))
+    if (coordtype=="utm")  d <- d/1000
+  }
+  as.matrix(d)
+}
+## Apply the truncation function. From the spTimer package.  
+## @param Y Vector of values on which the truncation will be applied. 
+## @param at The value at which truncation occurred. 
+## @param lambda The lambda value for the transformation. 
+## It is 2 for square-root etc. 
+## @param both  Whether truncation at both end points. 
+## @return A vector of same length as the input vector Y 
+## after applying truncation. 
+## @export
+truncated.fnc<-function(Y, at=0, lambda=NULL, both=FALSE){
+  #
+  #
+  # at is left-tailed
+  #
+  if(is.null(lambda)){
+    stop("Error: define truncation parameter lambda properly using list ")
+  }
+  if(is.null(at)){
+    stop("Error: define truncation point properly using list ")
+  }
+  if(at < 0){
+    stop("Error: currently truncation point only can take value >= zero ")
+  }
+  zm <- cbind(Y,Y-at,1)
+  zm[zm[, 2] <= 0, 3] <- 0
+  zm[zm[, 3] == 0, 2] <- - extraDistr::rhnorm(nrow(zm[zm[,3]==0,]),sd(zm[zm[, 3] != 0, 1],na.rm=TRUE))
+  ck <- min(zm[,2],na.rm=TRUE)
+  zm[,2] <- zm[,2]-ck
+  zm[,2] <- zm[,2]^(1/lambda)
+  #zm[, 2] <- zm[, 2]^(1/lambda)
+  #zm[zm[, 3] == 0, 2] <- - rhnorm(nrow(zm[zm[,3]==0,]),sd(zm[zm[, 3] != 0, 1]^(1/lambda)))
+  #
+  if (both == TRUE) {
+    list(zm=zm,at2=ck)
+  }
+  else {
+    list(zm=c(zm[,2]),at2=ck)
+  }
+  #
+}
+##from spTimer 
+## for truncated model
+##
+## Reverse the truncated function for a vector of values
+## @param Y Vector of values on which the truncation will be reversed. 
+## @param at The value at which truncation occurred. 
+## @param lambda The lambda value for the transformation.  It is 2 for square-root etc. 
+## @param at2 is the second at parameter. 
+## @return A vector of same length as the input vector Y. 
+## @export
+reverse.truncated.fnc<-function(Y, at=0, lambda=NULL, at2=0){
+  #
+  # at is left-tailed
+  #
+  if(is.null(lambda)){
+    stop("Error: define truncation parameter lambda properly using list ")
+  }
+  #zm <- Y
+  #zm[zm <= 0]<- 0
+  #zm <- zm^(lambda)
+  #zm <- zm + at
+  zm <- Y
+  zm <- zm^(lambda)
+  zm <- zm + at2
+  zm[zm <= 0]<- 0
+  zm <- zm + at
+  zm
+  #
+}
+##
+## probability below threshold (for truncated)
+##from spTimer 
+prob.below.threshold <- function(out, at){
+  # out is the N x nItr MCMC samples
+  fnc<-function(x, at){
+    length(x[x <= at])/length(x)
+  }   
+  apply(out,1,fnc,at=at)
+}
+##
+##
+##
+
+# Grid search method for choosing phi
+#' Calculates the validation statistics using the spatial model with a given range of values of
+#' the decay parameter phi.
+#' @param phis A vector values of phi
+#' @param s A vector giving the validation sites
+#' @param ... Any additional parameter that may be passed to \code{Bspatial}
+#' @return  A data frame giving the phi values and the corresponding validation statistics
+#' @export
+phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
+                         s=c(8,11,12,14,18,21,24,28), ...) {
+  n <- length(phis)
+  res <- matrix(NA, nrow=n+2, ncol=4)
+  d <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                coordtype="utm", coords=4:5, validrows =s, mchoice=F, verbose=T, ...)
+  res[n+2, ] <- unlist(d$stats)
+  b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                coordtype="utm", coords=4:5, validrows =s,  mchoice=F, verbose=T, ...)
+  res[n+1, ] <- unlist(b$stats)
+  a <- c(phis, b$phi, 0)
+  
+  # pb <- txtProgressBar(min = 0, max = n, style = 3)   # set progress bar
+  for (i in 1:n) {
+    cat("Now doing ", i, "to go to ", n, "\n")
+    phi <- phis[i]
+    b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                  coordtype="utm", coords=4:5, validrows=s, verbose=T, mchoice=F, phi=phi, ...)
+    res[i, ] <- unlist(b$stats)
+    # setTxtProgressBar(pb, i)
+  }
+  # close(pb)
+  results <- data.frame(phis=a,  res)
+  dimnames(results)[[2]] <- c("phis", "rmse", "mae", "crps", "cvg")
+  a <- results[order(results$rmse), ]
+  a
+}
+
+# Grid search method for choosing phi(s) and phi(t)
+#' Calculates the validation statistics using the spatial model with a given range of values of
+#' the decay parameter phi.
+#' @param phis A vector values of phi for spatial decay 
+#' @param phit A vector values of phi for temporal decay
+#' @param valids A vector giving the validation sites
+#' @return  A data frame giving the phi values and the corresponding validation statistics
+#' @examples
+#' asave <-  phichoicep(valids=c(8, 11))
+#' @export 
+phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
+                       phit=c(0.05, 0.25, 1.25, 6.25), 
+                       valids=c(8,11,12,14,18,21,24,28)) {
+  a <- expand.grid(phis, phit)
+  n <- length(a[,1])
+  res <- matrix(NA, nrow=n+2, ncol=4)
+  vrows <-  which(nysptime$s.index%in% valids)
+  f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
+  b <- Bsptime(model="separable",formula=f2, data=nysptime,
+               coordtype="utm", coords=4:5, validrows=vrows,
+               scale.transform = "SQRT", mchoice=F, verbose=T)
+  a[n+1, ] <- c(b$phi.s, b$phi.t)
+  res[n+1, ] <- unlist(b$stats)
+  
+  b <- Bsptime(model="lm", validrows=vrows, formula=f2, data=nysptime,
+               scale.transform = "SQRT", mchoice=F, verbose=T)
+  a[n+2, ] <- c(0, 0)
+  res[n+2, ] <- unlist(b$stats)
+  
+  for (i in 1:n) {
+    cat("Now doing ", i, "to go to ", n, "\n")
+    phi.s <- a[i,1]
+    phi.t <- a[i,2]
+    b <- Bsptime(model="separable", formula=f2, data=nysptime,
+                 validrows=vrows, coordtype="utm", coords=4:5,
+                 verbose=T, mchoice=F, phi.s=phi.s, phi.t=phi.t,
+                 scale.transform = "SQRT")
+    res[i, ] <- unlist(b$stats)
+    
+  }
+  results <- data.frame(phis=a[,1], phit=a[,2], res)
+  dimnames(results)[[2]] <- c("phis", "phit", "rmse", "mae", "crps", "cvg")
+  a <- results[order(results$rmse), ]
+  a
+}
+

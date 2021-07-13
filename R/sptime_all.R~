@@ -1,0 +1,1800 @@
+#' Calculates the validation statistics, exact parameter estimates and
+#' the estimated values of the Bayesian model choice criteria
+#' @param formula An object of class "formula" (or one that can be coerced to that class):
+#' a symbolic description of the model to be fitted.
+#' @param data The data frame for which the model formula is to be fitted.
+#' @param scale.transform Transformation of the response variable. It can take three values: SQRT, LOG or NONE.
+#' @param prior.beta0 A scalar value or a vector providing the prior mean for beta
+#' @param prior.M Prior precision value (or matrix) for beta.  Defaults to a diagonal matrix with diagonal values 10^(-4).
+#' @param prior.sigma2 Shape and scale parameter value for the gamma prior on precision
+#' @param verbose Logical scalar value: whether to print various estimates and statistics.
+#' @param plotit  Logical scalar value: whether to plot the predictions against the observed values.
+#' @param N Number of independent Monte Carlo samples.
+#' @param validrows A vector of rwo indices which should be used for validation.
+#' The remaining observations will be used for model fitting. The default NULL value instructs that
+#' validation will not be performed.
+#' @param mchoice Logical scalar value: whether model choice statistics should be calculated.
+#' @param rseed Random number seed that controls the starting point for the random numer stream.
+#' @return Parameter estimates, model choice statistics, validation statistics, validation observations and their
+#' predictions and fitted values. It also draws a validation plot if plotit=T. 
+#' @seealso \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer
+#' \code{\link{Bstan_sptime}} for independent GP model fitting using Stan,
+#' \code{\link{BspBayes_sptime}} for dynamic modelling using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' \code{\link{BspTDyn_sptime}} for spatio-temporal modelling using spTDyn.
+#' @examples
+#' a <- Blm_sptime(mchoice=FALSE)
+#' a <- Blm_sptime(mchoice=TRUE)
+#' valids <- c(8,11,12,14,18,21,24,28)
+#' vrows <-  which(nysptime$s.index%in% valids)
+#' a <- Blm_sptime(validrows=vrows, mchoice=F, verbose=T)
+#' @export
+Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
+                       scale.transform="SQRT",
+                       prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2,1),
+                       verbose =TRUE, plotit=TRUE,
+                       N=1000, validrows=NULL, mchoice=TRUE, rseed=44){
+  ###
+ start.time<-proc.time()[3]
+ set.seed(rseed)
+
+  nvalid <- length(validrows) 
+  n <- nrow(data)
+  
+  if (nvalid>n) stop("Can't validate after the data rows")
+  if (nvalid > 0) { ## perform validation
+    fdat <- data[-validrows, ]
+    vdat <- data[validrows, ]
+    u <- getXy(formula=formula, data=vdat)
+    xpreds <- u$X
+    vdaty <- u$y
+  } else { ## We are not doing validation
+    fdat <- data
+  }
+  n <- nrow(fdat)
+  u <- getXy(formula=formula, data=fdat)
+  X <- u$X
+  y <- u$y
+  
+  xnames <- colnames(X)
+  p <- ncol(X)
+
+  miss <- which(is.na(y))
+  if (length(miss)>0) { # Impute the missing observations
+    cat("Imputing the missing observations by the grand mean of the data\n")
+    omean <- mean(y, na.rm=T)
+    y[miss] <- omean
+  }
+  if (scale.transform == "SQRT") { 
+    if (min(y, na.rm=T) < 0) stop("Can't use the square root transformation. \n 
+                                There are negative observations.") 
+    else y <- sqrt(y)
+  } 
+
+  if (scale.transform == "LOG") {
+    if (min(y, na.rm=T) < 0) stop("Can't use the log transformation. \n 
+                                  There are negative observations. \n") 
+    else y <- log(y)
+  } 
+
+
+  if (!is.vector(prior.beta0)) stop("prior.beta0 must be a vector or scalar")
+  if (length(prior.beta0) != p ) prior.beta0 <- rep(prior.beta0[1], p)
+  if (!is.matrix(prior.M)) prior.M <- diag(prior.M, ncol=p, nrow=p)
+
+  Mstar <- prior.M + t(X) %*% X
+  Mstar_inv <- solve(Mstar)
+  # Mstar_inv
+  betastar <- Mstar_inv %*% (prior.M %*% prior.beta0 + t(X) %*% y)
+
+
+  two_bstar <- 2 * prior.sigma2[2] + t(prior.beta0) %*% prior.M %*% prior.beta0  + sum(y^2) - t(betastar) %*% Mstar %*% betastar
+  two_bstar <- as.numeric(two_bstar)
+  Var_beta_given_y <- two_bstar * Mstar_inv / (n+ 2* prior.sigma2[1] -2)
+  # Var_beta_given_y
+  ## Sds of parameter estimates
+  round(sqrt(diag(Var_beta_given_y)), 3)
+
+
+  gammas <- sqrt(diag(Mstar_inv)) * sqrt(two_bstar/(n+2*prior.sigma2[1]))
+  ## gammas
+  ## 95% Credible interval for betas
+  crs_low <- betastar - qt(0.975, df=n+2*prior.sigma2[1]) * gammas
+  crs_up <-  betastar + qt(0.975, df=n+2*prior.sigma2[1]) * gammas
+
+  ## Estimation of sigma^2
+
+  sparameter <- 0.5*n+prior.sigma2[1] ## Shape parameter for the posterior distribution of 1/sigma^2
+  rparameter <- 0.5* two_bstar ## Rate parameter for the posterior distribution of 1/sigma^2
+  sigma2_mean <-  rparameter /(sparameter -1)  ## Estimate of sigma^2
+  sigma2_var <- rparameter^2 /((sparameter-1)^2 * (sparameter-2))
+  sigma2_low <- 1/qgamma(0.975, shape=sparameter, rate=rparameter)
+  sigma2_up <- 1/qgamma(0.025, shape=sparameter, rate=rparameter)
+
+  sigma2_stats <- c(sigma2_mean, sqrt(sigma2_var), sigma2_low, sigma2_up)
+  a <- cbind(betastar, sqrt(diag(Var_beta_given_y)),  crs_low, crs_up)
+  params_table_lm  <- data.frame(rbind(a, sigma2_stats))
+  pnames <- c(xnames, "sigma2")
+  dimnames(params_table_lm) <- list(pnames, c("mean", "sd", "low", "up"))
+  round(params_table_lm, 2)
+  mod1 <- lm(formula=y~-1+X)
+  summary(mod1)
+
+  allres <- list(params=params_table_lm)
+  fitmeans <- X %*% betastar
+  allres$fit <- fitmeans
+  ## Variance to calculate later
+
+  if (verbose)  print(round(allres$params, 3))
+
+  ## validation statistics
+  if (nvalid>0) { # Perform validation if there are sites set up for validation
+    cat("validating ", length(vdaty), " space time observations", "\n")
+    k <- nrow(vdat)
+    deltasquare <- diag(1, k, k)
+    meanpred <- xpreds %*% betastar
+    # meanpred
+    vpred <- deltasquare + xpreds %*% Mstar_inv %*% t(xpreds)
+    vpred <- vpred * two_bstar /(n+2*prior.sigma2[1] - 2)
+    sdpred <- sqrt(diag(vpred))
+
+    ypreds <- matrix(rt(n=k*N, df=n+2*prior.sigma2[1]), nrow=k, ncol=N)
+    sdmat <- matrix(rep(sdpred, N), nrow=k, ncol=N)
+    means <- matrix(rep(meanpred, N), nrow=k, ncol=N)
+    ypreds <- ypreds * sdmat + means
+
+    if (scale.transform == "NONE") {
+      low <- meanpred - qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
+      upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
+      predsums <- data.frame(mean=meanpred, sd=sdpred, low=low, up=upr)
+
+      rmseBlm  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
+      maeBlm <- mean(abs(vdaty-meanpred), na.rm=T)
+      cvgBlm <- spT.pCOVER(vdaty, zup=upr, zlow=low)
+      crpslm <- crps(vdaty, ypreds)
+      a <- list(rmse=rmseBlm, mae=maeBlm, crps =crpslm, cvg=cvgBlm)
+      results <- list(stats=a)
+    }
+
+    if (scale.transform == "SQRT") {
+      ypreds <-  ypreds^2
+      results  <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
+      predsums <- get_parameter_estimates(t(ypreds))
+    }
+    if (scale.transform == "LOG")  {
+      ypreds <-  exp(ypreds)
+      results  <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
+      predsums <- get_parameter_estimates(t(ypreds))
+    }
+
+
+    yvalids <- cbind(vdat, predsums)
+    allres$stats <- results$stats
+    allres$yobs_preds <- yvalids
+
+    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (verbose) print(round(unlist(allres$stats), 3))
+
+
+  } # Validation complete
+
+  if (mchoice) { # Should we calculate model choice statistics
+    ## Going to sampling ...
+    set.seed(44)
+    ##
+    sigma2.samples <- 1.0/rgamma(N, shape=sparameter, rate=rparameter)
+    summary(sigma2.samples)
+    quant(sigma2.samples)
+
+    v <- matrix(rnorm(p*N), nrow=p, ncol=N)
+    dim(v)
+    sqrtmat <- chol(Mstar_inv)
+    sqrtmat
+    v <- t(sqrtmat) %*% v
+    dim(v)
+    sigmas <- sqrt(sigma2.samples)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    # sigmamat[, 1:5]
+    # sigmas[1:4]
+    betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
+    # betamat[, 1:5]
+    betasamples  <- v * sigmamat + betamat
+    ###
+
+    lmsamps <- t(rbind(betasamples, sigma2.samples))
+  #  mc.lmsamps <- as.mcmc(lmsamps)
+  #  summary(mc.lmsamps)
+  #  round(params_table_lm, 2)
+
+    ## Now calculate the Model choice criteria using sampl
+
+    ## DIC calculation for the independent error linear model
+    # pars <- params_table_lm[,1] ## Exact pars
+    pars <- as.vector(apply(lmsamps, 2, mean)) ## Alternative sampling estimated parameters
+    # Does not matter which one we choose
+
+    log_lik_at_theta_hat <- log_full_likelihood(pars, y=y, Xmat=X)
+    log_liks <- apply(lmsamps, 1, log_full_likelihood, y=y, Xmat=X)
+    # log_liks
+    # summary(log_liks)
+    # var(log_liks)
+
+    dic_results_lm <- calculate_dic(log_lik_at_theta_hat, log_liks)
+    dic_results_lm
+
+    ## WAIC calculation for the independent regression model
+    ## assumes we already have the samples lmsamps
+    pars <-  as.vector(apply(lmsamps, 2, mean))
+    fitmeans <- X %*% as.vector(pars[1:p])
+
+
+    logdens <- log_likelihoods_lm(pars=pars, y=y, Xmat=X)
+    # dens
+    v <- apply(lmsamps, 1, log_likelihoods_lm, y=y, Xmat=X) ## n by N
+    waic_results_lm <- calculate_waic(t(v))
+    waic_results_lm
+    ## waic(t(v))  ## matches with the results from the WAIC function in loo package
+
+    ## PMCC for the lm
+
+    v <- apply(lmsamps, 1, pred_samples_lm, Xmat=X) ## n by N
+    expected_ys <- apply(v, 1, mean)
+    var_ys <- apply(v, 1, var)
+    gof <- sum((y-expected_ys)^2)
+    penalty <- sum(var_ys)
+    pmcc <- gof + penalty
+    pmcc_results_lm <- list(gof=gof, penalty=penalty, pmcc=pmcc)
+    pmcc_results_lm
+    #####
+    lmmod_hand <- c(unlist(dic_results_lm), unlist(waic_results_lm), unlist(pmcc_results_lm))
+    round(lmmod_hand, 2)
+    allres$mchoice <-  lmmod_hand
+    allres$logliks <- list(log_full_like_at_thetahat=log_lik_at_theta_hat,  log_full_like_vec=log_liks, loglik=t(v))
+
+    if (verbose) print(round(allres$mchoice, 2))
+  } # Model choice
+ end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+  allres
+}
+#' Calculates the exact parameter estimates and the estimated values of the Bayesian model
+#' choice criteria
+#' @param data The data frame for which the model formula is to be fitted.
+#' The data frame should be in long format having one row for each location and  time
+#' combination. The data frame must be ordered by time within each site, and should
+#' optionally have a column, named s.index,  providing the site indices.
+#' Thus the data,  with n sites and T times within each site, should be
+#' organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
+#' The data frame should also contain two columns giving the coordinates of the
+#' locations. This model fitting method cannot handle missing data. All missing data points
+#' in the response variable will be replaced by the grand mean of the available observations.  
+#' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (Universal Transverse Mercator, supplied in meters) as the default.
+#' Type lonlat implies the coordinates are Longitude and Latitude of the locations.  
+#' Distance will be calculated in kilometer if this argument is either utm or lonlat.
+#' Euclidean distance will be calculated if this is given as the third type plain.
+#' If  distance in meter is to be calculated then coordtype should be passed on as plain even
+#' when  the coords are supplied in UTM projection. 
+#' @param coords A vector of size two identifying the two column numbers 
+#' of the data frame to take as coordinates. Unique values of the coordcolumns will be taken as coordinates.
+#' This argument can also be given as a  matrix of number of sites by 2 providing the coordinates of all the
+#' data locations. In this case it should ensured that the order of the site locations in this argument matches
+#' with the ordering of the data frame.
+#' @inheritParams Blm_sptime
+#' @param phi.s The fixed spatial decay parameter for the exponential covariance function.
+#' If this is not provided then a value is chosen which corresponds to an effective range
+#' which is the maximum distance between the data locations.
+#' @param phi.t  The fixed decay parameter for the exponential covariance function in the temporal domain.
+#' If this is not provided then a value is chosen which corresponds to an effective temporal
+#' range which is the maximum time of the data set.
+#' @param valids A vector of locations which are to be set aside for validation.
+#' It will validate for all the times in the validation sites. It is not possible to validate
+#' at selected time points using this model. 
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer,
+#' \code{\link{Bstan_sptime}} for independent GP fitting using Stan,
+#' \code{\link{BspBayes_sptime}} for dynamic modelling using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' \code{\link{BspTDyn_sptime}} for spatio-temporal modelling using spTDyn.
+#' @return Parameter estimates, model choice statistics, validation statistics, validation observations and their
+#' predictions and fitted values. It also returns the maximum distance and the adopted phi.s and phi.t values.
+#' @examples
+#' a <- Bsp_sptime()
+#' a <- Bsp_sptime(valids= c(8,11,12,14,18,21,24,28), phi.s=0.10, phi.t=6)
+#' a <- Bsp_sptime(formula=y8hrmax~xwdsp)
+#' a <- Bsp_sptime(formula=y8hrmax~xwdsp, mchoice=F)
+#' b <- Bsp_sptime(formula=y8hrmax~xwdsp, mchoice=F, valids= c(8,11,12,14,18,21,24,28))
+#' a <- Bsp_sptime(valids= c(8,11,12,14,18,21,24,28), scale.transform="NONE")
+#' b <- Bsp_sptime(valids= c(8,11,12,14,18,21,24,28), mchoice=T)
+#' d <- Bsp_sptime(valids= c(8,11,12,14,18,21,24,28), mchoice=T, scale.transform="LOG")
+#' @export
+Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordtype="utm", coords=4:5,
+                       scale.transform ="SQRT", phi.s=NULL, phi.t =NULL,
+                       prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2, 1),
+                       verbose =T,  plotit=TRUE,
+                       N=1000, valids=NULL, mchoice=T, rseed=44){
+    ##
+  start.time<-proc.time()[3]
+  set.seed(rseed)
+  r <- length(valids)
+  if (length(coords)==2) coords <-  unique(data[, coords]) 
+ 
+  if (r>0) { ## perform validation
+    nfull <- nrow(data)
+    k <- length(data$s.index)
+    sn <- nrow(coords)
+    tn <- nfull/sn
+    a <- abs(tn - floor(tn))
+    if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+    if (k==0) data$s.index <- rep(1:sn, each=tn)
+
+    fdat <- spT.subset(data=data, var.name=c("s.index"), s=valids, reverse=TRUE)
+    vdat <- spT.subset(data=data, var.name=c("s.index"), s=valids)
+    
+    u <- getXy(formula=formula, data=vdat)
+    xpreds <- u$X
+    vdaty <- u$y
+
+    fcoords <- coords[-valids, ]
+    vcoords <- coords[valids, ]
+    allcoords <- rbind(vcoords, fcoords)
+  } else { ## We are not doing validation
+   fdat <- data
+   fcoords <- coords
+   allcoords <- coords
+  }
+
+  sn <- nrow(fcoords)
+  n <- nrow(fdat)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+  # alldistmat <- as.matrix(dist(allcoords)) # distances in kilometers
+  alldistmat <- dist_mat(allcoords, coordtype)
+  dist_matrix <- alldistmat[(r+1):(r+sn), (r+1):(r+sn)]
+  summary(as.vector(alldistmat))
+  max.d <- max(alldistmat)
+
+  if (length(phi.s) == 0) phi.s <- 3/max.d
+  if (length(phi.t) == 0) phi.t <- 3/tn
+
+  
+  u <- getXy(formula=formula, data=fdat)
+  X <- u$X
+  y <- u$y
+
+  a <- rep(1:tn, each=tn)
+  b <- rep(1:tn, tn)
+  a <- abs(a-b)
+  tcov <- matrix(exp(-phi.t * a), ncol=tn)
+  scov <- exp(-phi.s * dist_matrix)
+  invscov <- solve(scov)
+  invtcov <- solve(tcov)
+
+
+  xnames <- colnames(X)
+  p <- ncol(X)
+
+  miss <- which(is.na(y))
+  if (length(miss)>0) { # Impute the missing observations
+    cat("This model fitting cannot handle missing data\n")
+    cat("Imputing the missing observations by the grand mean of the data\n")
+    omean <- mean(y, na.rm=T)
+    y[miss] <- omean
+  }
+  if (scale.transform == "SQRT") { 
+    if (min(y, na.rm=T) < 0) stop("Can't use the square root transformation. \n Negative values in response.") 
+    else y <- sqrt(y)
+  } 
+  
+  
+  if (scale.transform == "LOG") {
+    if (min(y, na.rm=T) < 0) stop("Can't use the log transformation. \n Negative values in response.") 
+    else y <- log(y)
+  } 
+  
+
+
+  if (!is.vector(prior.beta0)) stop("prior.beta0 must be a vector or scalar")
+  if (length(prior.beta0) != p ) prior.beta0 <- rep(prior.beta0[1], p)
+  if (!is.matrix(prior.M)) prior.M <- diag(prior.M, ncol=p, nrow=p)
+
+
+  XHinv <- matrix(0, p, sn*tn)
+  for (k in 1:p) {
+    Xs <- matrix(X[,k], byrow=T, ncol=tn)
+    # print(dim(scov))
+    # print(dim(Xs))
+    temp1 <- invscov %*% Xs
+    temp <- temp1 %*% invtcov
+    XHinv[k, ]<- as.vector(t(temp))
+  }
+
+  XHinvX <- XHinv %*% X
+  invXHX <- solve(XHinvX)
+
+
+  Mstar <- prior.M +  XHinvX
+  Mstar_inv <- solve(Mstar)
+  # Mstar_inv
+  betastar <- Mstar_inv %*% (prior.M %*% prior.beta0 + XHinv %*% y)
+  # mod1 <- lm(formula=y~-1+X)
+  #round(cbind(mod1$coefficients,  betastar), 3) ## Estimates change
+  ## Error here
+  ymat <- matrix(y, byrow=T, ncol=tn)
+  temp1 <- invscov %*% ymat
+  temp <- temp1 %*% invtcov
+  ytHinv <- as.vector(t(temp))
+
+  two_bstar <- 2 * prior.sigma2[2] + t(prior.beta0) %*% prior.M %*% prior.beta0  + sum(y*ytHinv) - t(betastar) %*% Mstar %*% betastar
+  two_bstar <- as.numeric(two_bstar)
+  Var_beta_given_y <- two_bstar * Mstar_inv / (n+ 2* prior.sigma2[1] -2)
+  # Check_beta_given_y
+  # round(sqrt(diag(Var_beta_given_y)), 2)
+  #summary(mod1)
+
+
+  gammas <- sqrt(diag(Mstar_inv)) * sqrt(two_bstar/(n+2*prior.sigma2[1]))
+  gammas
+  crs_low <- betastar - qt(0.975, df=n+2*prior.sigma2[1]) * gammas
+  crs_up <-  betastar + qt(0.975, df=n+2*prior.sigma2[1]) * gammas
+
+  # Parameter Estimates
+
+  sparameter <- 0.5*n+prior.sigma2[1]
+  rparameter <- 0.5* two_bstar
+  sigma2_mean <-  rparameter /(sparameter -1)
+  # sigma2_mean
+  sigma2_var <- rparameter^2 /((sparameter-1)^2 * (sparameter-2))
+  sigma2_low <- 1/qgamma(0.975, shape=sparameter, rate=rparameter)
+  sigma2_up <- 1/qgamma(0.025, shape=sparameter, rate=rparameter)
+  # sigma2_low
+  # sigma2_up
+
+  sigma2_stats <- c(sigma2_mean, sqrt(sigma2_var), sigma2_low, sigma2_up)
+  a <- cbind(betastar, sqrt(diag(Var_beta_given_y)),  crs_low, crs_up)
+  params_table_sp  <- data.frame(rbind(a, sigma2_stats))
+  pnames <- c(xnames, "sigma2")
+  dimnames(params_table_sp) <- list(pnames, c("mean", "sd", "low", "up"))
+  allres <- list(params=params_table_sp, phi.s=phi.s, phi.t=phi.t, max_dist=max.d)
+  fitmeans <- X %*% betastar
+  allres$fit <- fitmeans
+  allres$max.d <- max.d 
+  if (verbose)  print(round(allres$params, 3))
+
+  if (r>0) { ## We are performing validation
+    cat("validating ", length(vdaty), " space time observations", "\n")
+
+    S <- exp(-phi.s * alldistmat)
+    S12 <-  S[1:r, (r+1):(r+sn)] # is r by n
+    S11 <-  S[1:r, 1:r] # is r by r
+    S22 <-  S[(r+1):(r+sn), (r+1):(r+sn)] # sn by sn
+
+    fitmeans <- X %*% as.vector(betastar)
+    errbs <- y - fitmeans
+    materrbs <- matrix(errbs, byrow=T, ncol=tn) ## This is sn by tn
+
+    # Here is the additional contribution to the mean from Kriging
+    val.mean.mult <- S12 %*% solve(S22)
+
+    valmean.add <-  val.mean.mult %*% materrbs # this is nvalid by tn
+    vmeanadd.vec <- as.vector(t(valmean.add)) # This is r*tn by 1
+    meanpred <- xpreds %*% betastar + vmeanadd.vec
+    summary(meanpred)
+
+    u <- S11- S12 %*% solve(S22) %*% t(S12)
+    valas <- diag(u)  # this as(s') in paper and nvalid by 1
+    csptp <- matrix(rep(valas, tn), ncol=tn) # this is nvalid by tn
+
+    temp <- matrix(0, nrow=r*tn, ncol=p)
+    m <- 1
+    for (j in 1:r) {
+      for (k in 1:tn) {
+        for (i in 1:p) {
+          a <- as.matrix(X[,i], ncol=sn)
+          temp[m, i] <- sum(a[k, ] * val.mean.mult[j, ])
+        }
+        m <- m+1
+      }
+    }
+    gmat <- xpreds - temp
+
+    gpMinvg <- matrix(NA, nrow=r, ncol=tn)
+    m <- 1
+    for (j in 1:r) {
+      for (k in 1:tn) {
+        gpMinvg[j,k] <- quadform(gmat[m, ], Mstar_inv)
+        m <- m+1
+      }
+    }
+    vpred <- (csptp + gpMinvg) * two_bstar /(n+2*prior.sigma2[1] - 2)
+    sdpred <- sqrt(as.vector(t(vpred)))
+
+    ypreds <- matrix(rt(n=r*tn*N, df=n+2*prior.sigma2[1]), nrow=r*tn, ncol=N)
+    sdmat <- matrix(rep(sdpred, N), nrow=r*tn, ncol=N)
+    means <- matrix(rep(meanpred, N), nrow=r*tn, ncol=N)
+    ypreds <- ypreds * sdmat + means
+    #dim(ypreds)
+
+  if (scale.transform =="NONE") {
+    low <- meanpred - qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
+    upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
+    predsums <- data.frame(mean=meanpred, sd=sdpred, low=low, up=upr)
+
+    rmseBsp  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
+    maeBsp <- mean(abs(vdaty-meanpred), na.rm=T)
+    cvgBsp <- cal_cvg(vdaty, yup=upr, ylow=low)
+    crpsBsp <- crps(vdaty, ypreds)
+    a <- list(rmse=rmseBsp, mae=maeBsp, crps =crpsBsp, cvg=cvgBsp)
+    results <- list(stats=a)
+    }
+
+  if (scale.transform == "SQRT") {
+     ypreds <-  ypreds^2
+     results  <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
+     predsums <- get_parameter_estimates(t(ypreds))
+  }
+  if (scale.transform == "LOG")  {
+    ypreds <-  exp(ypreds)
+    results  <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
+    predsums <- get_parameter_estimates(t(ypreds))
+  }
+  yvalids <- data.frame(vdat, predsums)
+  allres$stats <- results$stats
+  allres$yobs_preds <- yvalids
+
+  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  if (verbose) print(round(unlist(allres$stats), 3))
+
+
+  } ## validation complete
+
+  if (mchoice) { # Perform model choice by sampling
+
+    ## First draw samples from the posterior distribution
+    set.seed(44)
+    sigma2.samples <- 1.0/rgamma(N, shape=sparameter, rate=rparameter)
+    summary(sigma2.samples)
+    # quant(sigma2.samples)
+
+    v <- matrix(rnorm(p*N), nrow=p, ncol=N)
+    dim(v)
+    sqrtmat <- chol(Mstar_inv)
+    # sqrtmat
+    v <- t(sqrtmat) %*% v
+    # dim(v)
+    sigmas <- sqrt(sigma2.samples)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
+    betasamples  <- v * sigmamat + betamat
+    ###
+
+    spsamps <- t(rbind(betasamples, sigma2.samples))
+  #  mc.spsamps <- as.mcmc(spsamps)
+  #  summary(mc.spsamps)
+  # round(params_table_sp, 2)
+    ###
+
+    ## Have to treat y as a single observation from the multivariate normal distribution
+
+    pars <- as.vector(apply(spsamps, 2, mean)) ## this is thetahat Bayes
+
+    ### start here ...
+    logdetSinv <- log(det(invscov))
+    logdetTinv <- log(det(invtcov))
+
+    loglik_at_thetahat <- log_full_likelihood_sptime(pars, y=y, Xmat=X,
+                                                     Sinv=invscov, Tinv = invtcov, log_detSinv=logdetSinv, log_detTinv=logdetTinv)
+
+
+    log_liks <- apply(spsamps, 1, log_full_likelihood_sptime, y=y, Xmat=X,
+                      Sinv=invscov, Tinv = invtcov, log_detSinv=logdetSinv, log_detTinv=logdetTinv)
+    #log_liks
+    # summary(log_liks)
+    # var(log_liks)
+    # dim(log_liks)
+    ## Has two arguments: (1) log full likelihood at thetahat and (2) vector of log-likelihood at the theta samples
+
+    ##
+    dic_results_sp <- calculate_dic(loglik_at_thetahat, log_liks)
+    dic_results_sp
+
+    ## WAIC calculation for the spatial model
+    ## assumes we already have the samples
+
+    # dens <- likelihoods_sp(pars=pars)
+    # dens
+
+    #  v <- as.matrix(apply(spsamps, 1, log_likelihoods_sp, y=y, Xmat=X, H=H)) ## n by N
+    v <- as.matrix(apply(spsamps, 1, log_likelihoods_sptime, y=y, Xmat=X,
+                         Sinv=invscov, Tinv = invtcov)) ## n by N
+
+    waic_results_sp <- calculate_waic(t(v))
+    waic_results_sp
+    # waic(t(v)  ## matches
+    ####
+    set.seed(44)
+    Ls <- chol(scov)
+    Lt <- chol(tcov)
+
+    pars <-  as.vector(apply(spsamps, 2, mean))
+    u <- pred_samples_sptime(pars, y=y, Xmat=X,  Sinv=invscov, Tinv = invtcov)
+
+    v <- apply(spsamps, 1, pred_samples_sptime, y=y, Xmat=X,  Sinv=invscov, Tinv = invtcov) ## n by N
+    expected_ys <- apply(v, 1, mean)
+    var_ys <- apply(v, 1, var)
+    gof <- sum( (y-expected_ys)^2)
+    penalty <- sum(var_ys)
+    pmcc <- gof + penalty
+    pmcc_results_sp <- list(gof=gof, penalty=penalty, pmcc=pmcc)
+    pmcc_results_sp
+
+    spatmod <- c(unlist(dic_results_sp), unlist(waic_results_sp), unlist(pmcc_results_sp))
+    allres$mchoice <-  spatmod
+    allres$logliks <- list(log_full_like_at_thetahat=loglik_at_thetahat,  log_full_like_vec=log_liks, loglik=t(v))
+
+    if (verbose) print(round(allres$mchoice, 2))
+  }
+ end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+  allres
+}
+##
+#'Model fitting and validation using dynamic linear model in spBayes
+#' @inheritParams Bsp_sptime
+#' @param validt A vector of time points for which validations are to be made. 
+#' @param prior.tau2 Shape and scale parameter for the inverse of the nugget effect variance (\eqn{\tau^2})
+#' @param prior.sigma.eta Shape and scale parameter for the inverse of the random effect variance
+#' @param prior.phi.param A vector of size two specifying the upper and lower limits of the
+#' uniform prior distribution on \eqn{\phi}, the decay parameter. The default is to take the
+#' values for which the effective range is between 1% and 100% of the maximum distance
+#' between the supplied coordinates.
+#' @param phi.tuning This controls the tuning for the decay parameters.
+#' It is  either a scalar or a vector of size same as the maximum number of time
+#' points at each site. The default is 10\% of the mid point of prior.phi.param. 
+#' @param N Number of MCMC samples. 
+#' @param burn.in How many burn in iterations
+#' @param n.report How often to print MCMC progress report
+#' @inheritParams spBayes::spDynLM
+#' @param burn.in  Number of initial iterations to discard.
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer,
+#' \code{\link{Bstan_sptime}} for independent GP fitting using Stan,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' @return Fitted model,  validation statistics, validation observations and their
+#' predictions. Plots of estimates of first five dynamic parameters are also provided if requested
+#' by the plotit argument. It also returns the parameters prior.phi.param and phi.tuning.  
+#' @examples
+#' a <- BspBayes_sptime()
+#' b <- BspBayes_sptime(valids=c(8,11,12,14,18,21,24,28), validt=56:62, plotit = T, scale.transform="NONE")
+#' b <- BspBayes_sptime(validt=NULL, plotit = T)
+#' b <- BspBayes_sptime(valids=NULL, plotit = T)
+#' b <- BspBayes_sptime(validt=10:15, plotit = T)
+#' b <- BspBayes_sptime( formula=y8hrmax ~ xmaxtemp, validt=10:15, plotit = T, scale.transform="NONE")
+#' @export
+BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
+                           coordtpe="utm", coords=4:5,  scale.transform ="SQRT",
+                           prior.beta0=0, prior.M = 0.00001,
+                           prior.sigma2=c(2, 10),
+                           prior.tau2 =c(2, 5),
+                           prior.sigma_eta =c(2, 0.001),
+                           prior.phi.param = NULL, phi.tuning =NULL, 
+                           verbose =T, plotit=FALSE,        
+                           N=2000,  burn.in=N-999, n.report=N/2, 
+                           valids=NULL, validt=NULL, mchoice=T,  rseed=44) {
+  ###
+ start.time<-proc.time()[3]
+  set.seed(rseed)
+  tnvalid <- length(validt)
+  snvalid <- length(valids)
+  if (length(coords)==2) coords <-  unique(data[, coords]) 
+  
+  sn <- nrow(coords)
+  n <- nrow(data)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+
+  max.d <- max(dist_mat(coords, coordtpe)) ## Distance in kilometers
+  
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y
+  vnames <- all.vars(formula)
+  xnames <- colnames(X)
+  
+  ymat <- matrix(y, byrow=T, ncol=tn)
+  dimnames(ymat)[[2]] <- paste(vnames[1], 1:tn, sep=".")
+
+  p <- ncol(X)
+  xmat <- matrix(X[,2], byrow=T, ncol=tn)
+  if (p > 2) {
+    for (j in 2:length(xnames)) {
+        a <- matrix(X[,j+1], byrow=T, ncol=tn)
+        xmat <- cbind(xmat, a)
+    }
+  }
+
+  a <- NULL
+  for (j in 1:length(xnames)) {
+    a <- c(a, paste(xnames[j], 1:tn, sep="."))
+  }
+  dimnames(xmat)[[2]] <- a
+
+  u <- NULL
+  for (i in 1:tn) {
+    b <- paste(vnames[1], ".", i, " ~ ", sep="")
+    for (j in 1:length(xnames)) {
+      if (j < length(xnames))
+       b <- paste(b, xnames[j],".", i, " + ", sep="")
+      else b <- paste(b, xnames[j],".", i, sep="")
+    }
+    u[i] <- b
+  }
+
+  # mods <- lapply(paste("y8hrmax.", 1:tn, "~xmaxtemp.", 1:tn, "+xwdsp.", 1:tn, "+xrh.", 1:tn, sep=""), as.formula)
+
+  nmods <- lapply(u, as.formula)
+
+  if (snvalid * tnvalid >0) {
+    yholdout <- ymat[valids, validt]
+    ymat[valids, validt] <- NA
+    vdaty <- as.vector(t(yholdout))
+    zeros <- matrix(rep(0, n), ncol=tn)
+    zeros[valids, validt] <- NA
+    zerovec <-  as.vector(t(zeros))
+    val_flag <- rep(0, n)
+    val_flag[is.na(zerovec)] <- 1
+    vdat <- data[val_flag>0, ]
+  }
+
+
+  if (scale.transform == "SQRT") { 
+    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the square root transformation.  
+            \n Negative observations are there in the response. ") 
+    else ymat <- sqrt(ymat)
+  } 
+  
+  
+  if (scale.transform == "LOG") {
+    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the log transformation. 
+    \n Negative observations are there in the response.") 
+    else ymat <- log(ymat)
+  } 
+  
+  fdat <- cbind.data.frame(ymat, xmat)
+  head(fdat)
+
+  k <- length(prior.phi.param)
+    if (k<2) prior.phi.param <- 3 * c(1/max.d, 100/max.d)
+    else  stop("Too many prior hyper parameters for phi")
+    
+    phi.mid <- mean(prior.phi.param[1:2])
+    
+    k <- length(phi.tuning)
+    if (k==1)  tuning <- list("phi"=rep(phi.tuning, tn))
+    if (k==0)  tuning <- list("phi"=rep(0.1*phi.mid, tn))
+    if (k==tn) tuning <- phi.tuning
+    if (k>2 & k!=tn) stop("Correctly specify the tuning parameter for phi")
+    
+   
+  starting <- list("beta"=rep(0, tn*p), "phi"=rep(phi.mid, tn),
+                   "sigma.sq"=rep(2,tn), "tau.sq"=rep(1, tn),
+                   "sigma.eta"=diag(rep(0.01, p)))
+
+  priors <- list("beta.0.Norm"=list(rep(prior.beta0, p), diag(prior.M^(-1),p)),
+                 "phi.Unif"=list(rep(prior.phi.param[1], tn), rep(prior.phi.param[2], tn)),
+                 "sigma.sq.IG"=list(rep(prior.sigma2[1],tn), rep(prior.sigma2[2],tn)),
+                 "tau.sq.IG"=list(rep(prior.tau2[1], tn), rep(prior.tau2[2],tn)),
+                 "sigma.eta.IW"=list(prior.sigma_eta[1], diag(prior.sigma_eta[2], p)))
+  ##make symbolic model formula statement for each month
+
+  if (coordtype=="utm") coords <- coords/1000
+
+  m.1 <- spBayes::spDynLM(nmods, data=fdat, coords=coords,
+                 starting=starting, tuning=tuning, priors=priors, get.fitted =TRUE,
+                 cov.model="exponential", n.samples=N, n.report=n.report)
+
+  allres <- list(fit=m.1)
+  beta <- apply(m.1$p.beta.samples[burn.in:N,], 2, quant)
+  theta <- apply(m.1$p.theta.samples[burn.in:N,], 2, quant)
+  allres$params <- list(beta=beta, theta=theta)
+    allres$prior.phi.param <- prior.phi.param
+    allres$phi.tuning <- phi.tuning 
+    
+  if  ( plotit ) {
+
+   # graphics.off()
+   # dev.off()
+    sigma.sq <- theta[,grep("sigma.sq", colnames(theta))]
+    tau.sq <- theta[,grep("tau.sq", colnames(theta))]
+    phi <- theta[,grep("phi", colnames(theta))]
+    par(mfrow=c(3,1))
+    plot(1:tn, sigma.sq[1,], pch=19, cex=0.5, xlab="Time", ylab="sigma.sq", ylim=range(sigma.sq))
+    arrows(1:tn, sigma.sq[1,], 1:tn, sigma.sq[3,], length=0.02, angle=90)
+    arrows(1:tn, sigma.sq[1,], 1:tn, sigma.sq[2,], length=0.02, angle=90)
+    plot(1:tn, tau.sq[1,], pch=19, cex=0.5, xlab="Time", ylab="tau.sq", ylim=range(tau.sq))
+    arrows(1:tn, tau.sq[1,], 1:tn, tau.sq[3,], length=0.02, angle=90)
+    arrows(1:tn, tau.sq[1,], 1:tn, tau.sq[2,], length=0.02, angle=90)
+    plot(1:tn, 3/phi[1,], pch=19, cex=0.5, xlab="Time", ylab="eff. range (km)", ylim=range(3/phi))
+    arrows(1:tn, 3/phi[1,], 1:tn, 3/phi[3,], length=0.02, angle=90)
+    arrows(1:tn, 3/phi[1,], 1:tn, 3/phi[2,], length=0.02, angle=90)
+    par(mfrow=c(1,1))
+    
+    if (p >5) k <- 4 
+    else k <- p 
+    
+    beta.0 <- beta[,grep("Intercept", colnames(beta))]
+    #plot(m.1$p.beta.0.samples)
+    par(mfrow=c(k,1))
+    plot(1:tn, beta.0[1,], pch=19, cex=0.5, xlab="Time", ylab="Intercept", ylim=range(beta.0))
+    arrows(1:tn, beta.0[1,], 1:tn, beta.0[3,], length=0.02, angle=90)
+    arrows(1:tn, beta.0[1,], 1:tn, beta.0[2,], length=0.02, angle=90)
+    for (j in 2:k) {
+    betaj <- beta[,grep(xnames[j-1], colnames(beta))]
+    plot(1:tn, betaj[1,], pch=19, cex=0.5, xlab="Time", ylab=xnames[j-1], ylim=range(betaj))
+    abline(h=0, col=2)
+    arrows(1:tn, betaj[1,], 1:tn, betaj[3,], length=0.02, angle=90)
+    arrows(1:tn, betaj[1,], 1:tn, betaj[2,], length=0.02, angle=90)
+    }
+     
+
+  }
+
+  if (mchoice==T) {
+  y <- as.vector(t(ymat))
+  ysamples <- m.1$p.y.samples
+  means <- apply(ysamples, 1, mean)
+  vars <- apply(ysamples, 1, var)
+  gof <- sum((y-means)^2, na.rm=T)
+  penalty <- sum(vars[!is.na(y)])
+  allres$mchoice <- list(gof=gof, penalty=penalty, pmcc = gof+penalty)
+  if (verbose) print(round(unlist(allres$mchoice), 2))
+}
+
+
+  if (snvalid*tnvalid>0) {
+    dim(m.1$p.y.samples)
+    a <- m.1$p.y.samples
+    ## This is in spTimer arrangement
+    ## (s1, t1), (s1, t2), (s1, t3), ... (sn, T)
+    dim(a)
+    ypreds <- a[val_flag>0, ]
+    dim(ypreds)
+
+    if (scale.transform == "SQRT") ypreds <-  ypreds^2
+    if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+
+
+    cat("validating ", length(vdaty), " space time observations", "\n")
+    a <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
+    predsums <- get_parameter_estimates(t(ypreds))
+
+    yvalids <- data.frame(vdat, predsums)
+    allres$stats  <-  a$stats
+    allres$yobs_preds <- yvalids
+    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (verbose) print(round(unlist(allres$stats), 3))
+
+  } # Finished validation
+ end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+ allres
+}
+##
+#' Model fitting and validation using the R-STAN package
+#' @param ad.delta Adaptive delta controling the behaviour of Stan during fitting
+#' @param t.depth Maximum allowed tree depth in the fitting process of stan
+#' @param s.size step size in the fitting process of stan
+#' @param no_chains Number of parallel chains to run in Stan
+#' @param prior.phi.dist Specifies one of three: "Unif", "Gamm", "Cauchy" as the
+#' prior distribution for \eqn{\phi} with the first option uniform as the
+#' default distribution. 
+#' @param prior.phi.param A vector of size two specifying the parameters for the prior distribution of
+#'  \eqn{\phi}. For the default uniform distribution the values correspond
+#' to an effective range that is between 1% and 100% of the maximum distance
+#' between the spatiaL locations. For the Gamma distribution the default values are 2 and 1
+#' and for the Cauchy distribution the default values are 0, 1 which specifies
+#' a half-Cauchy distribution in \eqn{(0, \infty)}.  
+#' @param phi_a Lower limit of the unform prior distribution for phi: the spatial decay parameter.
+#' @param phi_b Upper limit of the unform prior distribution for phi: the spatial decay parameter.
+#' phi_a and phi_b can be given the NULL values. In that case default values will be chosen.
+#' @inheritParams Bsp_sptime
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer
+#' \code{\link{BspBayes_sptime}} for dynamic model fitting using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' @return Fitted model,  validation statistics, validation observations and their
+#' predictions. Model choice statistics: WAIC
+#' @examples
+#' astan <- Bstan_sptime(N=1100, burn.in=100, valids=NULL, t.depth = 15)
+#' bstan <- Bstan_sptime(validt=1:62, N=1100, burn.in=100, t.depth = 15)
+#' a <- Bstan_sptime(N=600, burn.in=100, valids=NULL)
+#' d <- Bstan_sptime(validt=1:62, N=600, burn.in=100)
+#' b <- Bstan_sptime(validt=56:62, plotit = T)
+#' b <- Bstan_sptime(validt=NULL, N=60, burn.in=10)
+#' b <- Bstan_sptime(valids=NULL, plotit = T)
+#' b <- Bstan_sptime(validt=10:15, plotit = T)
+#' b <- Bstan_sptime( formula=y8hrmax ~ xmaxtemp , validt=10:15, plotit = F)
+#' @export
+Bstan_sptime <-  function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
+                          coordtype="utm", coords=4:5,
+                          valids=NULL, validt=NULL,
+                          prior.beta0=0, beta_prior_var=10^4,              
+                          prior.sigma2=c(2, 10), prior.tau2 = c(2, 5),
+                          prior.phi = "Unif", prior.phi.param = NULL, 
+                          scale.transform ="SQRT",
+                          ad.delta = 0.80, t.depth=15, s.size=0.01,
+                          N=1100, burn.in=100,  no_chains=1,
+                          mchoice=TRUE, plotit=FALSE, rseed=44, verbose=T, ...) {
+###
+  start.time<-proc.time()[3]
+  set.seed(rseed)
+  tnvalid <- length(validt)
+  snvalid <- length(valids)
+  
+  if (length(coords)==2) coords <-  unique(data[, coords]) 
+  
+  sn <- nrow(coords)
+  n <- nrow(data)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+  nT <- sn*tn
+
+  alldistmat <- as.matrix(dist_mat(coords, coordtype)) # distances in kilometers
+  max.d <- max(alldistmat)
+
+  
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y
+  vnames <- all.vars(formula)
+  xnames <- colnames(X)
+  
+  ymat <- matrix(y, byrow=T, ncol=tn)
+  yorig <- y
+  dimnames(ymat)[[2]] <- paste(vnames[1], 1:tn, sep=".")
+
+  p <- ncol(X)
+  zeros <- matrix(rep(0, n), ncol=tn)
+  ynavec <- yorig
+
+  if (snvalid * tnvalid >0) {
+    yholdout <- ymat[valids, validt]
+    ymat[valids, validt] <- NA
+   # vdaty <- as.vector(t(yholdout))
+    ynavec <- as.vector(t(ymat))
+    zeros[valids, validt] <- NA
+
+    #  a <- cbind(ynavec, data$y8hrmax)
+    #  head(a)
+    #  summary(ynavec - data$y8hrmax)
+    y <- ynavec
+    zerovec <-  as.vector(t(zeros))
+    val_flag <- rep(0, nT)
+    val_flag[is.na(zerovec)] <- 1
+    vdaty <- yorig[val_flag>0]
+    vdat <- data[val_flag>0, ]
+  }
+
+## Figure out which values of y are missing
+
+missing_flag <- rep(0, nT)
+missing_flag[is.na(y)] <- 1
+ntmiss <- sum(missing_flag)
+    ntobs <- nT - ntmiss
+    if (ntmiss >0 ) missing <- 1
+    else missing <- 0
+
+data_miss_idx <- which(is.na(y))
+data_obs_idx <- which(!is.na(y))
+yobs <- y[data_obs_idx]
+
+
+if (scale.transform == "SQRT") { 
+  if (min(yobs, na.rm=T) < 0) stop("Can't use the square root transformation.  
+            \n Negative observations are there in the response. ") 
+  yobs <- sqrt(yobs)
+  ynavec <- sqrt(ynavec)  ## keeps the modelling y's
+} 
+
+
+if (scale.transform == "LOG") {
+  if (min(yobs, na.rm=T) < 0) stop("Can't use the log transformation. 
+    \n Negative observations are there in the response.") 
+  yobs <- log(yobs)
+  ynavec <- log(ynavec) ## keeps the modelling y's
+} 
+
+    k <- length(prior.phi)
+    if (k>1) stop("Too many prior distributions for phi")
+    if (k==0) prior.phi <- "Unif"
+    if (k==1) {
+        u <- match(prior.phi, c("Unif", "Gamm", "Cauchy"))
+        if (is.na(u)) stop("Sorry, can't handle that prior distribution for phi.\n
+        Please specify it as one of the three: Unif, Gamma or Cauchy")
+    }
+    k <- length(prior.phi.param)
+    if (k>2) stop("Too many prior hyper parameters for phi")
+    if (prior.phi=="Unif") { 
+        if (k<2) prior.phi.param <- 3 * c(1/max.d, 100/max.d)
+        phidist <- 0
+     }
+     if (prior.phi=="Gamm") { 
+         if (k<2) prior.phi.param <- c(2, 1)
+         phidist <- 1
+     }
+     if (prior.phi=="Cauchy") { 
+         if (k<2) prior.phi.param <- c(0, 1)
+         phidist <- 2 
+     }
+        
+ 
+datatostan <- list(sn=sn, tn=tn, nT=nT, p=p, ntmiss=ntmiss, ntobs = ntobs, missing=missing,
+             data_miss_idx=data_miss_idx,  data_obs_idx =  data_obs_idx,
+               yobs=yobs,  X=X,
+             sigma2_prior=prior.sigma2,
+             tau2_prior = prior.tau2,
+             phidist = phidist,
+             prior_phi_param =prior.phi.param,
+             dist = alldistmat)
+
+initfun <- function() {
+  list(sigma_sq = 1, tau_sq=1, beta=rep(0, p), phi =0.5*3/max.d)
+}
+# cat("You must keep the supplied file gp_marginal.stan in the sub-folder stanfiles\n")
+# cat("below the current working directory, getwd(). It will give an error if the file is not found.\n")
+cat("ATTENTION: the run is computationally intensive!\n")
+cat("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
+# gp_fit_stan <- rstan::stan(data=datatostan, file = "gp_marginal.stan", seed =rseed, init=initfun,
+#                      chains = no_chains, iter = N, warmup = burn.in,
+# 		     control = list(adapt_delta = ad.delta, stepsize=s.size, max_treedepth=t.depth), ...)
+
+gp_fit_stan <- rstan::sampling(stanmodels$gp_marginal, data=datatostan,  seed =rseed, init=initfun,
+                           chains = no_chains, iter = N, warmup = burn.in,
+                           control = list(adapt_delta = ad.delta, stepsize=s.size, max_treedepth=t.depth), ...)
+
+params <- summary(gp_fit_stan, pars =c("beta", "tau_sq", "sigma_sq", "phi"), probs = c(.025, .975))
+
+# summary(post.gp)$summary
+# summary(lm(yX$Y~-1+yX$X))
+    allres <- list(params=params, fit=gp_fit_stan)
+    allres$prior.phi.param <- prior.phi.param
+    allres$prior.phi <- prior.phi
+    
+
+if (verbose)  print(allres$params)
+
+if (snvalid*tnvalid>0) {
+  cat("validating ", length(vdaty), " space time observations", "\n")
+  listofdraws <- rstan::extract(gp_fit_stan)
+
+  a <- cbind(missing_flag, val_flag)
+  b <- a[a[,1]>0, ]
+  valindex <- which(b[,2]>0)
+
+  preds <- listofdraws$z_miss
+  ypreds <- preds[, valindex] # N by r
+
+
+  if (scale.transform == "SQRT") ypreds <-  ypreds^2
+  if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+
+  a <- calculate_validation_statistics(yval=vdaty, yits=t(ypreds))
+  predsums <- get_parameter_estimates(ypreds)
+
+  ids <- rep(valids, tnvalid) ## 1736 is the order of the predictive samples provided by spBayes
+  ts <- rep(validt, each=snvalid)
+  yvalids <- data.frame(vdat, predsums)
+  allres$stats <- a$stats
+  allres$yobs_preds <- yvalids
+  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  if (verbose) print(allres$stats)
+
+}
+ if (mchoice) {
+  ## logliks <- loo::extract_log_lik(gp_fit_stan)
+  ## allres$mchoice <- loo::waic(logliks)
+   cat("Calculating model choice statistics\n")
+   v <- logliks_from_gp_marginal_stanfit(y=ynavec, X=X, sn=sn, tn=tn,  distmat=alldistmat, stanfit=gp_fit_stan)
+   waic_results <- calculate_waic(v$loglik)
+   dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
+   pmcc_results <- v$pmcc
+
+   stanmod <- c(unlist(dic_results), unlist(waic_results), unlist(pmcc_results))
+   allres$mchoice <-  stanmod
+   if (verbose) print(allres$mchoice)
+   allres$logliks <- v
+ }
+ end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+
+allres
+}
+##
+#' Model fitting and validation using the spTimer package
+#' @inheritParams Bsp_sptime
+#' @param prior.phi Specifies one of three: "Unif", "Gamm", "FIXED" as the
+#' prior distribution for \eqn{\phi} with the second  option "Gamm" as the
+#' default distribution. 
+#' @param prior.phi.param A vector of size two specifying the parameters
+#' for the prior distribution of \eqn{\phi} for the uniform and gamma distributions.
+#' For the default uniform distribution the values correspond
+#' to an effective range that is between 1% and 100% of the maximum distance
+#' between the spatiaL locations.
+#' For the third option "FIXED",  it is a scalar specifying the fixed value. If this is not supplied
+#' default value corresponds to the effective range which is the maximum distance between the
+#' data locations. 
+#' @param phi.tuning Tuning prameter fo sampling phi. See the help file for spT.Gibbs
+#' @param phi.npoints Number of points for the discrete uniform prior distribution on phi. See the help file for spT.Gibbs
+#' @param g_size The grid size c(m, n) for the knots for the GPP model. A square grid is assumed
+#' if this is passed on as a scalar. This does not need to be given if knots.coords is given instead.
+#' @param knots.coords Optional two column matrix of UTM-X and UTM-Y coordinates of the knots in kilometers.
+#' It is preferable to specify the g_size parameter instead.
+#' @inheritParams BspBayes_sptime
+#' @inheritParams spTimer::spT.Gibbs
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{Bstan_sptime}} for indendent GP model fitting using Stan
+#' \code{\link{BspBayes_sptime}} for dynamic model fitting using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' @return Parameter estimates, fitted model, validation statistics and validation observations.
+#' @examples
+#' a <- BspTimer_sptime(valids=NULL)
+#' b <- BspTimer_sptime(validt=56:62, plotit = T)
+#'  b <- BspTimer_sptime(validt=NULL, plotit = T)
+#'  b <- BspTimer_sptime(valids=NULL, plotit = T)
+#'  b <- BspTimer_sptime(validt=10:15, plotit = T)
+#'  b <- BspTimer_sptime( formula=y8hrmax ~ xmaxtemp , validt=10:15, plotit = F)
+#' @export
+BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, model="GP",
+                            coordtype="utm", coords=4:5,
+                            valids=NULL, validt=NULL,  scale.transform ="SQRT",
+                            prior.beta0=0, prior.M=0.001, prior.sigma2 =c(2, 1),
+                            prior.phi="Gamm",
+                            prior.phi.param =NULL, 
+                            phi.tuning=NULL, phi.npoints=NULL,
+                            N=5000, burn.in=1000, plotit=TRUE,
+                            mchoice=T, verbose=T, rseed=44,
+                            g_size = NULL, knots.coords = NULL,
+                            ...) {
+###
+###
+  set.seed(rseed)
+  start.time<-proc.time()[3]
+  tnvalid <- length(validt)
+  snvalid <- length(valids)
+
+  if (length(coords)==2) coords <-  unique(data[, coords]) 
+  
+  sn <- nrow(coords)
+  n <- nrow(data)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+  nT <- sn*tn
+
+  alldistmat <- dist_mat(coords, coordtype) # distances in kilometers
+  max.d <- max(alldistmat)
+  
+  
+  priors <- spTimer::spT.priors(model=model, inv.var.prior=Gamm(prior.sigma2[1], prior.sigma2[2]),
+                     beta.prior=Norm(prior.beta0, prior.M^(-1)))
+
+    k <- length(prior.phi)
+    if (k>1) stop("Too many prior distributions for phi")
+    if (k==0) prior.phi <- "Gamm"
+
+     if (k==1) {
+        u <- match(prior.phi, c("Unif", "Gamm", "FIXED"))
+        if (is.na(u)) stop("Sorry, can't handle that prior distribution for phi.\n
+        Please specify it as one of the three: Unif, Gamm or FIXED")
+    }
+    k <- length(prior.phi.param)
+    if (k>2) stop("Too many prior hyper parameters for phi")
+    if (prior.phi=="Unif") { 
+        if (k<2) prior.phi.param <- 3 * c(1/max.d, 100/max.d)
+        if (length(phi.npoints)==0) phi.npoints <- 10
+     }
+     if (prior.phi=="Gamm") { 
+         if (k<2) prior.phi.param <- c(2, 1)
+         if (length(phi.tuning)==0) phi.tuning <- mean(prior.phi.param) * 0.1
+         spatial.decay <- spTimer::spT.decay(distribution=Gamm(prior.phi.param[1], prior.phi.param[2]), tuning=phi.tuning)
+     }
+    if (prior.phi == "FIXED") {
+        if (k==1) phi <- prior.phi.param[1]
+        else  phi <- 3/max.d 
+        spatial.decay <- spTimer::spT.decay(distribution="FIXED", value= phi)
+    }   
+    if (prior.phi == "Unif") {
+        if (k<2) prior.phi.param <- 3 * c(1, 100)/max.d 
+        if (length(phi.npoints)==0) phi.npoints <- 10
+        spatial.decay <- spTimer::spT.decay(distribution=Unif(prior.phi.param[1], prior.phi.param[2]),
+                                             npoints=phi.npoints)
+   }
+  
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y
+  vnames <- all.vars(formula)
+  xnames <- colnames(X)
+  
+  ymat <- matrix(y, byrow=T, ncol=tn)
+
+  dimnames(ymat)[[2]] <- paste(vnames[1], 1:tn, sep=".")
+  p <- ncol(X)
+  yorig <- y
+
+  ## Additional code for GPP
+  ## Checks and sets up the knots.coords
+  if (model == "GPP") {
+    kmn <- length(knots.coords[,1]) ## length of supplied knots.coords
+    gmn <- length(g_size) ## length of given  grid size
+  #  cat("kmn= ", kmn, " gmn =", gmn, "\n")
+    if (gmn ==1) g_size <- rep(g_size, 2)
+    if ( (kmn ==0) & (gmn ==0))
+      stop("Need either the knots (knots.coords) or the grid size (g_size) for the GPP model")
+
+    if ( (kmn > 0) & (gmn >0)) { # both given
+      if (kmn != (g_size[1] * g_size[2])) stop("Conflict in knots.coords and grid size.
+                                            Specify only one of those two")
+    }
+    # if ( (kmn == 0) & (gmn >0)) { # only grid size given
+     if (gmn >0) { # only grid size given
+      xcoord <- c(max(coords[,1]), min(coords[,1]))
+      ycoord <- c(max(coords[,2]), min(coords[,2]))
+      knots.coords <- spTimer::spT.grid.coords(xcoord, ycoord, by=g_size)
+    }
+    knots.coords <- as.matrix(knots.coords)
+    
+    if (coordtype=="utm") knots.coords <-  knots.coords/1000
+  }
+  
+  distance.method <- "euclidean"
+  if (coordtype=="utm") { 
+    coords <- coords/1000
+  } 
+  if (coordtype=="lonlat") distance.method <- "geodetic:km"
+  
+  if (snvalid * tnvalid >0) {
+    zeros <- matrix(rep(0, n), ncol=tn)
+    yholdout <- ymat[valids, validt]
+    ymat[valids, validt] <- NA
+
+    ynavec <- as.vector(t(ymat))
+    zeros[valids, validt] <- NA
+    zerovec <-  as.vector(t(zeros))
+    val_flag <- rep(0, nT)
+    val_flag[is.na(zerovec)] <- 1
+    vdaty <- yorig[val_flag>0]
+    vdat <- data[val_flag>0, ]
+  } else ynavec <- yorig
+
+
+  data$ynavec <- ynavec
+  newformula <- update(formula, ynavec ~ . )
+
+  if (model=="GPP") { 
+  gp_fit <- spTimer::spT.Gibbs(formula=newformula, data=data,
+              model=model, coords=coords,
+              nItr =N, nBurn=burn.in, distance.method=distance.method,
+              priors=priors, spatial.decay=spatial.decay,
+            scale.transform=scale.transform, knots.coords=knots.coords, ...)
+  } else { 
+  gp_fit <- spTimer::spT.Gibbs(formula=newformula, data=data,
+                               model=model, coords=coords,
+                               nItr =N, nBurn=burn.in, distance.method=distance.method,
+                               priors=priors, spatial.decay=spatial.decay,
+                               scale.transform=scale.transform, ...)
+  }
+  
+  allres <- list(params=gp_fit$parameter, fit=gp_fit)
+  if (model=="GPP") allres$knots.coords <- knots.coords
+
+  fits <- gp_fit$fitted
+  if (verbose) print(round(allres$params, 3))
+
+if (snvalid*tnvalid>0) {
+  nvalids <- length(vdaty)
+  itmax <- gp_fit$iterations-gp_fit$nBurn
+  cat("validating ", nvalids, " space time observations", "\n")
+
+
+  if (model=="GPP") {
+  ## Generating the ypreds by approximation from the fitteds
+  v <- fitted(gp_fit)[val_flag>0,]
+  meanmat <- matrix(rep(v$Mean, each=itmax), byrow=T, ncol=itmax)
+  sigemat <- matrix(rep(v$SD, each=itmax), byrow=T, ncol=itmax)
+  } else {
+  ovalues <- gp_fit$op
+  sig2eps <-  gp_fit$sig2ep
+  meanmat <- ovalues[val_flag>0, ]
+  dim(meanmat)
+  sige <- sqrt(sig2eps)
+  # a <- 1:3
+  # matrix(rep(a, each=4), byrow=F, ncol=3)
+  sigemat <- matrix(rep(sige, each=nvalids), byrow=F, ncol=itmax)
+  ##
+  }
+
+  a <- matrix(rnorm(nvalids*itmax), nrow=nvalids, ncol=itmax)
+  ypreds <- meanmat + a * sigemat
+
+  if (scale.transform == "SQRT")  ypreds <-  (ypreds)^2
+  if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+
+  predsums <- get_parameter_estimates(t(ypreds))
+  b <- calculate_validation_statistics(vdaty, ypreds)
+  ##
+  yvalids <- data.frame(vdat, predsums)
+  allres$stats  <- b$stats
+  allres$yobs_preds <- yvalids
+  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  if (verbose) print(round(unlist(allres$stats), 3))
+}
+if (mchoice) {
+    cat("Calculating model choice statistics\n")
+    pmcc_results <- list(gof=gp_fit$PMCC[1], penalty=gp_fit$PMCC[2], pmcc=gp_fit$PMCC[3])
+
+    if (model=="GP")  {
+       v <- logliks_from_full_gp_spTimer(gpfit=gp_fit)
+       allres$logliks <- v
+       waic_results <- calculate_waic(v$loglik)
+       dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
+       sptimermod <- c(unlist(dic_results), unlist(waic_results), unlist(pmcc_results))
+    } else sptimermod <- c(unlist(pmcc_results))
+    allres$mchoice <-  sptimermod
+    if (verbose) print(round(allres$mchoice, 2))
+}
+
+  end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+allres
+
+}
+##
+#'Model fitting and validation using SPDE AR model in INLA 
+#' @param prior.range A length 2 vector, with (range0, Prange) specifying 
+#' that \eqn{P(\rho < \rho_0)=p_{\rho}}, where \eqn{\rho} is the spatial range of 
+#' the random field. If Prange is NA, then range0 is used as a fixed range value. 
+#' If this parameter is unspecified then range0=0.90 * maximum distance 
+#' and Prange =0.95. If instead a single value is specified then the range is set at the single value.
+#' @param prior.sigma A length 2 vector, with (sigma0, Psigma) specifying 
+#' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
+#' standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.
+#' @inheritParams Bsp_sptime
+#' @inheritParams Binla_sp
+## #' @param model The INLA model to be fitted. It is one of "ar1",  "rw1",  "rw2",
+## #' "besag",  and "iid". See the INLA help files for more details regarding the models.
+## #' The ar model does not work.
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer,
+#' \code{\link{BspBayes_sptime}} for dynamic modelling using spBayes,
+#' \code{\link{Bstan_sptime}} for independent GP model fitting using Stan.
+#' @return Parameter estimates, model choice statistics, validation statistics, validation observations and their
+#' predictions and fitted values. It also returns the model choice statistics calculated by INLA on request.
+#' @examples
+#'  a <- Binla_sptime(prior.range=c(200, 0.90))
+#'  a <- Binla_sptime(valids=NULL, mchoice=T)
+#'  b <- Binla_sptime(validt=56:62, plotit = T)
+#'  b <- Binla_sptime(validt=NULL, plotit = T)
+#'  b <- Binla_sptime(valids=NULL, plotit = T)
+#'  b <- Binla_sptime(validt=10:15, plotit = T)
+#'  b <- Binla_sptime( formula=y8hrmax ~ xmaxtemp , validt=10:15, plotit = F)
+#'  https://becarioprecario.bitbucket.io/inla-gitbook/ch-missing.html
+#' @export
+Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
+                                         coordtype="utm", coords=4:5,
+                                         scale.transform ="SQRT",
+                                         valids=NULL,
+                                         validt=NULL,
+                                         prior.tau2 =c(2, 1),
+                                        prior.range= c(1, 0.5),
+                                         prior.sigma = c(1, 0.005),
+                                         N=1000, mchoice=TRUE,  plotit=TRUE,
+                                         verbose = TRUE, rseed=44, ...) {
+ ###
+ set.seed(rseed)
+ start.time <- proc.time()[3]
+ tnvalid <- length(validt)
+ snvalid <- length(valids)
+ r <- tnvalid*snvalid
+ if (length(coords)==2) coords <-  unique(data[, coords]) 
+ if (coordtype=="lonlat")  stop("Please either supply the coordinates in UTM meters \n 
+                                or set the coordtype = plain and re-run.")
+ if (coordtype=="utm")coords <- as.matrix(coords)/1000 ## distance will be in kilometers
+ 
+  sn <- nrow(coords)
+  n <- nrow(data)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y
+  
+  xnames <- colnames(X)
+  vnames <- all.vars(formula)
+  
+  yorig <- y
+
+  # yX <- spTimer::Formula.matrix(formula=formula, data=data)
+  ymat <- matrix(y, byrow=T, ncol=tn)
+  p <- ncol(X)
+  times <- rep(1:sn, each=tn)
+  all.locs <- matrix(rep(coords, each=tn), byrow=F, ncol=2) ## can come from data columns too
+
+  if (r >0) {
+  cat("Will perform validation\n")
+  zeros <- matrix(rep(0, n), ncol=tn)
+  yholdout <- ymat[valids, validt]
+  ymat[valids, validt] <- NA
+  zeros[valids, validt] <- NA
+  zerovec <-  as.vector(t(zeros))
+  val_flag <- rep(0, sn*tn)
+  val_flag[is.na(zerovec)] <- 1
+  vdaty <- yorig[val_flag>0]
+  valframe <- data[val_flag>0, ]
+  }
+  
+  
+  if (scale.transform == "SQRT") { 
+    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the square root transformation.  
+            \n Negative observations are there in the response. ") 
+    else ymat <- sqrt(ymat)
+  } 
+  
+  
+  if (scale.transform == "LOG") {
+    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the log transformation. 
+    \n Negative observations are there in the response.") 
+    else ymat <- log(ymat)
+  } 
+  
+
+  y <- c(t(ymat))  ## in spTimer format s1 (all time), s2  (all time) ...
+
+  alldistmat <- as.matrix(dist(coords)) # distances in kilometers
+  max.d <- max(alldistmat)
+  k <- length(prior.range)
+  if (k<2) {
+      if (k==0) prior.range = c(0.50*max.d,  0.95)
+      if (k==1) prior.range = c(0.50*max.d, NA)
+  }
+
+  max.edge   <- diff(range(coords[,1]))/15
+  bound.outer 	<- diff(range(coords[,2]))/3
+
+  mesh <- inla.mesh.2d(
+    loc = coords,
+    max.edge = c(1,5)*max.edge,
+    offset = c(max.edge, bound.outer),
+    cutoff = max.edge/5)
+ # plot(mesh)
+ # points(coords[,1], coords[,2], pch=20, cex=2)
+
+  spde		<- inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
+                               prior.range = prior.range, prior.sigma = prior.sigma)
+
+  hyper 	<- list(prec = list(prior = "loggamma", param = c(prior.tau2[1], prior.tau2[2])))
+
+  A_est <- inla.spde.make.A(mesh=mesh, loc=all.locs, group=times, n.group=tn)
+  dim(A_est)
+
+  s_index <- inla.spde.make.index(name="spatial.field", n.spde=spde$n.spde, n.group=tn)
+  names(s_index)
+
+  stack_est <- inla.stack(data=list(y=y), A=list(A_est, 1),
+                          effects=list(c(s_index,list(Intercept=1)), Xcov=X[,-1]), tag="est")
+
+  stack <- inla.stack(stack_est)
+
+  newformula	<- y ~ -1 + Xcov + f(spatial.field, model = spde, group=spatial.field.group, control.group=list(model="ar1"))
+
+
+  cat("ATTENTION: the run is computationally intensive!\n")
+  cat("The run with supplied default takes about 5 minutes to run in a fast PC\n")
+  ifit <- inla(newformula, data=inla.stack.data(stack, spde=spde), family="gaussian",
+               control.family = list(hyper = hyper),
+               control.predictor=list(A=inla.stack.A(stack), compute=TRUE),
+               control.compute = list(config = T, dic = mchoice, waic = mchoice), ...)
+  cat("Finished INLA fitting \n")
+
+  # Fixed effects betas
+  fixed.out <- round(ifit$summary.fixed,3)
+  if (verbose) print(fixed.out)
+  # Hyperparameters sigma2eps and AR(1) a
+  rownames(ifit$summary.hyperpar)
+
+  ###
+  prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[1]])
+  tausq.samp 		<- 1/prec.samp
+  summary(tausq.samp)
+
+  range.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[2]])
+  phi.samp 		<- 3/range.samp
+  summary(phi.samp)
+
+  sd.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[3]])
+  sigmasq.samp 		<- sd.samp^2
+  summary(sigmasq.samp)
+
+  rho.samp <-  inla.rmarginal(N, ifit$marginals.hyperpar[[4]])
+  summary(rho.samp)
+
+  beta.samp <- matrix(NA, nrow=N, ncol=(p-1))
+
+  for (i in 1:(p-1)) {
+    beta.samp[, i] <-  as.vector(inla.rmarginal(N, ifit$marginals.fixed[[i]]))
+  }
+
+  dimnames(beta.samp)[[2]] <- c(xnames)[-1]
+  samps <- data.frame(beta.samp, phi=phi.samp, sigmasq=sigmasq.samp, tausq=tausq.samp, rho=rho.samp)
+
+  params <- get_parameter_estimates(samps)
+
+  allres <- list(params=params, fit=ifit, prior.range=prior.range)
+  if (verbose) print(round(allres$params, 3))
+
+  ###
+  if (r>0) {
+###
+    u <- ifit$summary.fitted.values
+    fits <- u[1:(tn*sn), ]
+    v <- data.frame(y, fits)
+   # write.table(round(v,2),  "junk.txt", sep="\t")
+
+    cat("validating ", length(vdaty), " space time observations", "\n")
+
+    predsums <- fits[val_flag>0, ]
+    dimnames(predsums)[[2]] <- c("mean",  "sd", "low", "median", "up", "mode")
+    b <- cal_valstats_from_summary(vdaty, predsums, nsample=N)
+    ## b$ samples is r by N
+
+    if (scale.transform == "SQRT") {
+      ypreds <-  (b$samples)^2
+      predsums <- get_parameter_estimates(t(ypreds))
+      b <- calculate_validation_statistics(vdaty, ypreds)
+    }
+    if (scale.transform == "LOG")  {
+      ypreds <-  exp(b$samples)
+      predsums <- get_parameter_estimates(t(ypreds))
+      b <- calculate_validation_statistics(vdaty, ypreds)
+    }
+
+   #cat("dim predsums", dim(valframe), "dim predsums ", dim(predsums), "\n")
+    yvalids <- data.frame(valframe,  predsums)
+    allres$stats  <- b$stats
+    allres$yobs_preds <- yvalids
+
+    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (verbose) print(round(unlist(allres$stats), 3))
+
+  }
+ if (mchoice)  {
+   n <- length(y)
+   means <- ifit$summary.fitted.values$mean[1:n]
+   vars <- ifit$summary.fitted.values$sd[1:n]
+   gof <- sum((y-means)^2, na.rm=T)
+   penalty <- sum(vars[!is.na(y)])
+
+   allres$mchoice <- list(pdic=ifit$dic$p.eff, dic=ifit$dic$dic, pwaic=ifit$waic$p.eff, waic=ifit$waic$waic,
+                          gof=gof, penalty=penalty, pmcc = gof+penalty)
+   if (verbose) print(round(unlist(allres$mchoice), 2))
+ }
+
+ end.time <- proc.time()[3]
+   comp.time<-end.time-start.time
+   comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+
+  allres
+}
+##
+#' Model fitting and validation using the spTDyn package
+#' @param rhotp Initial value for the rho parameters in the temporal dynamic model.
+#' The default is rhotp=0 for which  parameters are sampled from the full conditional distribution
+#' via MCMC with initial value 0.
+#' If rhotp=1,parameters are not sampled and fixed at value 1.
+#' @param phi.tuning Tuning prameter fo sampling phi. See the help file for spT.Gibbs
+#' @param Number of points for the discrete uniform prior distribution on phi. See the help file for spT.Gibbs
+#' @inheritParams BspTimer_sptime
+#' @inheritParams spTimer::spT.Gibbs
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{Bstan_sptime}} for indendent GP model fitting using Stan
+#' \code{\link{BspBayes_sptime}} for dynamic model fitting using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' @return Parameter estimates, fitted model, validation statistics and validation observations.
+#' @examples
+#' a <- BspTDyn_sptime()
+#' b <- BspTDyn_sptime(valids=1:8, validt=56:62, plotit = T)
+#' @export
+BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+tp(xwdsp)+xrh, model="GP",
+                            coordtype="utm", coords=4:5,
+                            valids=NULL, validt=NULL,  scale.transform ="SQRT",
+                            prior.beta0=0, prior.M=0.001, prior.sigma2 =c(2, 1),
+                           prior.phi="Gamm", prior.phi.param =NULL,
+                           phi.tuning=NULL, phi.npoints=NULL,
+                            rhotp = 0,
+                            N=5000, burn.in=1000, plotit=TRUE,
+                            mchoice=T, verbose=T, rseed=44, ...) {
+  ###
+  ###
+
+  set.seed(rseed)
+  start.time<-proc.time()[3]
+  tnvalid <- length(validt)
+  snvalid <- length(valids)
+
+  if (length(coords)==2) coords <-  unique(data[, coords]) 
+  
+  sn <- nrow(coords)
+  n <- nrow(data)
+  tn <- n/sn
+  a <- abs(tn - floor(tn))
+  if (a>0) stop("Unequal number of time points: check numbers of locations and times")
+  nT <- sn*tn
+
+
+  alldistmat <- dist_mat(coords, coordtype)
+  max.d <- max(alldistmat)
+  priors <- spTimer::spT.priors(model=model, inv.var.prior=Gamm(prior.sigma2[1], prior.sigma2[2]),
+                                beta.prior=Norm(prior.beta0, prior.M^(-1)))
+
+   k <- length(prior.phi)
+    if (k>1) stop("Too many prior distributions for phi")
+    if (k==0) prior.phi <- "Gamm"
+
+     if (k==1) {
+        u <- match(prior.phi, c("Unif", "Gamm", "FIXED"))
+        if (is.na(u)) stop("Sorry, can't handle that prior distribution for phi.\n
+        Please specify it as one of the three: Unif, Gamm or FIXED")
+    }
+    k <- length(prior.phi.param)
+    if (k>2) stop("Too many prior hyper parameters for phi")
+    if (prior.phi=="Unif") { 
+        if (k<2) prior.phi.param <- 3 * c(1/max.d, 100/max.d)
+        if (length(phi.npoints)==0) phi.npoints <- 10
+     }
+     if (prior.phi=="Gamm") { 
+         if (k<2) prior.phi.param <- c(2, 1)
+         if (length(phi.tuning)==0) phi.tuning <- mean(prior.phi.param) * 0.1
+         spatial.decay <- spTimer::spT.decay(distribution=Gamm(prior.phi.param[1], prior.phi.param[2]), tuning=phi.tuning)
+     }
+    if (prior.phi == "FIXED") {
+        if (k==1) phi <- prior.phi.param[1]
+        else  phi <- 3/max.d 
+        spatial.decay <- spTimer::spT.decay(distribution="FIXED", value= phi)
+    }   
+    if (prior.phi == "Unif") {
+        if (k<2) prior.phi.param <- 3 * c(1, 100)/max.d 
+        if (length(phi.npoints)==0) phi.npoints <- 10
+        spatial.decay <- spTimer::spT.decay(distribution=Unif(prior.phi.param[1], prior.phi.param[2]),
+                                             npoints=phi.npoints)
+   }
+  
+  initials <- spTDyn::initials(rhotp=rhotp)
+
+  distance.method <- "euclidean"
+  if (coordtype=="utm") { 
+  coords <- coords/1000
+  } 
+  if (coordtype=="lonlat") distance.method <- "geodetic:km"
+  
+ 
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y
+  vnames <- all.vars(formula)
+  xnames <- colnames(X)
+  yname <- vnames[1]
+  
+  
+  ymat <- matrix(y, byrow=T, ncol=tn)
+  dimnames(ymat)[[2]] <- paste(vnames[1], 1:tn, sep=".")
+  p <- ncol(X)
+  yorig <- y
+
+  if (snvalid * tnvalid >0) {
+    zeros <- matrix(rep(0, n), ncol=tn)
+    yholdout <- ymat[valids, validt]
+    ymat[valids, validt] <- NA
+    ynavec <- as.vector(t(ymat))
+    zeros[valids, validt] <- NA
+    zerovec <-  as.vector(t(zeros))
+    val_flag <- rep(0, nT)
+    val_flag[is.na(zerovec)] <- 1
+    vdaty <- yorig[val_flag>0]
+    vdat <- data[val_flag>0, ]
+  } else ynavec <- yorig
+
+  data$ynavec <- ynavec
+  #  options(warn=-1)
+
+  newformula <- update(formula, ynavec ~ .)
+  library(spTDyn)
+  fit <- spTDyn::GibbsDyn(formula=newformula, data=data,
+                               model=model, coords=coords,
+                               nItr =N, nBurn=burn.in, distance.method=distance.method,
+                               priors=priors, spatial.decay=spatial.decay,
+                               initials = initials,
+                               scale.transform=scale.transform, ...)
+
+  allres <- list(params=fit$parameter, fit=fit)
+  fits <- fit$fitted
+  if (verbose) print(round(allres$params, 3))
+
+  if (snvalid*tnvalid>0) {
+    cat("validating ", length(vdaty), " space time observations", "\n")
+    ovalues <- fit$op
+    sig2eps <-  fit$sig2ep
+
+    ovalidation <- ovalues[val_flag>0, ]
+    itmax <- ncol(ovalidation)
+    nvalids <- nrow(ovalidation)
+    dim(ovalidation)
+    sige <- sqrt(sig2eps)
+    # a <- 1:3
+    # matrix(rep(a, each=4), byrow=F, ncol=3)
+    sigemat <- matrix(rep(sige, each=nvalids), byrow=F, ncol=itmax)
+    a <- matrix(rnorm(nvalids*itmax), nrow=nvalids, ncol=itmax)
+    ypreds <- ovalidation + a * sigemat
+    ##
+
+    if (scale.transform == "SQRT")  ypreds <-  (ypreds)^2
+    if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+
+    predsums <- get_parameter_estimates(t(ypreds))
+    b <- calculate_validation_statistics(vdaty, ypreds)
+
+    ##
+    yvalids <- data.frame(vdat, predsums)
+    allres$stats  <- b$stats
+    allres$yobs_preds <- yvalids
+    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (verbose) print(round(unlist(allres$stats), 3))
+  }
+  if (mchoice) {
+    cat("Calculating model choice statistics\n")
+    pmcc_results <- list(gof=fit$PMCC[1], penalty=fit$PMCC[2], pmcc=fit$PMCC[3])
+
+    sptimermod <- c(unlist(pmcc_results))
+    allres$mchoice <-  sptimermod
+    if (verbose) print(round(allres$mchoice, 2))
+  }
+
+  end.time <- proc.time()[3]
+  comp.time<-end.time-start.time
+  comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+  allres
+
+}
+
+
+

@@ -1,0 +1,465 @@
+#' Model fitting and validation using the R-STAN package
+#' @param ad.delta Adaptive delta controling the behaviour of Stan during fitting
+#' @param t.depth Maximum allowed tree depth in the fitting process of stan
+#' @param s.size step size in the fitting process of stan
+#' @param no_chains Number of parallel chains to run in Stan
+#' @param phi_a Lower limit of the unform prior distribution for phi: the spatial decay parameter.
+#' @param phi_b Upper limit of the unform prior distribution for phi: the spatial decay parameter.
+#' #' phi_a and phi_b can be given the NULL values. In that case default values will be chosen.
+#' @inheritParams BspBayes_sptime
+#' @seealso \code{\link{Blm_sptime}} for independent linear model fitting,
+#' \code{\link{Bsp_sptime}} for exact spatio-temporal model fitting,
+#' \code{\link{BspTimer_sptime}} for spatio-temporal modelling using spTimer
+#' \code{\link{BspBayes_sptime}} for dynamic model fitting using spBayes,
+#' \code{\link{Binla_sptime}} for spatio-temporal modelling using R-INLA.
+#' @return Fitted model,  validation statistics, validation observations and their
+#' predictions. Model choice statistics: WAIC
+#' @examples
+#' astan <- Bmoving_sptime(N=1100, burn.in=100, valids=NULL, t.depth = 15)
+#' bstan <- Bstan_sptime(validt=1:62, N=1100, burn.in=100, t.depth = 15)
+#' a <- Bmoving_sptime(N=600, burn.in=100, valid=10)
+#' d <- Bstan_sptime(validt=1:62, N=600, burn.in=100)
+#' b <- Bstan_sptime(validt=56:62, plotit = T)
+#' b <- Bstan_sptime(validt=NULL, N=60, burn.in=10)
+#' b <- Bstan_sptime(valids=NULL, plotit = T)
+#' b <- Bstan_sptime(validt=10:15, plotit = T)
+#' b <- Bstan_sptime( formula=y8hrmax ~ xmaxtemp , validt=10:15, plotit = F)
+#' @export
+Bmoving_sptime <-  function(formula = temp ~ xlon + xlat + xinter + month, 
+                        data = ocean, coordtype="lonlat",  coords=1:2,  
+                        scale.transform ="NONE",  
+                        prior.beta0=0,   beta_prior_var=10^4,  
+                        prior.sigma2=c(2, 1),  
+                        prior.tau2 = c(2, 1), 
+                        prior.phi=NULL, 
+                        max_range_prop=0.90,  min_range_prop=0.05, 
+                        valid = 10, predspace =T, newdata=NULL, 
+  ad.delta = 0.80,   t.depth=12,   s.size=0.01,  
+  N=2500,   burn.in=500,    no_chains=1,  
+  mchoice=TRUE,   plotit=FALSE,   rseed=44,   verbose=T, 
+ knots.coords = NULL,  g_size = 5)
+{
+  start.time<-proc.time()[3]
+  set.seed(rseed)
+  coords <- data[, coordcolumns]
+  ## For predictions at new locations 
+  
+  data$mod <- 1 ## Flag for modelling data
+  # data$val <- 0
+    
+  nvalid <- length(valid)
+  if (length(valid)==1) {   
+    nvalid <- valid
+    n <- nrow(data)
+    valid <- sample(n, valid)
+  }
+  # data$val[valid] <- 1
+  valid <- which(data$val>0)
+  vdat <-  data[valid, ]
+  
+  if (predspace) { 
+    cat("For spatial predictions make sure the new data fore prediction is in \n 
+        exact same form as fitting data. Otherwise this method will not work.")
+    newdata$mod <- 0
+    newdata$val <- 0
+    r1 <- ncol(data)
+    r2 <- ncol(newdata)
+    if (r1 !=r2) stop("new data for predictions should have \n the same number of columns as the modelling data")
+    newdata$mod <- 0 ## these data won't be modelled 
+    newdata$val <- 0
+    
+    a <- rbind(data, newdata)
+    data <- a[order(a$time), ]
+    
+    coords <- data[, coordcolumns]
+  }
+  
+ dim(coords)
+ dim(data)
+ summary(data$temp)
+ summary(a$temp)
+  
+  ## For knots 
+  kmn <- length(knots.coords[,1]) ## length of supplied knots.coords
+  gmn <- length(g_size) ## length of given  grid size
+    #  cat("kmn= ", kmn, " gmn =", gmn, "\n")
+    if (gmn ==1) g_size <- rep(g_size, 2)
+    if ( (kmn ==0) & (gmn ==0))
+      stop("Need either the knots (knots.coords) or the grid size (g_size) for the GPP model")
+    
+    if ( (kmn > 0) & (gmn >0)) { # both given
+      if (kmn != (g_size[1] * g_size[2])) stop("Conflict in knots.coords and grid size.
+                                            Specify only one of those two")
+    }
+    # if ( (kmn == 0) & (gmn >0)) { # only grid size given
+    if (gmn >0) { # only grid size given
+      xcoord <- c(max(coords[,1]), min(coords[,1]))
+      ycoord <- c(max(coords[,2]), min(coords[,2]))
+      knots.coords <- spTimer::spT.grid.coords(xcoord, ycoord, by=g_size)
+    }
+    knots.coords <- as.matrix(knots.coords)
+    
+    b <- c(t(knots.coords)) # b is a vector of longs/lats
+    n <- nrow(coords)
+    B <- matrix(rep(b, each=n), nrow=n) # Replicates B as rows n times 
+    a <- cbind(coords, B) 
+    rd <- apply(a, 1, row_dists, coordtype=coordtype)
+    Cdist <- t(rd)
+    m <- nrow(knots.coords)
+    dmat <- dist_mat(knots.coords, coordtype)
+    max(dmat)
+    max.d <- max(Cdist)
+
+  head(data)
+  dim(data)
+  
+  nvec <- data$time 
+  a <- table(nvec)
+  length(a)
+
+  t1 <- min(nvec) 
+  if (t1 != 1) stop("Time should start at 1") 
+  
+  tn <- max(nvec)
+  k <- sort(unique(nvec))
+  
+  alltime <- 1:tn
+  ontime <- length(k)
+  
+  if (ontime<tn) { 
+    cat("There are missing times\n")
+    misst <- alltime[-k]
+    } else misst <- NULL
+  
+  start_row <- rep(NA, ontime)
+  fin_row <- rep(NA, ontime)
+  
+  for (i in 1:ontime) { 
+   rowids <- which(data$time==k[i])  
+   start_row[i] <- min(rowids)
+   fin_row[i] <- max(rowids)
+  }
+    
+  u <- as.data.frame(table(nvec)) ## How many observations at each time point 
+  u$srow <- start_row
+  u$frow <- fin_row
+  ots <- as.numeric(as.character(u[,1]))
+  nts <- as.numeric(u[,2])
+  v <- sort(c(ots, misst)) 
+  summary(v-alltime)
+ #  u
+  
+  sn <- nrow(unique(coords))
+  n <- nrow(data)
+  
+  vnames <- all.vars(formula)
+  xnames <- vnames[-1]
+  
+  u <- getXy(formula=formula, data=data)
+  X <- u$X
+  y <- u$y  
+  summary(y)
+  yorig <- y
+  y[data$mod<1] <- NA ## setting the prediction data to NA
+  summary(y)
+  vdaty <- y[data$val>0]  ## Saving the y's for validations 
+  y[data$val>0] <- NA ## setting the validations to NA
+  summary(y)
+ 
+ ## Figure out which values of y are missing
+ 
+  missing_flag <- rep(0, n)
+  missing_flag[is.na(y)] <- 1
+  ntmiss <- sum(missing_flag)
+  ntobs <- n - ntmiss
+  
+  data_miss_idx <- which(is.na(y))
+  data_obs_idx <- which(!is.na(y))
+  yobs <- y[data_obs_idx]
+  
+  data$newy <- y 
+  
+  a <- data[data$mod>0, ]
+  omiss <- which(is.na(y) & (data$mod>0) & (data$val<1))
+  vmiss <- which(is.na(y) & (data$val>0))
+  pmiss <- which(is.na(y) & (data$mod<1))
+  
+  a <- 1:ntmiss
+  b <- sort(c(omiss, vmiss, pmiss))
+  
+  valindex <- match(vmiss, data_miss_idx)
+  pindex <- match(pmiss, data_miss_idx)
+  oindex <- match(omiss, data_miss_idx)
+  
+  # b <- sort(c(valindex, oindex, pindex))
+  # summary(b-a)
+  
+  ynavec <- y
+  if (scale.transform == "SQRT") { 
+    if (min(yobs, na.rm=T) < 0) stop("Can't use the square root transformation.  
+            \n Negative observations are there in the response. ") 
+    yobs <- sqrt(yobs)
+    ynavec <- sqrt(ynavec)  ## keeps the modelling y's
+  } 
+  
+  
+  if (scale.transform == "LOG") {
+    if (min(yobs, na.rm=T) < 0) stop("Can't use the log transformation. 
+    \n Negative observations are there in the response.") 
+    yobs <- log(yobs)
+    ynavec <- log(ynavec) ## keeps the modelling y's
+  } 
+  
+  
+  ra <- 3/max.d 
+  if (length(phi_a)==0) phi_a <- ra*min_range_prop
+  if (length(phi_b)==0) phi_b <- ra*max_range_prop 
+  
+  p <- ncol(X)
+  missing <- 0
+  if (ntmiss>0) missing <- 1
+  
+  datatostan <- list(n=n, tn=tn, m2=nrow(knots.coords), p=p, 
+                     missing=missing,  ntmiss=ntmiss, ntobs = ntobs, 
+                     data_miss_idx=as.vector(data_miss_idx),  data_obs_idx =  as.vector(data_obs_idx), 
+                     time =data$time, nots=length(ots),  ots = ots, nts=nts, start_row=start_row, fin_row=fin_row,  
+                     n_misst=length(misst), misst=misst,  
+                     Cdist=Cdist, dmat = dmat,  
+                     yobs=yobs,  X=X,
+                     sigma_prior =prior.sigma2, 
+                     tau_prior = prior.tau2,
+                     phi_prior = c(phi_a, phi_b=phi_b))
+  
+  initfun <- function() {
+    # starting values near the lm estimates
+    # variations will work as well
+    list(sigma_sq = 1, tau_sq=1, beta=rep(0, p))
+  }
+  cat("You must keep the supplied file ind_gpp.stan in the sub-folder stanfiles\n")
+  cat("below the current working directory, getwd(). It will give an error if the file is not found.\n")
+  cat("ATTENTION: the run is computationally intensive!\n")
+  cat("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
+  mfit <- rstan::stan(data=datatostan, file = "stanfiles/ind_gpp_marginal.stan", seed =rseed, init=initfun,
+                             chains = no_chains, iter = N, warmup = burn.in, 
+                            control = list(adapt_delta = ad.delta, stepsize=s.size, max_treedepth=t.depth))
+  
+  library(rstan)
+  params <- summary(mfit, pars =c("beta", "tau_sq", "sigma_sq", "phi"), probs = c(.025, .975))
+  b <- round(params$summary, 5)
+  b
+  listofdraws <- rstan::extract(mfit)
+ 
+  
+    # summary(post.gp)$summary
+  # summary(lm(yX$Y~-1+yX$X))
+  allres <- list(params=params, fit=mfit)
+  
+  if (verbose)  print(allres$params$summary)
+  
+  if (nvalid>0) {
+    cat("validating ", length(vdaty), " space time observations", "\n")
+  
+    # a <- cbind(missing_flag, val_flag)
+    # b <- a[a[,1]>0, ]
+    # valindex <- which(b[,2]>0)
+    
+    ypreds <- listofdraws$z_miss[, valindex]
+    
+    if (scale.transform == "SQRT") ypreds <-  ypreds^2
+    if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+    
+    a <- calculate_validation_statistics(yval=vdaty, yits=t(ypreds))
+    predsums <- get_parameter_estimates(ypreds)
+    
+    yvalids <- data.frame(vdat, predsums)
+    allres$stats <- a$stats
+    allres$yobs_preds <- yvalids
+    allres$mcmcvalid <- ypreds
+    
+    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (verbose) print(allres$stats)
+    
+    
+  }
+  if (predspace) {
+    cat("Retrieving the requested predictions \n")
+    
+    ypreds <- listofdraws$z_miss[, pindex]
+    if (scale.transform == "SQRT") ypreds <-  ypreds^2
+    if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
+    predsums <- get_parameter_estimates(ypreds)
+    preds <-  data.frame(newdata, predsums)
+    allres$preds <- preds
+    allres$mcmcpred <- ypreds
+  }
+  
+  if (mchoice) {
+    ## logliks <- loo::extract_log_lik(gp_fit_stan)
+    ## allres$mchoice <- loo::waic(logliks)
+  
+    cat("Calculating model choice statistics\n")
+    v <- logliks_from_moving_gpp_marginal_stanfit (y=ynavec, d=datatostan, stanfit=mfit)
+    waic_results <- calculate_waic(v$loglik)
+    dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
+    pmcc_results <- v$pmcc
+    
+    stanmod <- c(unlist(dic_results), unlist(waic_results), unlist(pmcc_results))
+    allres$mchoice <-  stanmod
+    if (verbose) print(allres$mchoice)
+    allres$logliks <- v
+    
+    if (verbose) print(allres$mchoice)
+  }
+  
+  
+  end.time <- proc.time()[3]
+  comp.time<-end.time-start.time
+  comp.time<-fancy.time(comp.time)
+  allres$computation.time<-comp.time
+  print(comp.time)
+  
+  allres
+}
+
+
+
+
+## Provides the likelihood evaluations for calculating DIC and WAIC
+## Provides the conditional log-likelihoods from the marginal
+## model. These are used to calculate WAIC.
+## Inputs are: y (on the modelling scale), sn, tn, and the stanfitted object
+## The output is a list of
+## (i)   log full likelihood at theta hat
+## (ii)  N (MCMC) dimensional vector of log full likelihood at N theta samples
+## (iii) matrix of N (MCMC) by n (observed data points)
+#' @export
+logliks_from_moving_gpp_marginal_stanfit <- function(y, d=datatostan, stanfit) {
+  
+  y <- ynavec
+ d <- datatostan 
+   stanfit <- mfit 
+  
+  listofdraws <- rstan::extract(stanfit)
+  
+  phi <- listofdraws$phi
+  itmax <- length(phi)
+  beta <- listofdraws$beta # N by p 
+  print(dim(beta))
+  print(dim(t(X)))
+  xbeta <- beta %*% t(X) # N by n 
+  tau_sq <- listofdraws$tau_sq
+  sigma_sq <- listofdraws$sigma_sq
+  zmiss <- listofdraws$z_miss
+  
+  ntobs <- d$ntobs
+  loglik <- matrix(NA, nrow=itmax, ncol=ntobs)
+  yrep <- matrix(NA, nrow=itmax, ncol=ntobs)
+  log_full_like_vec <- numeric()
+  m2 <- d$m2
+  
+  nna <- length(y[is.na(y)])
+  
+  for (it in 1:itmax) {
+   # it <- 1
+    sigma2 <- sigma_sq[it]
+    tau2   <- tau_sq[it]
+    phi_it <- phi[it]
+    yimputed  <- y
+    if (nna >0 ) yimputed[is.na(y)] <- zmiss[it, ]
+    
+    Sigma <- exp(-phi_it * d$dmat)
+    diag(Sigma) <- 1
+    Swinv <-  solve(Sigma) 
+    Cmat <-  exp(-phi_it * d$Cdist)
+   
+    cond_mean_vec <- numeric()
+    cond_var_vec <- numeric()
+    
+    u <- 0.0
+    for (i in 1:d$nots) { 
+     
+      zt <-  yimputed[d$start_row[i]:d$fin_row[i]] 
+      mut <- xbeta[it, d$start_row[i]:d$fin_row[i]]
+
+      if (d$nts[i] >1) {  #do conditioning 
+        Ct <- Cmat[d$start_row[i]:d$fin_row[i] ,]
+        St <-  sigma2 * Ct %*% Swinv %*% t(Ct)
+        St <- St + tau2 * diag(1, nrow=d$nts[i], ncol=d$nts[i])
+        St <- 0.5* (St + t(St))
+        Qmat <- solve(St)
+        meanmult <- diag(1/diag(Qmat), nrow=d$nts[i], ncol=d$nts[i]) %*% Qmat
+        condmean <- zt - meanmult %*% (zt - mut)
+        condvar <- 1/diag(Qmat)
+        logden_contr <- mnormt::dmnorm(zt, mean=mut, varcov= St, log=T)
+        } else   { 
+          condmean <- mut 
+          condvar <- sigma2+tau2
+          logden_contr <- dnorm(zt[1], mean=mut[1], sd =sqrt(sigma2+tau2), log=T)  
+        }
+        u <- u +  logden_contr
+        # cat("i=", i, " logden= ", logden_contr, "\n")
+     #   cat("i=", i, " mean= ", condmean, "\n")
+      #  cat("i=", i, " var= ", condvar, "\n")
+        
+        cond_mean_vec[d$start_row[i]:d$fin_row[i]] <- condmean
+        cond_var_vec[d$start_row[i]:d$fin_row[i]] <- condvar
+     } # i loop 
+
+    log_full_like_vec[it] <- u
+    yobs <- y[!is.na(y)]
+    ymean <-   cond_mean_vec[!is.na(y)]
+    yvar <- cond_var_vec[!is.na(y)]
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    yrep[it, ] <- ymean + rnorm(ntobs) * sqrt(yvar)
+  }
+  # print(calculate_waic(loglik))
+  
+  ## to calculate log full likelihood at theta hat
+  ## calculate theta hat first
+  
+  sigma2 <- mean(sigma_sq)
+  tau2   <- mean(tau_sq)
+  phi_mean <- mean(phi)
+  yimputed  <- y
+  
+  if (nna >0) {
+  zmissmean <- apply(zmiss, 2, mean)
+  yimputed[is.na(y)] <- zmissmean
+  }
+  
+  Sigma <- exp(-phi_it * d$dmat)
+  diag(Sigma) <- 1
+  Swinv <- solve(Sigma)
+  meanxbeta <-  apply(xbeta, 2, mean)
+  Cmat <-  exp(-phi_mean * d$Cdist)
+  
+  u <- 0.0
+  for (i in 1:d$nots) { 
+    zt <-  yimputed[d$start_row[i]:d$fin_row[i]] 
+    mut <- meanxbeta[d$start_row[i]:d$fin_row[i]]
+    
+    if (d$nts[i] >1) { 
+      Ct <- Cmat[d$start_row[i]:d$fin_row[i] ,] 
+      St <-  sigma2 * Ct %*% Swinv %*% t(Ct)
+      St <- St + tau2 * diag(1, nrow=d$nts[i], ncol=d$nts[i])
+      St <- 0.5*(St + t(St))
+      logden_contr <- mnormt::dmnorm(zt, mean=mut, varcov =St, log=T)
+    } else { 
+      logden_contr <- dnorm(zt, mean=mut, sd =sqrt(sigma2+tau2), log=T)  
+    }
+    u <- u +  logden_contr
+  } # i loop 
+  log_full_like_at_thetahat <- u
+  ##
+  
+  yrepmeans <- as.vector(apply(yrep, 2, mean))
+  yrepvars <- as.vector(apply(yrep, 2, var))
+  yobs <- y[!is.na(y)]
+  gof <-   sum((yobs-yrepmeans)^2)
+  penalty <- sum(yrepvars)
+  pmcc <- list(gof=gof, penalty=penalty, pmcc=gof+penalty)
+  
+  list(log_full_like_at_thetahat=log_full_like_at_thetahat,  log_full_like_vec=log_full_like_vec,
+       loglik=loglik, pmcc=pmcc)
+}
+
