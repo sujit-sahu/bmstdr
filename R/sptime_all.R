@@ -1082,7 +1082,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
 
 
   cat("ATTENTION: this INLA run is likely to be computationally intensive!\n")
- # cat("The run with supplied default takes about 5 minutes to run in a fast PC\n")
+ 
   ifit <- inla(newformula, data=inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
                control.predictor=list(A=inla.stack.A(stack), compute=TRUE),
@@ -1106,6 +1106,30 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   rnames
   no_h <- length(rownames(ifit$summary.hyperpar)) +1 # number of hyper parameters plus 1 
   
+  a <- grepl("Rho", x=rnames, ignore.case = TRUE)
+  k <- which(a)
+  if (any(a)) { 
+    rho.samp <-  inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    summary(rho.samp)
+    samps$rho <- rho.samp
+  }
+  ###
+  prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[1]])
+  tausq.samp 		<- 1/prec.samp
+  summary(tausq.samp)
+  samps$sigma2eps <- tausq.samp
+  
+  a <- grepl("Stdev", x=rnames, ignore.case = TRUE)
+  k <- which(a)
+  if (any(a)) { 
+    sd.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    sigmasq.samp 		<- sd.samp^2
+    summary(sigmasq.samp)
+    samps$sig2eta <- sigmasq.samp
+  } else { 
+    samps$sig2eta <- (prior.sigma[1])^2
+  }
+  
   a <- grepl("Range", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if ( any(a) ) { 
@@ -1118,29 +1142,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     samps$phi <- 1/prior.range[1]
   }
   
-  a <- grepl("Stdev", x=rnames, ignore.case = TRUE)
-  k <- which(a)
-  if (any(a)) { 
-    sd.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
-    sigmasq.samp 		<- sd.samp^2
-    summary(sigmasq.samp)
-    samps$sigmasq <- sigmasq.samp
-  } else { 
-    samps$sigmasq <- (prior.sigma[1])^2
-    }
-  ###
-  prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[1]])
-  tausq.samp 		<- 1/prec.samp
-  summary(tausq.samp)
-  samps$tausq <- tausq.samp
-    
-  a <- grepl("Rho", x=rnames, ignore.case = TRUE)
-  k <- which(a)
-  if (any(a)) { 
-    rho.samp <-  inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
-    summary(rho.samp)
-    samps$rho <- rho.samp
-  }
+
 
   params <- get_parameter_estimates(samps)
 
