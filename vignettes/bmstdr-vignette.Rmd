@@ -729,7 +729,7 @@ The AR models `M5` and `M6` are used to obtain the following results.
 
 ## Spatio-temporal dynamic models using the spTDyn package 
 
-The `spTDyn` package can be used to fit dynamic models in both time and space. A spatial dynamic model allows the regression coefficient to vary in space. A temporal dynamic model allows the regression coefficient to have a dynamic equation in time. To invoke these dynamic models the regression variables are specified in the 
+The `r CRANpkg("spTDyn")` package can be used to fit dynamic models in both time and space. A spatial dynamic model allows the regression coefficient to vary in space. A temporal dynamic model allows the regression coefficient to have a dynamic equation in time. To invoke these dynamic models the regression variables are specified in the 
 formula argument with the optional enclosures `sp` for spatially dynamic and `tp` for temporally dynamic. Here is an example where the model is specified to have spatially varying effects of maximum temperature and dynamic regression coefficients for 
 wind speed. 
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
@@ -1300,7 +1300,7 @@ The validation statistics reported below show that the AR model is indeed slight
    style_headers(bold = TRUE, text_color = "red")
 ```
 
-```{r, echo=TRUE, eval=TRUE, message=FALSE, fig.show=FALSE}
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide',  fig.show=FALSE}
 Ncar <- 5000
 burn.in.car <- 1000
 thin <- 10
