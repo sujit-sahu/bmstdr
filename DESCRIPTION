@@ -50,7 +50,8 @@ Suggests:
     Matrix, 
     databmstdr, 
     akima, 
-    tidyr
+    tidyr, 
+    huxtable
 Biarch: true
 VignetteBuilder: knitr
 LinkingTo: 

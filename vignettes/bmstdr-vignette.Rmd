@@ -55,8 +55,8 @@ table11 <- tabs[[11]]
 # Introduction 
 
 
-Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/web/views/SpatioTemporal.html">
-Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/web/views/Spatial.html"> Analysis of Spatial Data.</a>
+Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/view=SpatioTemporal">
+Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/view=Spatial"> Analysis of Spatial Data.</a>
 Moreover, there are a number of packages and text books discussing handling of spatial and spatio-temporal data.  For example, see the references @sp1, @sp2, @spacetime1 and @splm1.  The diversity in packages, however, is also a source of challenge for an applied scientist who is also interested in exploring solutions offered by other models from rival packages. The challenge comes from the essential requirement to  learn the package specific commands and prior distributions that are to be used for the applied problem at hand. 
 
 
