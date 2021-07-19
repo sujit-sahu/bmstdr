@@ -2,7 +2,6 @@
 title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
 output: 
    BiocStyle::html_document:
-   BiocStyle::pdf_document:
 bibliography: bigref.bib
 number_sections: true
 author: 
@@ -35,20 +34,31 @@ library(bmstdr)
 library(ggplot2)
 require(databmstdr)
 require(ggsn)
-# output: rmarkdown::html_vignette
-```
-```{r echo=FALSE}
+library(tidyr)
+library(huxtable)
 knitr::opts_chunk$set(eval = F)
-# knitr::opts_knit$set(root.dir ='~/Dropbox/sks/bookproject/rbook/Rfiles')
+tabs <- lapply(list.files(system.file('txttables', package = 'bmstdr'), full.names = TRUE), dget)
+table1 <- tabs[[1]]
+table2 <- tabs[[2]]
+table3 <- tabs[[3]]
+table4 <- tabs[[4]]
+table5 <- tabs[[5]]
+table6 <- tabs[[6]]
+table7 <- tabs[[7]]
+table8 <- tabs[[8]]
+table9 <- tabs[[9]]
+table10 <- tabs[[10]]
+table11 <- tabs[[11]]
 ```
-<!--withBraces    <- "\\newcommand{\\withBraces}{This is a sentence.}" -->
-
-<!-- # https://stackoverflow.com/questions/34029611/how-to-use-objects-from-global-environment-in-rstudio-markdown -->
 
 
 # Introduction 
 
-Bayesian modeling of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others. The diversity in packages, however, is also a source of challenge for a typical applied scientist. The challenge comes from the essential requirement to  learn the package specific commands and prior distributions that are to be used for the applied problem at hand. 
+
+Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/web/views/SpatioTemporal.html">
+Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/web/views/Spatial.html"> Analysis of Spatial Data.</a>
+Moreover, there are a number of packages and text books discussing handling of spatial and spatio-temporal data.  For example, see the references @sp1, @sp2, @spacetime1 and @splm1.  The diversity in packages, however, is also a source of challenge for an applied scientist who is also interested in exploring solutions offered by other models from rival packages. The challenge comes from the essential requirement to  learn the package specific commands and prior distributions that are to be used for the applied problem at hand. 
+
 
 The current package `r Rpackage("bmstdr")` sets out to help  researchers in applied sciences model a large variety of spatial and spatio-temporal data using a multiplicity of packages but by using only three commands with different options. Point reference spatial data, where each observation comes with a single geo-coded location reference such as a latitude-longitude pair, can be analyzed by fitting several spatial   and spatio-temporal models using `R` software packages such as
 `r CRANpkg("spBayes")` [@spBayes],  `r CRANpkg("spTimer")` [@spTimer],  `r Rpackage("INLA")` [@Rue_inla], 
@@ -218,7 +228,7 @@ where the matrix $S_w$ is determined using the Matern correlation function.
 This marginal model is fitted using any of the three packages mentioned above. 
 The code for this model fitting is very similar to the one for fitting `M2` above; the only 
 important change is in the `package=` argument as noted below. 
-```{r}
+```{r, echo=TRUE, eval=FALSE}
 M3 <- Bspatial(package="spBayes", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
                coordtype="utm", coords=4:5, prior.phi=c(0.005, 2), mchoice=T)
 M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
@@ -226,42 +236,38 @@ M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 M5  <- Bspatial(package="inla",formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
                coordtype="utm", coords=4:5, mchoice=T)
 ```
+```{r, echo=FALSE, eval=FALSE}
+a3 <- Bmchoice(case="MC.sigma2.unknown", y=ydata)
+## Now organize the all the results for forming Table 1. 
+a5 <- rep(NA, 11)
+a5[c(1, 3, 5, 7, 9:11)] <- unlist(M5$mchoice)
+table1 <- cbind.data.frame(unlist(a3), M1$mchoice, M2$mchoice, M3$mchoice, M4$mchoice,  a5)
+colnames(table1) <- paste("M", 0:5, sep="")
+round(table1,  2)
+save(table1, file="tables/table1.RData")
+dput(table1, file=paste0(path, "table1.txt"))
+```
+
 
 Model fitting is very fast except for `M4` with the `stan` package. The model run 
 for `M4` takes about 20 minutes on a fast personal computer. These run produces the 
 following table of values of various Bayesian model choice criteria. 
-```{r}
-library(tidyr)
-data <- matrix(rnorm(25), 5, 5)
-as_hux(data) %>%
-  set_outer_borders(0.4) %>%
-  map_background_color(by_rows("grey95", "white")) %>%
-  map_text_color(by_quantiles(c(0.1, 0.9), c("red", "black", "green3")))
-```
-
-<!-- \@ref(tab:lmcrit). -->
-\begin{tabular}{rrrrrrr}
-  \hline
- & M0 & M1 & M2 & M3 & M4 & M5 \\ 
-  \hline
-$p_{\mbox{DIC}}$ & 2.07 & 4.99 & 4.98 & 5.17 & 4.95 & 4.03 \\ 
- $p_{\mbox{DIC alt}}$  & 13.58 & 5.17 & 5.16 & 7.83 & 5.25 &  \\ 
-  DIC  & 169.20 & 158.36 & 158.06 & 158.68 & 158.01 & 156.94 \\ 
- DIC Alt  & 192.22 & 158.72 & 158.41 & 163.99 & 158.62 &  \\ 
-$p_{\mbox{waic 1}}$  & 1.82 & 5.20 & 4.93 & 4.88 & 4.50 & 4.56 \\ 
- $p_{\mbox{waic 2}}$   & 2.52 & 6.32 & 5.91 & 6.77 & 5.43 &  \\ 
-  WAIC 1 & 168.95 & 158.57 & 157.51 & 158.70 & 157.11 & 158.12 \\ 
-  WAIC 2   & 170.35 & 160.82 & 159.47 & 162.48 & 158.97 &  \\ 
-  gof & 593.54 & 327.98 & 330.08 & 323.56 & 319.27 & 334.10 \\ 
-  penalty & 575.80 & 351.52 & 346.73 & 396.63 & 397.63 & 38.92 \\ 
-  PMCC & 1169.34 & 679.50 & 676.82 & 720.18 & 716.90 & 373.02 \\    \hline
-\end{tabular}
-```{r lmcrit, echo=FALSE}
-knitr::kable(0, caption="Model choice criteria for various models.")
+```{r tab, echo=FALSE, eval=TRUE}
+   table1 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+# knitr::kable(table1, format="html", digits=2, col.names = colnames(table1), align='r')
 ```
 Mathematical expressions for all the quantities in the above table are 
 provided in @Sahubook. Here  M0 is the intercept only model for which the results are obtained using the  following `r Rpackage("bmstdr")` command,
-```{r}
+```{r, echo=TRUE, eval=FALSE}
 Bmchoice(case="MC.sigma2.unknown", y=ydata).
 ```
 The implementation using `inla` does not calculate the alternative values of the DIC and WAIC.
@@ -280,7 +286,7 @@ Data from eight validation sites 8, 11, 12, 14, 18, 21, 24 and 28 are set aside 
 
 The `r Rpackage("bmstdr")` command for performing validation needs an additional argument `validrows` which are the row numbers of the supplied data frame which should be used for validation. Thus the commands for validating at the
 sites 8, 11, 12, 14, 18, 21, 24, and 28   are given by: 
-```{r}
+```{r, echo=TRUE, eval=FALSE}
 s <- c(8,11,12,14,18,21,24,28)
 f1 <- yo3~xmaxtemp+xwdsp+xrh
 M1.v <-  Bspatial(package="none", model="lm", formula=f1, 
@@ -295,18 +301,22 @@ M5.v  <- Bspatial(package="inla", formula=f1, data=nyspatial,
         coordtype="utm", coords=4:5, validrows=s) 
 ```
 The table below presents the validation statistics for all five models.  Coverage
-is 100\% for all five models and the validation performances are comparable. 
+is 100% for all five models and the validation performances are comparable. 
 Model  `M2` with $\phi=0.4$ can  be used as the best model if it is imperative that
 one must be  chosen.  
-\begin{tabular}{rrrrrr}
-  \hline
- & M1 & M2 & M3 & M4 & M5 \\ 
-  \hline
-  rmse & 2.447 & 2.400 & 2.428 & 2.352 & 2.374 \\ 
-  mae & 2.135 & 2.015 & 2.043 & 1.946 & 1.967 \\ 
-  crps & 1.508 & 1.483 & 1.495 & 1.474 & 1.473 \\ 
-   \hline
-\end{tabular}
+```{r, echo=FALSE, eval=TRUE}
+   table2[-4, ] %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+
 
 To illustrate $K$-fold cross-validation, the 28 observations  in the `nyspatial` data set are randomly assigned to $K=4$ groups of equal size. 
 ```{r, echo=TRUE, eval=TRUE}
@@ -319,17 +329,20 @@ s3 <- u[15:21]
 s4 <- u[22:28]
 ```
 Now the `M2.v` command is called four times with the `validrows` argument taking values `s1, ... s4`.  The table below  presents the 4-fold cross-validation statistics for `M2` only.  It shows a wide variability in performance
-with a low coverage of 57.14\% for Fold 3. 
-\begin{tabular}{rrrrr}
-  \hline
-  & Fold 1 & Fold 2 & Fold 3 & Fold 4 \\
-  \hline
-rmse & 2.441 & 5.005 & 5.865 & 2.508 \\ 
-  mae & 1.789 & 3.545 & 5.462 & 2.145 \\ 
-  crps & 1.462 & 2.752 & 4.194 & 1.501 \\ 
-  cvg & 100\% & 85.71\% & 57.14\% & 100\% \\ 
-   \hline
-\end{tabular}
+with a low coverage of 57.14% for Fold 3. 
+```{r, echo=FALSE, eval=TRUE}
+   table3 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+
 A validation plot is automatically drawn each time a validation is performed. Below, we include the validation plot for fold-3 only. 
 ```{r, echo=T, eval=T, message=FALSE, results='hide'}
 M2.v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
@@ -482,14 +495,14 @@ The `getvalidrows` command is included in the `databmstdr` library. Now we use t
 ```{r, echo=T, eval=T, message=FALSE, results='hide', fig.show='hide'}
 M31 <- Bsptime(package="spTimer",formula=f2, data=nysptime, 
                coordtype="utm", coords=4:5,
-               validrows=vrows, model="GP", 
+               validrows=vrows, model="GP", report=5, 
                mchoice=F, scale.transform = "NONE", N=5000)
 ```
 For ease of illustration we have chosen `scale.transform = "NONE"`. More complicated  additional coding will be required if a different scale is chosen. 
 
 We illustrate a plot of the observations, fitted values and the validation predictions and their uncertainty intervals as plotted in Figure 11.13 in the book @banerjeebook2015. 
 The `databmstdr` package includes the function `fig11.13.plot` to generate this plot.
-The arguments required for this function are prepared as follows. The `spTimer` package does not provide the 95\% intervals for the fitted values nor does it provide the MCMC samples of the fitted values which can be used to construct the 95\% intervals. Hence, in the code below we use a normal approximation to obtain the uncertainty intervals. 
+The arguments required for this function are prepared as follows. The `spTimer` package does not provide the 95% intervals for the fitted values nor does it provide the MCMC samples of the fitted values which can be used to construct the 95% intervals. Hence, in the code below we use a normal approximation to obtain the uncertainty intervals. 
 Now we first organize the data for plotting. 
 ```{r, echo=T, eval=T}
 modfit <- M31$fit
@@ -649,41 +662,20 @@ M4.c <- Bsptime(package="stan",formula=f2, data=nysptime,
 ```
 The above commands have been executed to produce 
 the following table of model choice criteria for the four models M1 to M4. 
-\begin{tabular}{rrrrr}
-  \hline
- & M1 & M2 & M3 & M4\\ 
-  \hline 
-$p_{\mbox{DIC}}$ & 5.06 & 5.07 & 78.65 & 29.96 \\ 
-$p_{\mbox{DIC alt}}$  & 5.38 & 5.38 & 841.96 & 26.21 \\ 
-   DIC   & 3912.25 & 3214.02 & 3132.10 & 2694.35 \\ 
- DIC alt  & 3912.88 & 3214.64 & 4658.72 & 2686.85 \\ 
-  $p_{\mbox{waic 1}}$  & 4.95 & 14.11 & 48.53 & 9.27 \\ 
-  $p_{\mbox{waic 2}}$ & 4.97 & 14.18 & 132.90 & 10.14 \\ 
- WAIC 1  & 3912.14 & 2449.15 & 2603.86 & 2089.15 \\ 
- WAIC 2 & 3912.18 & 2449.30 & 2772.60 & 2090.89 \\ 
-  gof & 963.68 & 286.21 & 216.75 & 328.93 \\ 
-  penalty & 967.10 & 240.63 & 873.84 & 362.23 \\ 
-  PMCC & 1930.78 & 526.85 & 1090.59 & 691.16 \\ 
-   \hline
-\end{tabular}
 
-To see how these models perform we refit the models by requesting to validate. The validation rows are selected by issuing the commands: 
-```{r}
-valids <- c(8,11,12,14,18,21,24,28)
-vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+```{r, echo=FALSE, eval=TRUE}
+   table4 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
 ```
-The four commands to fit `M1.c` to `M4.c` are modified to include the option 
-`validrows=vrows` and setting `mchoice=FALSE` to speed up computations. Execution of the four modified commands produces the table: 
-\begin{tabular}{rrrrr}
-  \hline
- & M1 & M2 & M3 & M4 \\ \hline 
-rmse & 9.37 & 6.50 & 6.40 & 6.41 \\ 
-  mae & 7.55 & 5.01 & 4.94 & 4.84 \\ 
-  crps & 5.25 & 5.75 & 4.07 & 3.54 \\ 
-  cvg & 97.95 & 99.59 & 99.59 & 92.83 \\ 
-\hline
-\end{tabular}
-
+Later we sill investigate  how these models perform by refitting  the models by requesting to validate. 
 ## Autoregressive model fitting with spTimer and INLA 
 
 Temporal auto regressive (AR) models can be fitted using both the `spTimer` and `INLA` package. The command for fitting the AR model using the `spTimer` package requires 
@@ -705,16 +697,35 @@ M6 <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime,
         mchoice=T, validrows=vrows)
 ```
 The AR models `M5` and `M6` are used to obtain the following results. 
-\begin{tabular}{rrrrrrrr}
-  \hline
-Package  & gof & penalty & PMCC & rmse & mae & crps & cvg \\ 
-  \hline
-spTimer & 321.33 & 607.31 & 928.64 & 6.46 & 4.99 & 3.87 & 99.39 \\ 
- INLA & 718.85 & 20.97 & 739.82 & 9.43 & 7.51 & 5.80 & 62.70 \\ 
-   \hline
-\end{tabular}
-Here validation has been performed using all the 62 temporal observations from the eight validation sites noted before. Our implementation of `M6` using INLA seems to suffer from low coverage values, although the other three model validation statistics values are quite comparable. 
+```{r, echo=FALSE, eval=TRUE}
+   table5 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
 
+```{r, echo=FALSE, eval=TRUE}
+   table6 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+
+
+<!--- Our implementation of `M6` using INLA seems to suffer from low coverage values, although the other three model validation statistics values are quite comparable. 
+--> 
 
 ## Spatio-temporal dynamic models using the spTDyn package 
 
@@ -905,19 +916,20 @@ The `r Rpackage("bmstdr")` package function can be used compare all the model fi
 We set aside all the data from the eight sites as noted previously. 
 This gives us 496 ($=8 \times 62$) data points the validation set and the model is fitted with remaining 1240 space time observations from the 20 modeling sites.
 The table below reports the results. 
-\begin{tabular}{rrrrrrrrr}
-  \hline
-  & M1 & M2 & M3 & M4 & M5 & M6 & M7 & M9 \\ 
-  \hline
-rmse & 9.35 & 6.46 & 6.40 & 6.41 & 9.43 & 6.46 & 6.59 & 6.36 \\ 
-  mae & 7.54 & 4.98 & 4.94 & 4.84 & 7.52 & 4.99 & 5.11 & 4.85 \\ 
-  crps & 5.24 & 5.74 & 4.07 & 3.55 & 5.80 & 3.87 & 3.79 & 4.16 \\ 
-  cvg & 98.16 & 99.59 & 99.59 & 92.01 & 64.14 & 99.39 & 99.39 & 99.39 \\ 
-  G & 728.91 & 218.36 & 181.71 & 173.46 & 516.16 & 185.76 & 71.30 & 146.69 \\ 
-  P & 731.61 & 195.18 & 935.42 & 266.10 & 16.89 & 718.47 & 467.46 & 815.85 \\ 
-  $G+P$ & 1460.52 & 413.54 & 1117.13 & 439.56 & 533.05 & 904.23 & 538.76 & 962.54 \\ 
-   \hline
-\end{tabular}
+
+
+```{r, echo=FALSE, eval=TRUE}
+   table7 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
 In the above table we have omitted M8, the model based on `spBayes` because we were not able to produce comparable results. We do not report the
 WAIC and the DIC since those are not available in the `r Rpackage("bmstdr")` package for all the models. @Sahubook provides further discussion of the results. 
   
@@ -1013,7 +1025,7 @@ employ the conditionally auto regressive (CAR) models for the spatial random eff
 ### Logistic regression model for areal unit data 
 
 ```{r, echo=T, eval=T, message=FALSE, results='hide'}
-N <- 20000
+N <- 50000
 burn.in <- 10000
 thin <- 10
 f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
@@ -1055,7 +1067,16 @@ colnames(a) <- c("DIC", "pDIC", "WAIC", "pWAIC")
 ```
 
 ```{r m1mchoice, echo=FALSE, eval=TRUE}
-knitr::kable(round(a, 2),  caption = "Model choice statistics for the binomial model fitted to the engtotals data set")
+ a %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
 ```
 
 
@@ -1097,9 +1118,19 @@ colnames(a) <- c("DIC", "pDIC", "WAIC", "pWAIC")
 ```
 
 ```{r m2mchoice, echo=FALSE, eval=TRUE}
-knitr::kable(round(a, 2),  caption = "Model choice statistics for the Poisson model fitted to the engtotals data set")
+a %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
 ```
 
+<!-- caption = "Model choice statistics for the Poisson model fitted to the engtotals data set") -->
 
 ### Normal regression model for areal unit data 
 Below we set the regression model formula. The MCMC control parameters are assumed to be the same as before.  
@@ -1132,10 +1163,20 @@ rownames(a) <- c("Independent", "Leroux",  "INLA-BYM")
 colnames(a) <- c("DIC", "pDIC", "WAIC", "pWAIC") 
 ```
 
-```{r m3mchoice, echo=FALSE, eval=TRUE}
-knitr::kable(round(a, 2),  caption = "Model choice statistics for the normal regression model fitted to the engtotals data set")
+```{r, echo=FALSE, eval=TRUE}
+   a %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
 ```
 
+<!-- caption = "Model choice statistics for the normal regression model fitted to the engtotals data set") --> 
 
 ## Modeling temporal areal unit data 
 
@@ -1176,7 +1217,7 @@ nweek <- rep(1, nrow(engdeaths))
 f1 <- highdeathsmr ~  jsa + log10(houseprice) + log(popdensity) 
 ```
 The basic model fitting command for fitting the linear trend model is: 
-```{r, echo=T, eval=F}
+```{r, echo=T, eval=FALSE}
 M1st <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
 W=Weng, model="linear", family="binomial", package="CARBayesST",  N=N,
 burn.in=burn.in, thin=thin)
@@ -1186,32 +1227,20 @@ burn.in=burn.in, thin=thin)
  argument `interaction=F` may be supplied to suppress the interaction term.
  For the `"ar"` model an additional argument `AR=2` may be provided to opt for a second order auto regressive model. The model fitting commands,   
  not shown here, produce the following table: 
- \begin{tabular}{rrrrr}
-  \hline
- & DIC & pDIC & WAIC & pWAIC \\ 
-  \hline
-Linear & 7994.6 & 9.7 & 7994.6 & 9.8 \\ 
-  Anova (Interaction) & 7981.9 & 84.8 & 7980.5 & 82.4 \\ 
-  Anova (No Interaction) & 7981.2 & 17.2 & 7981.2 & 17.1 \\ 
-  Separable & 7995.3 & 92.5 & 7961.8 & 58.9 \\ 
-  AR(1) & 7433.7 & 1918.9 & 7266.0 & 1401.1 \\ 
-   \hline
-\end{tabular}
+ ```{r, echo=FALSE, eval=TRUE}
+   table8 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
 Clearly, the AR model is chosen by both the DIC and WAIC.
-The parameter estimates of the chosen AR model are provided below: 
-\begin{tabular}{rrrr}
-  \hline
- & Median & 2.5\% & 97.5\% \\ 
-  \hline
-(Intercept) & --3.2285 & --6.9051 & 0.1949 \\ 
-  jsa & 0.3951 & -0.1063 & 0.9401 \\ 
-  log10(house price) & 0.1885 & --0.4644 & 0.8679 \\ 
-  log(pop density) & 0.1536 & 0.0679 & 0.2496 \\ 
-  $\tau^2$ & 7.7510 & 4.5113 & 15.2136 \\ 
-  $\rho_S$ & 0.6329 & 0.4504 & 0.7817 \\ 
-  $\rho_T$ & 0.0015 & 0.0001 & 0.0080 \\ 
-   \hline
-\end{tabular}
+
 
 
 ###  Spatio-temporal GLM  fitting with Poisson distribution
@@ -1231,42 +1260,25 @@ f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + 
 We now fit the Poisson model by keeping  the other arguments  same
  as before in the previous Section. The command for fitting the
  temporal auto-regressive model is:
-```{r}
+```{r, echo=FALSE, eval=FALSE}
 M2st <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  W=Weng,
 model="ar", family="poisson", package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
 ```
 The `model` argument can be changed to fit the other models. The resulting model fits are used to obtain the following model choice statistics. 
-\begin{tabular}{rrrrr}
-  \hline
- & DIC & p.d & WAIC & p.w \\ 
-  \hline
-Linear & 28957.4 & 408.4 & 29638.8 & 917.8 \\ 
-  Anova (Interaction) & 26165.1 & 2091.1 & 26089.1 & 1585.8 \\ 
-  Anova (No Interaction) & 28865.4 & 220.6 & 29246.7 & 537.2 \\ 
-  Separable & 26186.4 & 1847.1 & 26172.9 & 1464.1 \\ 
-  AR & 26159.0 & 1952.6 & 26145.7 & 1534.3 \\ 
-   \hline
-\end{tabular}
-The parameter estimates of the chosen ANOVA model are reported below:  
-\begin{tabular}{rrrr}
-  \hline
- & Median & 2.5\% & 97.5\% \\ 
-  \hline
-(Intercept) & -3.766 & -4.511 & -2.977 \\ 
-  jsa & 0.143 & 0.052 & 0.229 \\ 
-  log10(houseprice) & 0.622 & 0.478 & 0.759 \\ 
-  log(popdensity) & 0.054 & 0.036 & 0.071 \\ 
-  n0 & 0.507 & 0.488 & 0.526 \\ 
-  n1 & 0.194 & 0.171 & 0.218 \\ 
-  n2 & 0.084 & 0.059 & 0.107 \\ 
-  n3 & 0.063 & 0.048 & 0.078 \\ 
-  $\tau^2_S$ & 0.003 & 0.001 & 0.006 \\ 
-  $\tau^2_T$ & 0.015 & 0.007 & 0.031 \\ 
-  $\tau^2_I$ & 0.122 & 0.111 & 0.135 \\ 
-  $\rho_S$ & 0.572 & 0.114 & 0.933 \\ 
-  $\rho_T$ & 0.787 & 0.346 & 0.972 \\ 
-   \hline
-\end{tabular}
+
+```{r, echo=FALSE, eval=TRUE}
+   table9 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+
 To  investigate the differences in  model choice by DIC and WAIC we test both models for validation.  We randomly select 10\% data rows for validation 
 by issuing the command
 ```{r}
@@ -1274,66 +1286,99 @@ vs <- sample(nrow(engdeaths), 0.1*nrow(engdeaths))
 ```
 Now we refit the Anova and AR models with the additional argument `validrows = vs`.
 The validation statistics reported below show that the AR model is indeed slightly worse than the chosen Anova model.  
-\begin{tabular}{rrrr}
-  \hline
- & rmse & mae & cvg \\ 
-  \hline
-Anova & 5.55 & 2.77 & 96.65 \\ 
-  AR & 5.82 & 2.78 & 96.49 \\ 
-   \hline
-\end{tabular}
+
+```{r, echo=FALSE, eval=TRUE}
+   table10 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+
+```{r, echo=TRUE, eval=TRUE, message=FALSE, fig.show=FALSE}
+Ncar <- 5000
+burn.in.car <- 1000
+thin <- 10
+inlaN <- (Ncar - burn.in.car)/thin
+scol <- "spaceid"
+tcol <-  "Weeknumber"
+f20 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
+model <- c("bym", "ar1")
+f2inla <-  covid ~  jsa + log10(houseprice) + log(popdensity) + n0 
+set.seed(5)
+vs <- sample(nrow(engdeaths), 0.1*nrow(engdeaths))
+M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,  
+                       W=Weng, model="ar", AR=2, family="poisson", package="CARBayesST", 
+                       N=Ncar, burn.in=burn.in.car, thin=thin, 
+                       validrows=vs, verbose=T)
+M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
+                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=inlaN, burn.in=0) 
+yobspred <- M2st_ar2.0$yobs_preds
+names(yobspred)
+yobs <- yobspred$covid
+predsums <- get_validation_summaries(t(M2st_ar2.0$valpreds))
+dim(predsums)
+b <- obs_v_pred_plot(yobs, predsums, segments=T) 
+names(M2stinla.0)
+inlapredsums <- get_validation_summaries(t(M2stinla.0$valpreds))
+dim(inlapredsums)
+a <- obs_v_pred_plot(yobs, inlapredsums, segments=T) 
+inlavalid <- a$pwithseg
+ar2valid <- b$pwithseg
+```
+```{r obs_v_pred_plot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models."}
+library(ggpubr)
+ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
+```
 
 
 
-### Spatio-temporal GLM  fitting with normal distribution}
+### Spatio-temporal GLM  fitting with normal distribution
  
  We now illustrate spatio-temporal random effects  fitting of the model 
  `f3` for NO$_2$. We fit the `"gaussian"` family model but keep the  other arguments  same
  as before in the previous two sections for fitting binomial and Poisson models.
  The command for fitting the temporal auto-regressive model is:
-```{r}
+```{r, echo=T, eval=FALSE}
 M3st <- Bcartime(formula=f3, data=engdeaths, scol=scol, tcol=tcol, 
 W=Weng, model="ar", family="gaussian", package="CARBayesST", 
 N=N, burn.in=burn.in, thin=thin)
 ```
 The following table produces the model choice statistics.  
-
-\begin{tabular}{rrrrr}
-  \hline
- & DIC & pDIC & WAIC & pWAIC\\ 
-  \hline
-Linear & 12821.1 & 34.1 & 12822.3 & 35.1 \\ 
-  Anova (Interaction) & 12632.3 & 42.5 & 12632.8 & 42.7 \\ 
-  Anovano (No Interaction) & 12632.3 & 42.5 & 12632.8 & 42.7 \\ 
-  AR & 11526.7 & 1794.0 & 11490.1 & 1453.1 \\ 
-   \hline
-\end{tabular}
- The AR model is the
-best according to  both DIC and WAIC although it receives much higher penalty. The parameter estimates of the
-chosen model are presented below: 
-\begin{tabular}{rrrr}
-  \hline
- & Median & 2.5\% & 97.5\% \\ 
-  \hline
-(Intercept) & --1.1211 & --2.0041 & --0.2193 \\ 
-  jsa & 0.0063 & --0.1022 & 0.1149 \\ 
-  log10(houseprice) & 0.7511 & 0.5871 & 0.9113 \\ 
-  log(popdensity) & 0.1136 & 0.0947 & 0.1322 \\ 
-  $\tau^2$ & 0.3625 & 0.3034 & 0.4271 \\ 
-  $\nu^2$ & 0.2775 & 0.2563 & 0.2975 \\ 
-  $\rho_S$ & 0.9291 & 0.8824 & 0.9620 \\ 
-  $\rho_T$ & 0.0070 & 0.0003 & 0.0344 \\ 
-   \hline
-\end{tabular}
- Model validation, not done here,
-can be performed by supplying the `validrows` argument.   
+```{r, echo=FALSE, eval=TRUE}
+   table11 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")
+```
+The AR model is the best according to  both DIC and WAIC although it receives much higher penalty.  Note that model validation can be performed by supplying the `validrows` argument.   
 
 
 
 # Discussion 
 
-The `r Rpackage("bmstdr")` package enables the user to use a plurality of `R` packages for fitting spatial and spatio-temporal models. The applied researcher is thus encouraged to explore other, possibly richer,  solutions to their problems offered by  other packages. 
+  
+The  `r Rpackage("bmstdr")` package enables the user to use a plurality of `R` packages for fitting spatial and spatio-temporal models both for point reference and aerial data sets. The package allows a researcher in applied sciences  to explore many solutions so that they are able to choose the best model and software package among the  ones available. The package functions are  illustrated throughout using realistic real data examples including recent epidemiological data on Covid-19 pandemic in England. 
 
-There are several limitations of the `r Rpackage("bmstdr")` package. The first one is that it does not allow modeling of  point reference spatial data which are discrete. Such modeling is challenging and at the moment only a few packages such as `INLA` can be used. Bayesian modeling implementation of discrete point reference spatial and spatio-temporal will be considered in future versions. The `r Rpackage("bmstdr")` package also offers only a limited number of models using the `rstan` and `INLA` packages. Spatio-temporal models offering richer structures can be fitted using these two and other `R` packages. Such modeling will also be considered in future version updates.  
+The package also includes several utility and plot functions which the reader may find useful in their modeling and analysis work. For example, the function `calculate_validation_statistic` calculates four validation statistics from input observed data and posterior samples. Users of other packages, not included in `r Rpackage("bmstdr")`,   may find such functions useful. A list of all the functions is available by running the command `ls("package:bmstdr")`. 
+
+
+There are many current limitations of the`r Rpackage("bmstdr")` package. The foremost among those  is that the package  does not allow modeling of  point reference spatial data which are discrete. Such modeling is challenging and at the moment only a few packages such as `INLA` can be used. Bayesian modeling of such data will be considered in a future version. 
+
+The  package offers only a limited number of models using the `r Rpackage("rstan")`
+and  `r Rpackage("INLA")` computing platforms. Spatio-temporal models offering richer structures can be fitted using these two and other `R` packages. Moreover, the current version does not allow fitting of multivariate models. Such modeling will be considered in future updates of this package.  
+
+
 
 # References 
