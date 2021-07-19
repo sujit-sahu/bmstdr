@@ -101,14 +101,13 @@
 #' only required when rho = 1, and the prior precision is improper. Defaults to 0. Only used for adaptive 
 #' model fitting in CARBayesST. 
 #' @param rho.S The value in the interval [0, 1] that the spatial dependence parameter rho.S is 
-#' fixed at if it should not be estimated. If this arugment is NULL then rho.S is 
+#' fixed at if it should not be estimated. If this argument is NULL then rho.S is 
 #' estimated in the model.
 #' @param rho.T The value in the interval [0, 1] that the temporal dependence parameter 
-#' rho.T is fixed at if it should not be estimated. If this arugment is NULL 
+#' rho.T is fixed at if it should not be estimated. If this argument is NULL 
 #' then rho.T is estimated in the model.
 #' @param offsetcol Only used in INLA based modelling. The column name or number 
-#' in the data frame that should be used as the offset.  See documentation for the 
-#' \code{\link{inla}} function/package.
+#' in the data frame that should be used as the offset.  
 #' @param N MCMC sample size. 
 #' @param thin The level of thinning to apply to the MCMC samples to reduce 
 #' their temporal autocorrelation. Defaults to 1 (no thinning).

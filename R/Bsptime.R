@@ -128,12 +128,12 @@
 #' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 #' standard deviation of the field. If Psigma is NA, then sigma0 is taken as the fixed value of 
 #' this parameter.
-#' @param offset Only used in INLA based modelling.  Offset parameter. See documentation for \code{\link{inla.mesh.2d}}.
-#' @param max.edge Only used in INLA based modelling. See documentation for \code{\link{inla.mesh.2d}}.
+#' @param offset Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
+#' @param max.edge Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Model for the covariance function. Only relevant for the spBayes, spTimer and the spTDyn packages.  Default is the exponential model. 
 #' See the documentation for \code{\link{spLM}} in the package spBayes. 
 #' @param tol.dist	Minimum separation distance between any two locations out of those specified by 
-#' coords, knots.coords and pred.coords. The default is 0.005. The programme 
+#' coords, knots.coords and pred.coords. The default is 0.005. The program 
 #' will exit if the minimum distance is less than the non-zero specified value. 
 #' This will ensure non-singularity of the covariance matrices.
 #' @param N MCMC sample size. 
@@ -143,7 +143,7 @@
 #' A set value is required to help reproduce the results.
 #' @param n.report  How many times to report in MCMC progress. This is only used when the package is spBayes or spTimer. 
 #' @param no.chains Number of parallel chains to run in Stan. 
-#' @param ad.delta Adaptive delta controling the behaviour of Stan during fitting. 
+#' @param ad.delta Adaptive delta controlling the behavior of Stan during fitting. 
 #' @param t.depth Maximum allowed tree depth in the fitting process of Stan. 
 #' @param s.size step size in the fitting process of Stan. 
 #' @param plotit  Logical scalar value: whether to plot the predictions against the observed values.
