@@ -1,0 +1,3 @@
+structure(c(321.33, 737.984233720451, 607.31, 20.8427459271079, 
+928.64, 758.826979647559), .Dim = 2:3, .Dimnames = list(c("spTimer", 
+"INLA"), c("gof", "penalty", "pmcc")))
