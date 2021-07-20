@@ -35,7 +35,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
                         prior.phi.param = NULL,
                         scale.transform ="NONE",
                         ad.delta = 0.80,  t.depth=12,   s.size=0.01,  
-                        N=2500,   burn.in=500,    no.chains=1,  
+                        N=2500,   burn.in=1000,    no.chains=1,  
                         validrows = 10, predspace =F, newdata=NULL, 
                         mchoice=TRUE,   plotit=FALSE,   rseed=44,   verbose=T, 
                         knots.coords = NULL,  g_size = 5)

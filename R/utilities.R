@@ -283,17 +283,17 @@ cal_valstats_from_summary <- function(yval, pred_summary, nsample, level=95) {
 #' Calculate the DIC criteria values
 #' @param loglikatthetahat Log of the likelihood function at theta hat (Bayes). It is a scalar value.
 #' @param logliks A vector of log likelihood values at the theta samples
-#' @return a list containing four values p_dic, p_dic alt, dic and dic_alt
+#' @return a list containing four values pdic, pdicalt, dic and dicalt
 ## #' @export
 calculate_dic <- function(loglikatthetahat, logliks) {
   expected_log_lik <- mean(logliks)
  # expected_log_lik
   pdic <- 2 * (loglikatthetahat -  expected_log_lik)
-  pdic_alt <- 2 * var(logliks)
-  dic_orig <- -2 * loglikatthetahat + 2*pdic
-  dic_alt <- -2 * loglikatthetahat + 2*pdic_alt
-  dic_results <- list(pdic=pdic, pdic_alt=pdic_alt, dic_orig=dic_orig, dic_alt=dic_alt)
-  dic_results
+  pdicalt <- 2 * var(logliks)
+  dicorig <- -2 * loglikatthetahat + 2*pdic
+  dicalt <- -2 * loglikatthetahat + 2*pdicalt
+  dicresults <- list(pdic=pdic, pdicalt=pdicalt, dicorig=dicorig, dicalt=dicalt)
+  dicresults
 }
 
 #' Calculate WAIC  function.
