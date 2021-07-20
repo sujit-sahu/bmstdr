@@ -23,6 +23,8 @@ Bspatial(
   prior.phi.param = NULL,
   prior.range = c(1, 0.5),
   prior.sigma = c(1, 0.005),
+  offset = c(10, 140),
+  max.edge = c(50, 1000),
   cov.model = "exponential",
   N = 5000,
   burn.in = 1000,
@@ -107,6 +109,10 @@ and Prange =0.95. If instead a single value is specified then the range is set a
 \item{prior.sigma}{A length 2 vector, with (sigma0, Psigma) specifying 
 that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.}
+
+\item{offset}{Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.}
+
+\item{max.edge}{Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.}
 
 \item{cov.model}{Only relevant for the spBayes package.  Default is the exponential model. 
 See the documentation for \code{\link{spLM}} in the package spBayes.}

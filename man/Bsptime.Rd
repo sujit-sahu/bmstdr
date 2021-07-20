@@ -172,9 +172,9 @@ that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal
 standard deviation of the field. If Psigma is NA, then sigma0 is taken as the fixed value of 
 this parameter.}
 
-\item{offset}{Only used in INLA based modelling.  Offset parameter. See documentation for \code{\link{inla.mesh.2d}}.}
+\item{offset}{Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.}
 
-\item{max.edge}{Only used in INLA based modelling. See documentation for \code{\link{inla.mesh.2d}}.}
+\item{max.edge}{Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.}
 
 \item{rhotp}{Only relevant for models fitted by  spTDyn. 
 Initial value for the rho parameters in the temporal dynamic model.
@@ -214,7 +214,7 @@ Optional two column matrix of UTM-X and UTM-Y coordinates of the knots in kilome
 It is preferable to specify the g_size parameter instead.}
 
 \item{tol.dist}{Minimum separation distance between any two locations out of those specified by 
-coords, knots.coords and pred.coords. The default is 0.005. The programme 
+coords, knots.coords and pred.coords. The default is 0.005. The program 
 will exit if the minimum distance is less than the non-zero specified value. 
 This will ensure non-singularity of the covariance matrices.}
 
@@ -230,7 +230,7 @@ A set value is required to help reproduce the results.}
 
 \item{no.chains}{Number of parallel chains to run in Stan.}
 
-\item{ad.delta}{Adaptive delta controling the behaviour of Stan during fitting.}
+\item{ad.delta}{Adaptive delta controlling the behavior of Stan during fitting.}
 
 \item{t.depth}{Maximum allowed tree depth in the fitting process of Stan.}
 

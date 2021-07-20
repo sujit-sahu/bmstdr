@@ -57,6 +57,8 @@
 #' @param prior.sigma A length 2 vector, with (sigma0, Psigma) specifying 
 #' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 #' standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.
+#' @param offset Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
+#' @param max.edge Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Only relevant for the spBayes package.  Default is the exponential model. 
 #' See the documentation for \code{\link{spLM}} in the package spBayes. 
 #' @param N MCMC sample size. Default value 5000. 
@@ -254,6 +256,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                    prior.phi.param = NULL, 
                    prior.range= c(1, 0.5),
                    prior.sigma = c(1, 0.005),
+                   offset = c(10, 140), max.edge=c(50, 1000),  
                    cov.model = "exponential",  
                    N=5000, burn.in=1000, rseed =44, n.report = 500, 
                    no.chains =1, ad.delta = 0.99, s.size=0.01,  t.depth=15, 
@@ -331,6 +334,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                            prior.tau2=prior.tau2,
                            prior.range= prior.range,
                            prior.sigma = prior.sigma,
+                           offset = offset, max.edge=max.edge,  
                            N=N, rseed=rseed,  plotit=plotit)
     } else { 
       cat("Implemented packages are none,", implemented, "\n")

@@ -14,7 +14,7 @@ calculate_dic(loglikatthetahat, logliks)
 \item{logliks}{A vector of log likelihood values at the theta samples}
 }
 \value{
-a list containing four values p_dic, p_dic alt, dic and dic_alt
+a list containing four values pdic, pdicalt, dic and dicalt
 }
 \description{
 Calculate DIC function.

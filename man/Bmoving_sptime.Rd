@@ -18,7 +18,7 @@ Bmoving_sptime(
   t.depth = 12,
   s.size = 0.01,
   N = 2500,
-  burn.in = 500,
+  burn.in = 1000,
   no.chains = 1,
   validrows = 10,
   predspace = F,
@@ -78,7 +78,7 @@ a half-Cauchy distribution in \eqn{(0, \infty)}.}
 \item{scale.transform}{Transformation of the response variable. It can take three values: SQRT, LOG or NONE.
 Default value is "NONE".}
 
-\item{ad.delta}{Adaptive delta controling the behaviour of Stan during fitting.}
+\item{ad.delta}{Adaptive delta controlling the behavior of Stan during fitting.}
 
 \item{t.depth}{Maximum allowed tree depth in the fitting process of Stan.}
 

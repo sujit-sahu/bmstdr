@@ -555,7 +555,7 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   
   modfit <- spBayes::spLM(formula=newformula, data=fdat, coords=fcoords, starting=starting,
                tuning=tuning, priors=priors, cov.model=cov.model,
-               n.samples=N, verbose=verbose, n.report=n.report)
+               n.samples=N, verbose=verbose, n.report=N/n.report)
 
   modrecover <- spBayes::spRecover(modfit, start=burn.in+1, verbose=FALSE)
   samps <- data.frame(modrecover$p.beta.recover.samples, modrecover$p.theta.recover.samples)
@@ -924,16 +924,7 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   if (scale.transform == "SQRT") newy <- sqrt(y)
   if (scale.transform == "LOG")  newy <- log(y)
 
-  # max.edge 		<- diff(range(fcoords[,1]))/15
-  # bound.outer 	<- diff(range(fcoords[,2]))/3
-
-  mesh			<- inla.mesh.2d(
-    loc = fcoords,
-    # max.edge = c(1,5)*max.edge,
-    # offset = c(max.edge, bound.outer),
-    max.edge = max.edge,
-    offset = offset,
-    cutoff = max.edge/5)
+  mesh <- inla.mesh.2d(loc=fcoords, offset=offset, max.edge=max.edge)
 
   spde		<- inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
                                prior.range = prior.range, prior.sigma = prior.sigma)

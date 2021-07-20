@@ -245,8 +245,8 @@ normal_theta_sigma2_model_choice_values <- function(samps, y=ydata) {
 
   pmcc <- gof + penalty
 
-  list(pdic=dic$pdic,  pdicalt=dic$pdic_alt, dic=dic$dic_orig,
-       dicalt=dic$dic_alt, pwaic1=waic$pwaic1, pwaic2=waic$pwaic2, waic1=waic$waic1, waic2=waic$waic2,
+  list(pdic=dic$pdic,  pdicalt=dic$pdicalt, dic=dic$dicorig,
+       dicalt=dic$dicalt, pwaic1=waic$pwaic1, pwaic2=waic$pwaic2, waic1=waic$waic1, waic2=waic$waic2,
        gof=gof, penalty=penalty, pmcc=pmcc)
 }
 

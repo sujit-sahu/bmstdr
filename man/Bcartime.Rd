@@ -89,8 +89,7 @@ ignored for the CARBayes and   CARBayesST models.}
 for each area. Only used if family="binomial".}
 
 \item{offsetcol}{Only used in INLA based modelling. The column name or number 
-in the data frame that should be used as the offset.  See documentation for the 
-\code{\link{inla}} function/package.}
+in the data frame that should be used as the offset.}
 
 \item{formula.omega}{
 A one-sided formula object with no response variable (left side of the "~") 
@@ -254,11 +253,11 @@ or "MI" can be included at a given time (similarily for "LD" and "MD").
 }
 
 \item{rho.T}{The value in the interval [0, 1] that the temporal dependence parameter 
-rho.T is fixed at if it should not be estimated. If this arugment is NULL 
+rho.T is fixed at if it should not be estimated. If this argument is NULL 
 then rho.T is estimated in the model.}
 
 \item{rho.S}{The value in the interval [0, 1] that the spatial dependence parameter rho.S is 
-fixed at if it should not be estimated. If this arugment is NULL then rho.S is 
+fixed at if it should not be estimated. If this argument is NULL then rho.S is 
 estimated in the model.}
 
 \item{rho}{The value in the interval [0, 1] that the spatial dependence parameter rho 

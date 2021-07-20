@@ -710,7 +710,7 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
 
   m.1 <- spBayes::spDynLM(nmods, data=fdat, coords=coords,
                  starting=starting, tuning=tuning, priors=priors, get.fitted =TRUE,
-                 cov.model=cov.model, n.samples=N, n.report=n.report)
+                 cov.model=cov.model, n.samples=N, n.report=N/n.report)
 
   allres <- list(fit=m.1, max.d=max.d)
   a1 <- m.1$p.beta.samples[burn.in:N,]
