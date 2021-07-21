@@ -51,7 +51,8 @@ Suggests:
     databmstdr, 
     akima, 
     tidyr, 
-    huxtable
+    huxtable, 
+    RColorBrewer
 Biarch: true
 VignetteBuilder: knitr
 LinkingTo: 

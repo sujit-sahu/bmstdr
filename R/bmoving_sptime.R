@@ -22,7 +22,7 @@
 #' scale(deep[,c("lat2", "sin1", "cos1", "sin2", "cos2")])
 #' f2 <- temp ~ xlon + xlat + xlat2+ xinter + x2inter 
 #' M2 <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", 
-#' coords = 1:2, N=11, burn.in=6, validrows =NULL, mchoice = FALSE)
+#' coords = 1:2, N=7, burn.in=2, validrows =NULL, mchoice = FALSE)
 #' summary(M2)
 #' plot(M2)
 #' names(M2)
