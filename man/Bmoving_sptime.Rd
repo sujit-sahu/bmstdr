@@ -2,7 +2,7 @@
 % Please edit documentation in R/bmoving_sptime.R
 \name{Bmoving_sptime}
 \alias{Bmoving_sptime}
-\title{Model fitting and validation using the R-STAN package}
+\title{Model fitting and validation for spatio-temporal data from moving sensors in time.}
 \usage{
 Bmoving_sptime(
   formula,
@@ -116,13 +116,38 @@ The grid size c(m, n) for the knots for the GPP model. A square grid is assumed
 if this is passed on as a scalar. This does not need to be given if knots.coords is given instead.}
 }
 \value{
-Fitted model,  validation statistics, validation observations and their
-predictions. Model choice statistics: WAIC
+A list containing:
+  \itemize{
+   \item params - A table of parameter estimates 
+   \item fit  -   The fitted model object. 
+   \item datatostan - A list containing all the information sent to the 
+   rstan package. 
+   \item prior.phi.param  -    This contains the values of 
+   the hyperparameters of the prior distribution for the spatial 
+   decay parameter \eqn{phi}.   
+   \item prior.phi  -    This contains the name of  of the prior 
+   distribution for the spatial decay parameter \eqn{phi}.  
+   \item fitteds  -   A vector of fitted values.   
+   \item residuals   -   A vector of residual values.  
+   \item package   -   The name of the package used for model fitting.  
+   This is  always stan for this function. 
+   \item model   -   The name of the fitted model.   
+   \item call  -   The command used to call the model fitting function.  
+   \item formula   -   The input formula for the regression part of 
+   the model.  
+   \item scale.transform  -   The transformation adopted by the 
+    input argument with the same name.  
+   \item sn   -   The number of data locations used in fitting.  
+   \item tn   -   The number of time points used in fitting for each location.  
+   \item computation.time  -   Computation time required 
+   to run the model fitting.     
+}
 }
 \description{
-Model fitting and validation using the R-STAN package
+Model fitting and validation for spatio-temporal data from moving sensors in time.
 }
 \examples{
+\dontrun{
 deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 deep$x2inter <- deep$xinter*deep$xinter
 deep$month <- factor(deep$month)
@@ -139,6 +164,7 @@ coords = 1:2, N=11, burn.in=6, validrows =NULL, mchoice = FALSE)
 summary(M2)
 plot(M2)
 names(M2)
+}
 }
 \seealso{
 \code{\link{Bsptime}} for spatio-temporal  model fitting.

@@ -25,9 +25,17 @@ then coordtype should be passed on as plain although the coords are supplied in 
 \item{nbins}{Number of bins for the variogram. Default is 30.}
 }
 \value{
-A list containing the variogram cloud, binned variogram values, and the 
-two plots: the variogram cloud plot and the variogram plot itself. In the variogram plot 
-a loess fit super is imposed.
+A list containing:
+  \itemize{
+   \item cloud - A data frame containing the variogram cloud. 
+   This contains pairs of all the data locations, distance 
+   between the locations and the variogram valuefor the pair. 
+   \item variogram  A data frame containing the variogram values in 
+   each bin.   
+   \item cloudplot A ggplot2 object of the plot of the  variogram cloud. 
+   \item variogramplot A ggplot2 object of the plot of the  binned variogram
+    values. 
+    }
 }
 \description{
 Calculates and plots the variogram cloud and an estimated variogram.

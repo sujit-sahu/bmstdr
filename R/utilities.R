@@ -18,44 +18,6 @@ NULL
 utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residvals", "up", "low"))
 utils::globalVariables(c("distance", "variogram", "preds", "inornot", "Time", "s.index", "x", "y", "f2"))
 NULL
-##
-## #' Find 2.5\%, 50\% and 97.5\% quantiles
-## #' @param x a vector
-## #' @return median and the 95\% credible interval
-## #' @examples
-## #' quant(rnorm(1000))
-## #' quant(runif(10000))
-quant <- function(x){
-  quantile(x, prob=c(0.025, 0.5, 0.975))
-}
-
-## 
-## #' Get X and y from formula and data 
-## #' @param formula A model formula
-## #' @param data A dataframe
-## #' @return Returns a list containing the design matrix X and the 
-## #' response data vector y.   
-## #' @export
-getXy <- function(formula, data) { 
-  # yX <- spTimer::Formula.matrix(formula=formula, data=data)
-  options(na.action='na.pass')
-  X <- model.matrix(formula, data=data)
-  a <- model.frame(formula=formula, data=data)
-  y <- as.vector(model.response(a))
-  options(na.action='na.omit')
-  list(X=X, y=y)
-}
-
-
-
-## Evaluate quadratic form a^T V a
-## @param a Vector of the quadratic form
-## @param V Matrix of the quadratic form 
-## @return Returns the value of the  qudratic form as a scalar
-quadform <- function(a, V) {
-  u <- t(a) %*% V %*% a
-  u[1,1]
-}
 
 #' Observed against predicted plot 
 #' @param yobs A vector containing the actual observations 
@@ -238,6 +200,205 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
    results
 }
 
+
+#' Calculates and plots the variogram cloud and an estimated variogram.
+#' @param formula Its a formula argument for the response and the coordinates. 
+#' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (supplied in meters) as the default. Distance will be calculated in units of kilometer
+#' if this argument is either utm or lonlat. Euclidean distance will be calculated 
+#' if this is given as the third type plain.  If  distance in meter is to be calculated 
+#' then coordtype should be passed on as plain although the coords are supplied in UTM. 
+#' @param data A data frame containing the response and the co-ordinates
+#' @param nbins Number of bins for the variogram. Default is 30. 
+#' @return A list containing:
+#'   \itemize{
+#'    \item cloud - A data frame containing the variogram cloud. 
+#'    This contains pairs of all the data locations, distance 
+#'    between the locations and the variogram valuefor the pair. 
+#'    \item variogram  A data frame containing the variogram values in 
+#'    each bin.   
+#'    \item cloudplot A ggplot2 object of the plot of the  variogram cloud. 
+#'    \item variogramplot A ggplot2 object of the plot of the  binned variogram
+#'     values. 
+#'     }
+#' @examples 
+#' a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
+#' coordtype="utm", nb=50)
+#' names(a)
+#' library(ggpubr)
+#' ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
+#' @export
+bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=nyspatial, nbins=30)
+{
+  X <- model.matrix(formula, data=data)
+  a <- model.frame(formula=formula, data=data)
+  y <- model.response(a)
+  z <- data.frame(y=y, X)
+  z <- na.omit(z)
+  y <- z$y
+  
+  xnames <- all.vars(formula)[-1]
+  kutmx <- z[,xnames[1]]
+  kutmy <- z[,xnames[2]]
+  
+  n <- length(y)
+  nc2 <- t(combn(n, 2))
+  k <- nrow(nc2)
+  bigmat <- matrix(0, nrow=k, ncol=6)
+  bigmat[, 1] <- kutmx[nc2[,1]]
+  bigmat[, 2] <- kutmy[nc2[,1]]
+  bigmat[, 3] <- kutmx[nc2[,2]]
+  bigmat[, 4] <- kutmy[nc2[,2]]
+  bigmat[, 5] <- as.vector(apply(bigmat[, 1:4],  1,  vdist, coordtype)) #distances in kilometers
+  bigmat[, 6] <- ((y[nc2[,1]] - y[nc2[,2]])^2)/2.0 # variogram cloud
+  
+  colnames(bigmat) <- c("p1.x", "p1.y", "p2.x", "p2.y", "distance", "variogram" )
+  
+  # par(ask=T)
+  a <- cut(bigmat[,5], nbins)
+  mvar <- as.vector(tapply(bigmat[,6], a, mean))
+  mdis <- as.vector(tapply(bigmat[,5], a, mean))
+  z <- data.frame(distance = mdis, variogram= mvar)
+  z <- na.omit(z)
+  bigmat <- as.data.frame(bigmat)
+  bigmat <- na.omit(bigmat)
+  p1 <- ggplot(data=bigmat) + 
+    geom_point(aes(x=distance, y=variogram), shape=8)
+  plot(p1)
+  
+  p2 <- ggplot(data=z) + 
+    geom_point(aes(x=distance, y=variogram), shape=8) + 
+    geom_smooth(method = "loess", se=F, aes(x=distance, y=variogram))
+  plot(p2)
+  list(cloud=bigmat, variogram=z, cloudplot=p1, variogramplot=p2)
+}
+
+
+#' Grid search method for choosing phi
+#' Calculates the validation statistics using the spatial model with a given range of values of
+#' the decay parameter phi.
+#' @param phis A vector values of phi
+#' @param s A vector giving the validation sites
+#' @param ... Any additional parameter that may be passed to \code{Bspatial}
+#' @return  A data frame giving the phi values and the corresponding validation statistics
+#' @export
+phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
+                         s=c(8,11,12,14,18,21,24,28), ...) {
+  n <- length(phis)
+  res <- matrix(NA, nrow=n+2, ncol=4)
+  d <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                coordtype="utm", coords=4:5, validrows =s, mchoice=F, verbose=T, ...)
+  res[n+2, ] <- unlist(d$stats)
+  b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                coordtype="utm", coords=4:5, validrows =s,  mchoice=F, verbose=T, ...)
+  res[n+1, ] <- unlist(b$stats)
+  a <- c(phis, b$phi, 0)
+  
+  # pb <- txtProgressBar(min = 0, max = n, style = 3)   # set progress bar
+  for (i in 1:n) {
+    cat("Now doing ", i, "to go to ", n, "\n")
+    phi <- phis[i]
+    b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
+                  coordtype="utm", coords=4:5, validrows=s, verbose=T, mchoice=F, phi=phi, ...)
+    res[i, ] <- unlist(b$stats)
+    # setTxtProgressBar(pb, i)
+  }
+  # close(pb)
+  results <- data.frame(phis=a,  res)
+  dimnames(results)[[2]] <- c("phis", "rmse", "mae", "crps", "cvg")
+  a <- results[order(results$rmse), ]
+  a
+}
+
+# Grid search method for choosing phi(s) and phi(t)
+#' Calculates the validation statistics using the spatial model with a given range of values of
+#' the decay parameter phi.
+#' @param phis A vector values of phi for spatial decay 
+#' @param phit A vector values of phi for temporal decay
+#' @param valids A vector giving the validation sites
+#' @return  A data frame giving the phi values and the corresponding validation statistics
+#' @examples
+#' \dontrun{
+#' asave <-  phichoicep()
+#' }
+#' @export 
+phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
+                       phit=c(0.05, 0.25, 1.25, 6.25), 
+                       valids=c(8,11,12,14,18,21,24,28)) {
+  a <- expand.grid(phis, phit)
+  n <- length(a[,1])
+  res <- matrix(NA, nrow=n+2, ncol=4)
+  vrows <-  which(nysptime$s.index%in% valids)
+  f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
+  b <- Bsptime(model="separable",formula=f2, data=nysptime,
+               coordtype="utm", coords=4:5, validrows=vrows,
+               scale.transform = "SQRT", mchoice=F, verbose=T)
+  a[n+1, ] <- c(b$phi.s, b$phi.t)
+  res[n+1, ] <- unlist(b$stats)
+  
+  b <- Bsptime(model="lm", validrows=vrows, formula=f2, data=nysptime,
+               scale.transform = "SQRT", mchoice=F, verbose=T)
+  a[n+2, ] <- c(0, 0)
+  res[n+2, ] <- unlist(b$stats)
+  
+  for (i in 1:n) {
+    cat("Now doing ", i, "to go to ", n, "\n")
+    phi.s <- a[i,1]
+    phi.t <- a[i,2]
+    b <- Bsptime(model="separable", formula=f2, data=nysptime,
+                 validrows=vrows, coordtype="utm", coords=4:5,
+                 verbose=T, mchoice=F, phi.s=phi.s, phi.t=phi.t,
+                 scale.transform = "SQRT")
+    res[i, ] <- unlist(b$stats)
+    
+  }
+  results <- data.frame(phis=a[,1], phit=a[,2], res)
+  dimnames(results)[[2]] <- c("phis", "phit", "rmse", "mae", "crps", "cvg")
+  a <- results[order(results$rmse), ]
+  a
+}
+
+## Not exporteds 
+
+
+## #' Find 2.5\%, 50\% and 97.5\% quantiles
+## #' @param x a vector
+## #' @return median and the 95\% credible interval
+## #' @examples
+## #' quant(rnorm(1000))
+## #' quant(runif(10000))
+quant <- function(x){
+  quantile(x, prob=c(0.025, 0.5, 0.975))
+}
+
+## 
+## #' Get X and y from formula and data 
+## #' @param formula A model formula
+## #' @param data A dataframe
+## #' @return Returns a list containing the design matrix X and the 
+## #' response data vector y.   
+## #' @export
+getXy <- function(formula, data) { 
+  # yX <- spTimer::Formula.matrix(formula=formula, data=data)
+  options(na.action='na.pass')
+  X <- model.matrix(formula, data=data)
+  a <- model.frame(formula=formula, data=data)
+  y <- as.vector(model.response(a))
+  options(na.action='na.omit')
+  list(X=X, y=y)
+}
+
+
+
+## Evaluate quadratic form a^T V a
+## @param a Vector of the quadratic form
+## @param V Matrix of the quadratic form 
+## @return Returns the value of the  qudratic form as a scalar
+quadform <- function(a, V) {
+  u <- t(a) %*% V %*% a
+  u[1,1]
+}
+
 cal_cvg <- function(vdaty, ylow, yup) {
   ## Remove the NA's
   u <- data.frame(vdaty=vdaty, low=ylow, up=yup)
@@ -247,9 +408,7 @@ cal_cvg <- function(vdaty, ylow, yup) {
   100*sum(u$inornot)/length(u$inornot)
 }
 
-
-
-
+##
 cal_valstats_from_summary <- function(yval, pred_summary, nsample, level=95) {
   
   ## yval is the actual n observations
@@ -321,29 +480,7 @@ calculate_waic <- function(v) {
   waic_results
 }
 
-## Calculate CRPS statistics
-crps_check<-function(yval, yits){
-  ## xits is the mcmc samples with dim r x N iteration
-  ## xval is the actual r observations may include NA's
-  tmp <- cbind(yval, yits)
-  tmp <- na.omit(tmp) ## Get rid of the NA observations in yval
-  N <- ncol(yits)
-  r1 <- nrow(tmp) ## number of observations to validate excluding the NA's
-  nyts <- tmp[, -1] ## this is r1 by N
-  ## Calculate CRPS statistics
-  crps_fac <- function(yits) {
-    ## yits is a vector of N MCMC iterations
-    ## Calculates the estimate of E|Y-Y*|
-    ans <- mean(abs(outer(yits, yits, FUN="-")))
-    ans
-  }
-  facs <- as.vector (apply(nyts, 1, crps_fac)) ## r1 by 1
-  errs  <- abs(nyts - matrix(rep(tmp[,1], N), ncol=N) ) ## r1 by N observations
-  maes <- as.vector (apply(errs, 1, mean)) ## r1 by 1
-  mean(maes-0.5*facs)
-  }
-
-
+## Replaced by Rcpp function 
 crpsR <- function(xval, xits){
   ## xval is the actual n observations
   ## xits is the mcmc samples with dim n x N iteration
@@ -860,80 +997,6 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
   v
 }
 
-# #
-#v <- logliks_from_full_gp_spTimer(arfit)
-#print(calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec))
-#print(calculate_waic(v$loglik))
-
-# v <- logliks_from_AR_spTimer(arfit)
-# v <- logliks_from_full_gp_spTimer(arfit)
-
-
-
-
-#' Calculates and plots the variogram cloud and an estimated variogram.
-#' @param formula Its a formula argument for the response and the coordinates. 
-#' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
-#' (supplied in meters) as the default. Distance will be calculated in units of kilometer
-#' if this argument is either utm or lonlat. Euclidean distance will be calculated 
-#' if this is given as the third type plain.  If  distance in meter is to be calculated 
-#' then coordtype should be passed on as plain although the coords are supplied in UTM. 
-#' @param data A data frame containing the response and the co-ordinates
-#' @param nbins Number of bins for the variogram. Default is 30. 
-#' @return  A list containing the variogram cloud, binned variogram values, and the 
-#' two plots: the variogram cloud plot and the variogram plot itself. In the variogram plot 
-#' a loess fit super is imposed.
-#' @examples 
-#' a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
-#' coordtype="utm", nb=50)
-#' names(a)
-#' library(ggpubr)
-#' ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
-#' @export
-bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=nyspatial, nbins=30)
-{
-  X <- model.matrix(formula, data=data)
-  a <- model.frame(formula=formula, data=data)
-  y <- model.response(a)
-  z <- data.frame(y=y, X)
-  z <- na.omit(z)
-  y <- z$y
-
-  xnames <- all.vars(formula)[-1]
-  kutmx <- z[,xnames[1]]
-  kutmy <- z[,xnames[2]]
-
-  n <- length(y)
-  nc2 <- t(combn(n, 2))
-  k <- nrow(nc2)
-  bigmat <- matrix(0, nrow=k, ncol=6)
-  bigmat[, 1] <- kutmx[nc2[,1]]
-  bigmat[, 2] <- kutmy[nc2[,1]]
-  bigmat[, 3] <- kutmx[nc2[,2]]
-  bigmat[, 4] <- kutmy[nc2[,2]]
-  bigmat[, 5] <- as.vector(apply(bigmat[, 1:4],  1,  vdist, coordtype)) #distances in kilometers
-  bigmat[, 6] <- ((y[nc2[,1]] - y[nc2[,2]])^2)/2.0 # variogram cloud
-
-  colnames(bigmat) <- c("p1.x", "p1.y", "p2.x", "p2.y", "distance", "variogram" )
-
-  # par(ask=T)
-  a <- cut(bigmat[,5], nbins)
-  mvar <- as.vector(tapply(bigmat[,6], a, mean))
-  mdis <- as.vector(tapply(bigmat[,5], a, mean))
-  z <- data.frame(distance = mdis, variogram= mvar)
-  z <- na.omit(z)
-  bigmat <- as.data.frame(bigmat)
-  bigmat <- na.omit(bigmat)
-  p1 <- ggplot(data=bigmat) + 
-    geom_point(aes(x=distance, y=variogram), shape=8)
-  plot(p1)
-  
-  p2 <- ggplot(data=z) + 
-    geom_point(aes(x=distance, y=variogram), shape=8) + 
-    geom_smooth(method = "loess", se=F, aes(x=distance, y=variogram))
-  plot(p2)
-  list(cloud=bigmat, variogram=z, cloudplot=p1, variogramplot=p2)
-}
 # 
 vdist <- function(points, coordtype)
 {
@@ -1124,86 +1187,3 @@ prob.below.threshold <- function(out, at){
 ##
 ##
 ##
-
-# Grid search method for choosing phi
-#' Calculates the validation statistics using the spatial model with a given range of values of
-#' the decay parameter phi.
-#' @param phis A vector values of phi
-#' @param s A vector giving the validation sites
-#' @param ... Any additional parameter that may be passed to \code{Bspatial}
-#' @return  A data frame giving the phi values and the corresponding validation statistics
-#' @export
-phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
-                         s=c(8,11,12,14,18,21,24,28), ...) {
-  n <- length(phis)
-  res <- matrix(NA, nrow=n+2, ncol=4)
-  d <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s, mchoice=F, verbose=T, ...)
-  res[n+2, ] <- unlist(d$stats)
-  b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s,  mchoice=F, verbose=T, ...)
-  res[n+1, ] <- unlist(b$stats)
-  a <- c(phis, b$phi, 0)
-  
-  # pb <- txtProgressBar(min = 0, max = n, style = 3)   # set progress bar
-  for (i in 1:n) {
-    cat("Now doing ", i, "to go to ", n, "\n")
-    phi <- phis[i]
-    b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                  coordtype="utm", coords=4:5, validrows=s, verbose=T, mchoice=F, phi=phi, ...)
-    res[i, ] <- unlist(b$stats)
-    # setTxtProgressBar(pb, i)
-  }
-  # close(pb)
-  results <- data.frame(phis=a,  res)
-  dimnames(results)[[2]] <- c("phis", "rmse", "mae", "crps", "cvg")
-  a <- results[order(results$rmse), ]
-  a
-}
-
-# Grid search method for choosing phi(s) and phi(t)
-#' Calculates the validation statistics using the spatial model with a given range of values of
-#' the decay parameter phi.
-#' @param phis A vector values of phi for spatial decay 
-#' @param phit A vector values of phi for temporal decay
-#' @param valids A vector giving the validation sites
-#' @return  A data frame giving the phi values and the corresponding validation statistics
-#' @examples
-#' asave <-  phichoicep(valids=c(8, 11))
-#' @export 
-phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
-                       phit=c(0.05, 0.25, 1.25, 6.25), 
-                       valids=c(8,11,12,14,18,21,24,28)) {
-  a <- expand.grid(phis, phit)
-  n <- length(a[,1])
-  res <- matrix(NA, nrow=n+2, ncol=4)
-  vrows <-  which(nysptime$s.index%in% valids)
-  f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
-  b <- Bsptime(model="separable",formula=f2, data=nysptime,
-               coordtype="utm", coords=4:5, validrows=vrows,
-               scale.transform = "SQRT", mchoice=F, verbose=T)
-  a[n+1, ] <- c(b$phi.s, b$phi.t)
-  res[n+1, ] <- unlist(b$stats)
-  
-  b <- Bsptime(model="lm", validrows=vrows, formula=f2, data=nysptime,
-               scale.transform = "SQRT", mchoice=F, verbose=T)
-  a[n+2, ] <- c(0, 0)
-  res[n+2, ] <- unlist(b$stats)
-  
-  for (i in 1:n) {
-    cat("Now doing ", i, "to go to ", n, "\n")
-    phi.s <- a[i,1]
-    phi.t <- a[i,2]
-    b <- Bsptime(model="separable", formula=f2, data=nysptime,
-                 validrows=vrows, coordtype="utm", coords=4:5,
-                 verbose=T, mchoice=F, phi.s=phi.s, phi.t=phi.t,
-                 scale.transform = "SQRT")
-    res[i, ] <- unlist(b$stats)
-    
-  }
-  results <- data.frame(phis=a[,1], phit=a[,2], res)
-  dimnames(results)[[2]] <- c("phis", "phit", "rmse", "mae", "crps", "cvg")
-  a <- results[order(results$rmse), ]
-  a
-}
-

@@ -26,5 +26,7 @@ Calculates the validation statistics using the spatial model with a given range 
 the decay parameter phi.
 }
 \examples{
-asave <-  phichoicep(valids=c(8, 11))
+\dontrun{
+asave <-  phichoicep()
+}
 }

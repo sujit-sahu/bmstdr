@@ -235,8 +235,8 @@
 #' M2$phi.s
 #' M2$phi.t
 #' valids <-  c(8,11,12,14,18,21,24,28)
-#'vrows <-  which(nysptime$s.index%in% valids)
-#'# a <- phichoicep(valids=c(8, 11)) 
+#' vrows <-  which(nysptime$s.index%in% valids)
+#' a <- phichoicep(valids=c(8, 11)) 
 #'# optimal phi.s=0.005, phi.t=0.05
 #'## Re-run to see
 #'M2.1 <- Bsptime(model="separable",  formula=f2, data=nysptime, 

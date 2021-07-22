@@ -17,8 +17,8 @@
 #' @param prior.M Prior sample size, defaults to 10^(-4).
 #' @param prior.sigma2 Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision.
 #' @param N The number of samples to generate. 
-#' @return A list containing the exact values of aic, bic, p_dic, dic, p_dic alt, dic alt,
-#'  p_waic1, waic1, p_waic2, waic2, gof, penalty and pmcc.
+#' @return A list containing the exact values of pdic, dic, pdicalt, dicalt,
+#'  pwaic1, waic1, pwaic2, waic2, gof, penalty and pmcc.
 #'  Also prints out the posterior mean and variance.
 #' @examples
 #' Bmchoice()

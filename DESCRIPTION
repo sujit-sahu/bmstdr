@@ -17,7 +17,7 @@ Imports:
     ggplot2,
     rstan, 
     spBayes, 
-    INLA, 
+    INLA (>= 21.02.21), 
     CARBayes, 
     CARBayesST
 Depends:

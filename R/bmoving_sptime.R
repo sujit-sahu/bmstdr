@@ -1,4 +1,4 @@
-#' Model fitting and validation using the R-STAN package
+#' Model fitting and validation for spatio-temporal data from moving sensors in time. 
 #' @inheritParams Bsptime
 #' @param coords A vector of size 2 giving the column numbers of the data 
 #' frame which contain the coordinates of the locations.  
@@ -7,9 +7,34 @@
 #' @param predspace A 0-1 flag indicating whether spatial predictions are to be made.
 #' @param newdata A new data frame with the same column structure as the model fitting data set. 
 #' @seealso \code{\link{Bsptime}} for spatio-temporal  model fitting.
-#' @return Fitted model,  validation statistics, validation observations and their
-#' predictions. Model choice statistics: WAIC
+#' @return A list containing:
+#'   \itemize{
+#'    \item params - A table of parameter estimates 
+#'    \item fit  -   The fitted model object. 
+#'    \item datatostan - A list containing all the information sent to the 
+#'    rstan package. 
+#'    \item prior.phi.param  -    This contains the values of 
+#'    the hyperparameters of the prior distribution for the spatial 
+#'    decay parameter \eqn{phi}.   
+#'    \item prior.phi  -    This contains the name of  of the prior 
+#'    distribution for the spatial decay parameter \eqn{phi}.  
+#'    \item fitteds  -   A vector of fitted values.   
+#'    \item residuals   -   A vector of residual values.  
+#'    \item package   -   The name of the package used for model fitting.  
+#'    This is  always stan for this function. 
+#'    \item model   -   The name of the fitted model.   
+#'    \item call  -   The command used to call the model fitting function.  
+#'    \item formula   -   The input formula for the regression part of 
+#'    the model.  
+#'    \item scale.transform  -   The transformation adopted by the 
+#'     input argument with the same name.  
+#'    \item sn   -   The number of data locations used in fitting.  
+#'    \item tn   -   The number of time points used in fitting for each location.  
+#'    \item computation.time  -   Computation time required 
+#'    to run the model fitting.     
+#' }
 #' @examples
+#' \dontrun{
 #' deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 #' deep$x2inter <- deep$xinter*deep$xinter
 #' deep$month <- factor(deep$month)
@@ -22,10 +47,11 @@
 #' scale(deep[,c("lat2", "sin1", "cos1", "sin2", "cos2")])
 #' f2 <- temp ~ xlon + xlat + xlat2+ xinter + x2inter 
 #' M2 <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", 
-#' coords = 1:2, N=7, burn.in=2, validrows =NULL, mchoice = FALSE)
+#' coords = 1:2, N=11, burn.in=6, validrows =NULL, mchoice = FALSE)
 #' summary(M2)
 #' plot(M2)
 #' names(M2)
+#' }
 #' @export
 #'
 Bmoving_sptime <-  function(formula,  data, coordtype,  coords,  
