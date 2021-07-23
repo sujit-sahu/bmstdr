@@ -387,7 +387,7 @@ Y({\bf s}_i, t) =  {\bf x}'({\bf s}_i, t) \mathbf{\beta} + w({\bf s}_i, t) + \ep
 for $i=1, \ldots, n$ and $t=1, \ldots, T.$ Different distribution specifications for  the spatio-temporal  random effects $w({\bf s}_i, t)$ and the observational errors 
 $\epsilon({\bf s}_i, t)$ give rise to different models. Variations of these models have been described in @Sahubook.  The `r CRANpkg("bmstdr")` function `Bsptime` has been developed to fit these models. 
 
-Similar to the `Bspatial` function, the `Bsptime` function takes a formula and a data argument. It is important to note that the `Bsptime` function *always assumes* that the data frame is first sorted by space and then time within each site in space. Note that missing covariate values  are not permitted at all.
+Similar to the `Bspatial` function, the `Bsptime` function takes a formula and a data argument. It is important to note that the `Bsptime` function *always assumes* that the data frame is first sorted by space and then time within each site in space. Note that missing covariate values  are not permitted.
 
 The arguments defining the scale, `scale.transform`, 
 and the hyper parameters of the prior distribution for the regression coefficients ${\mathbf \beta}$ and the variance parameters are also similar to the corresponding ones in the spatial model fitting case with `Bspatial`. Other important arguments 
@@ -404,7 +404,7 @@ of models, specified by the `model` argument,  can be fitted with each of these 
 named packages the `model` argument is passed to the chosen package. 
 
 For fitting a `separable` model `Bsptime` requires specification of
-two decay parameters $\phi_s$ and $\phi_t$. If these are not specified then values are chosen which correspond to the effective ranges  as the maximum distance in space and and length in time.
+two decay parameters $\phi_s$ and $\phi_t$. If these are not specified then values are chosen which correspond to the effective ranges  as the maximum distance in space  and length in time.
 
 There are numerous other package specific arguments that define the prior distributions and many important behavioral aspects of the selected package. Those are not described here. Instead the user is directed to the documentation `?Bsptime` and also the vignettes of the individual packages. 
 

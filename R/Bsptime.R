@@ -46,10 +46,11 @@
 #' \itemize{ 
 #' \item{lm model:} {If package is "none" and the model is "lm", this argument is 
 #' a vector of row indices of the data frame which should be used for validation. }
-#' \item{separable model:} {If package is "none" and the model is "seprable" this argument is 
-#'  a vector of site indices which should be used for validation. The "seperable" 
+#' \item{separable model:} {If package is "none" and the model is "separable" this argument is 
+#'  a vector of site indices which should be used for validation. The "separable" 
 #'  model  does not allow some sites to be used for both fitting and validation.
-#'  Thus it is not possible to validate at selected time points using the separable model.}
+#'  Thus it is not possible to validate at selected time points using the separable model.
+#'  Further details are provided in Chapter 7 of \insertCite{Sahubook;textual}{bmstdr}.}
 #'  }
 #' @param scale.transform Transformation of the response variable. It can take three values: SQRT, LOG or NONE.
 #' Default value is "NONE". 
@@ -207,6 +208,8 @@
 #'    \item computation.time  -   Computation time required 
 #'    to run the model fitting.  
 #' }
+#' @references
+#' \insertAllCited{}
 #' @examples
 #' library(bmstdr)
 #' library(databmstdr)

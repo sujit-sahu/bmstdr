@@ -19,7 +19,9 @@ Imports:
     spBayes, 
     INLA (>= 20.03.17), 
     CARBayes, 
-    CARBayesST
+    CARBayesST, 
+    Rdpack
+RdMacros: Rdpack
 Depends:
     R (>= 3.4.0),
     Rcpp (>= 0.12.0)

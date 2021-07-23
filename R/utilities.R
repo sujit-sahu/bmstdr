@@ -12,6 +12,7 @@
 #' @importFrom  utils combn
 #' @importFrom  utils head
 #' @importFrom rstan sampling 
+#' @importFrom Rdpack reprompt
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)

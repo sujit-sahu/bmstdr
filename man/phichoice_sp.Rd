@@ -2,7 +2,8 @@
 % Please edit documentation in R/utilities.R
 \name{phichoice_sp}
 \alias{phichoice_sp}
-\title{Calculates the validation statistics using the spatial model with a given range of values of
+\title{Grid search method for choosing phi
+Calculates the validation statistics using the spatial model with a given range of values of
 the decay parameter phi.}
 \usage{
 phichoice_sp(
@@ -22,6 +23,7 @@ phichoice_sp(
 A data frame giving the phi values and the corresponding validation statistics
 }
 \description{
+Grid search method for choosing phi
 Calculates the validation statistics using the spatial model with a given range of values of
 the decay parameter phi.
 }
