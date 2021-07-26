@@ -58,7 +58,9 @@ with nugget effect where the decay parameter has been assumed to be fixed. }
 \item{"inla" }{The model fitted is the spatial random effect model with the nugget effect.}
 \item{"none". } {In this case case, the argument  \code{model} must be 
 specified either as "lm" or "spat". See below}
-}}
+}
+ Further details and more examples are provided in Chapter 6 of the book 
+\insertCite{Sahubook;textual}{bmstdr}.}
 
 \item{model}{Only used when the package has been chosen to be "none". 
 It can take one of two values: either "lm" or "spat". The "lm" option is for an independent error 
@@ -110,9 +112,9 @@ and Prange =0.95. If instead a single value is specified then the range is set a
 that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.}
 
-\item{offset}{Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.}
+\item{offset}{Only used in INLA based modeling.  Offset parameter. See documentation for \code{inla.mesh.2d}.}
 
-\item{max.edge}{Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.}
+\item{max.edge}{Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.}
 
 \item{cov.model}{Only relevant for the spBayes package.  Default is the exponential model. 
 See the documentation for \code{\link{spLM}} in the package spBayes.}

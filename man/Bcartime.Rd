@@ -2,7 +2,7 @@
 % Please edit documentation in R/Bcartime.R
 \name{Bcartime}
 \alias{Bcartime}
-\title{Bayesian regression model fitting for areal spatio-temporal data. 
+\title{Bayesian regression model fitting for areal and areal spatio-temporal data. 
 Calculates parameter estimates, validation statistics, and 
 estimated values of several Bayesian model choice criteria.}
 \usage{
@@ -111,10 +111,14 @@ to identify the time points. If this is omitted, no temporal modelling will be p
 \item{package}{Which package is to be used in model fitting? Currently available 
 packages are:
 \itemize{  
-\item{"inla" }{INLA model fitting for areal data.}
-\item{"CARBayes" }{All possible models in this package can be fitted.}
-\item{"CARBayesST" }{All possible models in this package can be fitted.}
-}}
+\item{"inla" }{INLA model fitting for areal data.
+ See \insertCite{gomezrubio;textual}{bmstdr}.}
+\item{"CARBayes" }{All possible models in this package can be fitted. 
+See \insertCite{LeeCARBayes2021;textual}{bmstdr}.}
+\item{"CARBayesST" }{All possible models in this package can be fitted.
+See \insertCite{CarBayesST;textual}{bmstdr}.}
+Further details and more examples are provided in Chapters 10 and 11 of the book 
+\insertCite{Sahubook;textual}{bmstdr}.}}
 
 \item{model}{The specific spatio temporal model to be fitted. 
 If the package is "INLA" then the model argument should be a vector with two elements 
@@ -327,7 +331,7 @@ A list containing:
 }
 }
 \description{
-Bayesian regression model fitting for areal spatio-temporal data. 
+Bayesian regression model fitting for areal and areal spatio-temporal data. 
 Calculates parameter estimates, validation statistics, and 
 estimated values of several Bayesian model choice criteria.
 }
@@ -578,4 +582,7 @@ summary(M1)
    package="inla", validrows = vs) 
    summary(M3inla.bym.ar1)
    }
+}
+\references{
+\insertAllCited{}
 }

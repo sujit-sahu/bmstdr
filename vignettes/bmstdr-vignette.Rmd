@@ -1358,8 +1358,8 @@ These model fitted objects  can be explored as before. The following table repor
 ```{r, echo=T, eval=T, message=FALSE, results='hide'}
 a <- rbind(M3$mchoice, M3.leroux$mchoice)
 a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
 b <- M3.inla.bym$mchoice[1:4]
-b <- b[c(2, 1, 4, 3)]
 a <- rbind(a, b)
 rownames(a) <- c("Independent", "Leroux",  "INLA-BYM")
 colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 

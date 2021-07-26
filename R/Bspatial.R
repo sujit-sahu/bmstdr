@@ -20,6 +20,8 @@
 #' \item{"none". } {In this case case, the argument  \code{model} must be 
 #' specified either as "lm" or "spat". See below}
 #' }
+#'  Further details and more examples are provided in Chapter 6 of the book 
+#' \insertCite{Sahubook;textual}{bmstdr}.
 #' @param model Only used when the package has been chosen to be "none". 
 #' It can take one of two values: either "lm" or "spat". The "lm" option is for an independent error 
 #' regression model while the "spat" option fits a  spatial model without any nugget effect.  
@@ -57,8 +59,8 @@
 #' @param prior.sigma A length 2 vector, with (sigma0, Psigma) specifying 
 #' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 #' standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed range value.
-#' @param offset Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
-#' @param max.edge Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.
+#' @param offset Only used in INLA based modeling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
+#' @param max.edge Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Only relevant for the spBayes package.  Default is the exponential model. 
 #' See the documentation for \code{\link{spLM}} in the package spBayes. 
 #' @param N MCMC sample size. Default value 5000. 

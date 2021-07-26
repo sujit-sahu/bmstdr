@@ -1,4 +1,4 @@
-#' Bayesian regression model fitting for areal spatio-temporal data. 
+#' Bayesian regression model fitting for areal and areal spatio-temporal data. 
 #' Calculates parameter estimates, validation statistics, and 
 #' estimated values of several Bayesian model choice criteria. 
 #' @param formula An object of class "formula" (or one that can be coerced to that class):
@@ -19,10 +19,14 @@
 #' @param package Which package is to be used in model fitting? Currently available 
 #' packages are:
 #' \itemize{  
-#' \item{"inla" }{INLA model fitting for areal data.}
-#' \item{"CARBayes" }{All possible models in this package can be fitted.}
-#' \item{"CARBayesST" }{All possible models in this package can be fitted.}
-#' }
+#' \item{"inla" }{INLA model fitting for areal data.
+#'  See \insertCite{gomezrubio;textual}{bmstdr}.}
+#' \item{"CARBayes" }{All possible models in this package can be fitted. 
+#' See \insertCite{LeeCARBayes2021;textual}{bmstdr}.}
+#' \item{"CARBayesST" }{All possible models in this package can be fitted.
+#' See \insertCite{CarBayesST;textual}{bmstdr}.}
+#' Further details and more examples are provided in Chapters 10 and 11 of the book 
+#' \insertCite{Sahubook;textual}{bmstdr}.}
 #' @param link The link function to use for INLA based model fitting. This is 
 #' ignored for the CARBayes and   CARBayesST models. 
 #' @param model The specific spatio temporal model to be fitted. 
@@ -144,7 +148,8 @@
 #'    \item call -   The command used to call the model fitting function.   
 #'    \item computation.time -   Computation time required to run the model fitting.   
 #' }
-
+#' @references
+#' \insertAllCited{}
 #' @examples
 #' \dontrun{
 #' # Only spatial modeling for the engtotals data set 

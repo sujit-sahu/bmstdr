@@ -1,14 +1,33 @@
 ## The code in this file will re-produce the table results reported in the vignette 
 ## and paper: 
 ## bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
-## Some of the model fitting and validation commands will take a couple of hours to run. 
-## The total time to run all the code in this vignette is about 4 hours on a fast PC. 
-## Please start with a clear work space and restart R
+## by Sujit Sahu, University of Southampton, 
+## Email: S.K.Sahu@soton.ac.uk
+## Binary versions of the package are available from: 
+## https://www.southampton.ac.uk/~sks/bmbook/
+## A second package databmstdr is also required to reproduce 
+## some of the results. Please download and install it from the above webpage.
 
-setwd("~/Dropbox/sks/bookproject/rbook/bmstdr/inst/full_vignette_code")
-# sink("sahu_bmstdr.txt")
+## The total time to run all the code in this vignette is about 2 hours on a fast PC. 
+## Please start with a clear work space and restart R
 rm(list=ls())
-start.time<-proc.time()[3]
+## Set a suitable working directory
+yourpath <- "~/Dropbox/sks/bookproject/rbook/bmstdr/inst/full_vignette_code" 
+setwd(yourpath)
+
+## Please set a folder path for saving the tables. 
+## The table numbers and file names refer to the tables in the 
+## paper submitted to the JSS and also the vignette distributed 
+## with the package 
+tablepath <- "../txttables/"
+
+## Please set a folder path for saving the figures. 
+## The figure number and file name refers to the figures in the 
+## paper submitted to the JSS only.
+## The figures in the package vignette are drawn by the vignette Rmd file itself. 
+figurepath <- "figures/"
+# Set a file name to save the screen output if required 
+# sink("sahu_jss-bmstdr.txt")
 ## Please load all the libraries. You may have to install these as required. 
 library("bmstdr")
 library("ggplot2")
@@ -24,16 +43,18 @@ library("tidyr")
 library("doBy")
 
 
+## Note the start time
+start.time<-proc.time()[3]
+
 ## Code for drawing Figure 1. 
 ## This is a map of the state of New York where we also plot the 
 ## 28 air pollution monitoring sites. 
 
-tablepath <- "../txttables/"
-figurepath <- "figures/"
 
-N <- 5000
-burn.in <- 1000
-Nstan <- 2000
+N <- 5000 # This is also the package default for number of iterations
+Nstan <- 2000  # Stan runs take bit longer to run but requires 
+## less sample size and hence we work with these choices 
+burn.in <- 1000 # This is also the package default 
 
 nymap <- map_data(database="state",regions="new york")
 s <- c(1, 5, 10)
@@ -81,7 +102,7 @@ summary(M2)
 plot(M2)
 
 ## Illustrating a grid search method for choosing the decay parameter. 
-?phichoice_sp
+# ?phichoice_sp
 a <- phichoice_sp()
 a
 
@@ -216,7 +237,7 @@ a1 <- residuals(M1, numbers=list(sn=28, tn=62))
 
 ## Demonstrate grid search method for selecting the spatial
 ## temporal decay parameters. 
-?phichoicep
+# ?phichoicep
 # Takes few minutes to run for 20 values 
 a <- phichoicep()
 
@@ -279,7 +300,7 @@ p3
 
 
 ggarrange(p1, p2, p3, common.legend = TRUE, legend = "top", nrow = 3, ncol = 1)
-# This plot has not been  included 
+# This plot has not been  included in the JSS paper 
 
 
 # function to calculate site-wise averages 
@@ -657,34 +678,25 @@ deep[, c( "xlat2", "xsin1", "xcos1", "xsin2", "xcos2")] <-
 
 # 15 minutes 
 f2 <- temp ~ xlon + xlat + xlat2+ xinter + x2inter 
-M2 <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", coords = 1:2,
+M2atl <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", coords = 1:2,
                      N=1100, burn.in=100, validrows =NULL, mchoice =T)
-summary(M2)
-plot(M2)
-names(M2)
+summary(M2atl)
+plot(M2atl)
+names(M2atl)
 
-a <-residuals(M2)
-a <- fitted(M2)
+a <-residuals(M2atl)
+a <- fitted(M2atl)
 summary(a)
 
 
-listofdraws <- rstan::extract(M2$fit)
+listofdraws <- rstan::extract(M2atl$fit)
 names(listofdraws)
 dim(listofdraws$xbmodel)
 dim(listofdraws$bigS)
-dat <- M2$datatostan
+dat <- M2atl$datatostan
 names(dat)
 tempdata <- dat
-# dat$ots
-# dat$nts
 
-# n <- 7
-# u <- seq(from=1, to=n^2, length =n)
-# u 
-# a <- matrix(1:n^2, byrow=T, ncol=n)
-# a
-# dat$ots
-# dat$nots
 
 
 ## Extract the diagonal elements of all St 
@@ -702,10 +714,7 @@ for (i in 1:m) {
   x <- c(x, b1) ## indicates if the corresponding index is a diagonal 
 }
 
-# b <- cbind(v, x)
-# b[1:20, ]
-# u <- which(x>0)
-# length(u)
+
 
 varsamps <- listofdraws$bigS[, which(x>0)]/365
 dim(varsamps)
@@ -797,6 +806,8 @@ ggsave(filename = paste0(figurepath, "sd_temp_deep.png"),  width=8.27, height=5,
 
 
 ## Ocean temperature example complete. 
+
+## Remove the large model output 
 rm(list=ls(pattern="M"))
 
 # Code for Section 4 results 

@@ -78,7 +78,9 @@ model fitted using the \code{\link{spDynLM}} function in the \code{spBayes} pack
 \item{"sptDyn" }{All possible models in this package can be fitted.}
 \item{"none". } {In this case case, the argument  \code{model} must be 
 specified either as "lm" or "seperable". See below}
-}}
+}
+Further details and more examples are provided in Chapters 7-9 of the book 
+\insertCite{Sahubook;textual}{bmstdr}.}
 
 \item{model}{The model to be fitted. This argument is passed to the fitting package. 
 In case the package is none, then it can be either "lm" or "seperable". 
@@ -110,7 +112,7 @@ a vector of row indices of the data frame which should be used for validation. }
  a vector of site indices which should be used for validation. The "separable" 
  model  does not allow some sites to be used for both fitting and validation.
  Thus it is not possible to validate at selected time points using the separable model.
- Further details are provided in \insertCite{Sahubook;textual}{bmstdr}.}
+ Further details are provided in Chapter 7 of \insertCite{Sahubook;textual}{bmstdr}.}
  }}
 
 \item{scale.transform}{Transformation of the response variable. It can take three values: SQRT, LOG or NONE.

@@ -23,6 +23,8 @@
 #' \item{"none". } {In this case case, the argument  \code{model} must be 
 #' specified either as "lm" or "seperable". See below}
 #' }
+#' Further details and more examples are provided in Chapters 7-9 of the book 
+#' \insertCite{Sahubook;textual}{bmstdr}.
 #' @param model The model to be fitted. This argument is passed to the fitting package. 
 #' In case the package is none, then it can be either "lm" or "seperable". 
 #' The "lm" option is for an independent error regression model 
