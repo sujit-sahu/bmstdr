@@ -214,7 +214,6 @@
 #' \insertAllCited{}
 #' @examples
 #' library(bmstdr)
-#' library(databmstdr)
 #' library(ggplot2)
 #' library(ggsn)
 #' head(nysptime)
