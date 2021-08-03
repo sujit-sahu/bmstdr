@@ -313,7 +313,6 @@ estimated values of several Bayesian model choice criteria.
 }
 \examples{
 library(bmstdr)
-library(databmstdr)
 library(ggplot2)
 library(ggsn)
 head(nysptime)
