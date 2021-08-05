@@ -345,13 +345,13 @@ names(engtotals)
 f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
 set.seed(5)
 vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
-N <- 6000
-burn.in <- 1000
-thin <- 10 
+N <- 60
+burn.in <- 10
+thin <- 1
 
 ## Independent error logistic regression 
 M1 <- Bcartime(formula=f1,   data=engtotals, family="binomial",
-trials=engtotals$nweek,  N=N, burn.in = burn.in, thin=thin)
+trials=engtotals$nweek,  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
 summary(M1)
   # Leroux model  
   M1.leroux <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
@@ -362,7 +362,7 @@ summary(M1)
   M1.bym <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
   model="bym", W=Weng, 
   family="binomial", trials=engtotals$nweek, 
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M1.bym)
   # BYM model using INLA
   M1.inla.bym <- Bcartime(data=engtotals, formula=f1, W=Weng, 
@@ -373,26 +373,26 @@ summary(M1)
   M1.leroux.v <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
   model="leroux", W=Weng, family="binomial", 
   trials=engtotals$nweek, validrows=vs, 
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M1.leroux.v)
   
   ##
   ##
   ## Poisson Distribution 
-  N <- 6000
-  burn.in <- 1000
-  thin <- 10 
+  N <- 60
+  burn.in <- 10
+  thin <- 1
   f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
   set.seed(5)
   vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
   # Independent error Poisson regression 
   M2 <- Bcartime(formula=f2, data=engtotals, family="poisson",
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M2)
   ## Poisson regression  with Leroux Model
   M2.leroux <- Bcartime(formula=f2, data=engtotals, scol="spaceid",  
   model="leroux",  family="poisson", W=Weng,
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M2.leroux)
   # Poisson regression  with BYM Model
   M2.bym <- Bcartime(formula=f2, data=engtotals,
@@ -407,7 +407,7 @@ summary(M1)
   # Validation
   M2.leroux.v <- Bcartime(formula=f2, data=engtotals,
   scol="spaceid",  model="leroux",  family="poisson", W=Weng,
-  N=N, burn.in = burn.in, thin=thin, validrows=vs)
+  N=N, burn.in = burn.in, thin=thin, validrows=vs, verbose=FALSE)
   summary(M2.leroux.v)
   ##
   ##
@@ -416,11 +416,11 @@ summary(M1)
   set.seed(5)
   vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
   M3 <- Bcartime(formula=f3, data=engtotals, family="gaussian",
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M3)
   M3.leroux <- Bcartime(formula=f3, data=engtotals,
   scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
-  N=N, burn.in = burn.in, thin=thin)
+  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M3.leroux)
   M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
   model=c("bym"), family="gaussian", W=Weng,  package="inla") 
@@ -428,7 +428,7 @@ summary(M1)
   ## Validation
   M3.leroux.v <- Bcartime(formula=f3, data=engtotals,
   scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
-  N=N, burn.in = burn.in, thin=thin, validrows = vs)
+  N=N, burn.in = burn.in, thin=thin, validrows = vs, verbose=FALSE)
   summary(M3.leroux.v)
   ##Validation
   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
@@ -451,10 +451,10 @@ summary(M1)
   head(engdeaths)
   dim(engdeaths)
   set.seed(5)
-  vs <- sample(nrow(engdeaths), 100)
-  N <- 6000
-  burn.in <- 1000
-  thin <- 10 
+  vs <- sample(nrow(engdeaths), 5)
+  N <- 25
+  burn.in <- 5
+  thin <- 1
   colnames(engdeaths)
   scol <- "spaceid"
   tcol <-  "Weeknumber"
@@ -463,32 +463,24 @@ summary(M1)
   ## Binomial distribution 
   f1 <- highdeathsmr ~  jsa + log10(houseprice) + log(popdensity) 
   
-  # Linear trend model 
   M1st_linear <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol,
    trials=nweek, W=Weng, model="linear", family="binomial", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M1st_linear)
-   M1st_anova <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
-   tcol=tcol, trials=nweek, W=Weng, model="anova", family="binomial", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
-   summary(M1st_anova)
-   M1st_anova_nointer <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
-   tcol=tcol, trials=nweek, W=Weng, model="anova", interaction=F, 
-   family="binomial", package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
-   summary(M1st_anova_nointer)
    M1st_sepspat <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
    tcol=tcol, trials=nweek, W=Weng, model="sepspatial", 
-   family="binomial", package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   family="binomial", package="CARBayesST", N=N, burn.in=burn.in, 
+   thin=thin, verbose=FALSE)
    summary(M1st_sepspat)
    M1st_ar <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol, 
    trials=nweek, W=Weng, model="ar", AR=1, family="binomial", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M1st_ar)
    # Model validation 
    M1st_ar.v <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
    tcol=tcol, trials=nweek, W=Weng, model="ar", AR=1, 
    family="binomial", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin, validrows=vs)
+   N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
    summary(M1st_ar.v)
    ## Binomial distribution using INLA
    model <- c("bym", "ar1")
@@ -510,15 +502,15 @@ summary(M1)
    tcol <-  "Weeknumber"
    M2st_linear <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
    W=Weng, model="linear", family="poisson", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin)
+   N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_linear)
    M2st_anova <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
    W=Weng, model="anova", family="poisson", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin)
+   N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_anova)
    M2st_anova_nointer <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
    tcol=tcol,  W=Weng, model="anova",interaction=F,  family="poisson", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_anova_nointer)
    M2st_sepspat <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
    tcol=tcol, W=Weng, model="sepspatial",family="poisson", 
@@ -526,14 +518,14 @@ summary(M1)
    summary(M2st_sepspat)
    M2st_ar <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
    W=Weng, model="ar", AR=1, family="poisson", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin)
+   N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_ar)
    M2st_ar.v <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
    W=Weng, model="ar", family="poisson", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=T)
+   N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
    M2st_anova.v <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
    tcol=tcol,  W=Weng, model="anova", family="poisson", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, validrows=vs)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
    summary(M2st_ar.v)
    summary(M2st_anova.v)
    
@@ -557,19 +549,20 @@ summary(M1)
    tcol <-  "Weeknumber"
    M3st_linear <- Bcartime(formula=f3, data=engdeaths, scol=scol, 
    tcol=tcol, W=Weng, model="linear", family="gaussian", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M3st_linear)
    M3st_anova <- Bcartime(formula=f3, data=engdeaths, scol=scol, 
    tcol=tcol, W=Weng, model="anova", family="gaussian", 
-   package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M3st_anova)
    M3st_anova_nointer <- Bcartime(formula=f3, data=engdeaths, 
    scol=scol, tcol=tcol, W=Weng, model="anova", interaction=F, 
-   family="gaussian", package="CARBayesST", N=N, burn.in=burn.in, thin=thin)
+   family="gaussian", package="CARBayesST", N=N, burn.in=burn.in, 
+   thin=thin, verbose=FALSE)
    summary(M3st_anova_nointer)
    M3st_ar <- Bcartime(formula=f3, data=engdeaths, scol=scol, tcol=tcol,
    W=Weng, model="ar", family="gaussian", package="CARBayesST", 
-   N=N, burn.in=burn.in, thin=thin)
+   N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M3st_ar)
    ## Gaussian distribution based modeling with INLA
    model <- c("bym", "iid")

@@ -25,8 +25,7 @@ print.bmstdr <- function(x, digits=3, ...)
   message("\n")
   
   if (exists("computation.time", x))  { #  Validation has been performed  
-    message("\nComputation time:\n")
-    print(x$computation.time)
+    cat(x$computation.time)
   }
   
 }
@@ -46,31 +45,30 @@ summary.bmstdr <- function(object, digits=3, ...)
 {
  
   if (object$package == "none") message("\n The ",  object$model, " model has been fitted using bmstdr code in R. \n")
-  else message("\n The ",  object$model, " model has been fitted using the ", object$package, " package.\n")
+  else cat("\n The ",  object$model, " model has been fitted using the ", object$package, " package.\n")
   
-  message("Call:\n")
+  cat("Call:\n")
   print(object$call)
 
   
   if (exists("computation.time", object))  { #  Validation has been performed  
-    message("\nComputation time:\n")
-    print(object$computation.time)
+    cat(object$computation.time)
   }
   
-  message("\nModel formula\n")
+  cat("\nModel formula\n")
   print(object$formula)
-  message("\n")
+  cat("\n")
   
-  message("\nParameter Estimates:\n")
+  cat("\nParameter Estimates:\n")
   print(round(object$params, digits = digits))
   
   if (exists("mchoice", object))  { # Model choice has been performed  
-    message("\nModel Choice Statistics:\n")
+    cat("\nModel Choice Statistics:\n")
     print(round(object$mchoice, digits = digits))
   }
   
   if (exists("stats", object))  { #  Validation has been performed  
-    message("\nValidation Statistics:\n")
+    cat("\nValidation Statistics:\n")
     print(round(unlist(object$stats), digits = digits))
   }
   
@@ -109,7 +107,7 @@ object$fitteds
 #' @method plot bmstdr
 #' @rdname plot.bmstdr 
 #' @export
-plot.bmstdr <- function(x, segments=T, ...) { 
+plot.bmstdr <- function(x, segments=TRUE, ...) { 
   old.par <- par()
   if (x$package == "spTimer")  {   
     plot(x$fit) 

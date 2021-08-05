@@ -195,15 +195,23 @@ estimated values of several Bayesian model choice criteria.
 }
 \examples{
 a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm")
-a <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, validrows=c(8,11,12,14,18,21,24,28))
-\donttest{
+summary(a)
+plot(a)
+print(a)
+b <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, 
+validrows=c(8,11,12,14,18,21,24,28))
+#' print(b)
+summary(b)
 ## Illustration with the nyspatial data set 
+N <- 25
+burn.in <- 5
+n.report <- 2 
 head(nyspatial)
 ## Linear regression model fitting 
 M1 <- Bspatial(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, mchoice=T)
 print(M1)
 plot(M1)
-residuals(M1)
+a <- residuals(M1)
 summary(M1)
 ## Spatial model fitting
 M2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
@@ -211,61 +219,27 @@ coordtype="utm", coords=4:5, phi=0.4, mchoice=T)
 names(M2)
 print(M2)
 plot(M2)
-residuals(M2)
+a <- residuals(M2)
 summary(M2)
 ##
 ##
-# Drawing a map of New York 
-library(ggplot2)
-library(ggsn)
-nymap <- map_data(database="state",regions="new york")
-head(nymap)
-s <- c(8,11,12,14,18,21,24,28) # 8 validation sites
-fcoords <- nyspatial[-s, c("Longitude", "Latitude")]
-vcoords <- nyspatial[s,  c("Longitude", "Latitude")]
-library(tidyr)
-label <- tibble(long = -76.1, lat = 41.5,
-label = "20 fitted (circles) & 8  \n  validation (numbered) sites")
-vsites8 <- ggplot() +
-geom_polygon(data=nymap, aes(x=long, y=lat, group=group),
-color="black", size = 0.6, fill=NA) +
-geom_point(data =fcoords, aes(x=Longitude,y=Latitude)) +
-geom_text(data=vcoords, aes(x=Longitude,y=Latitude, label=s), col=4) +
-labs( title= "28 air pollution monitoring sites in New York", x="Longitude", y = "Latitude") +
-geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
-geom_rect(mapping=aes(xmin=-80.2, xmax=-77.3, ymin=41, ymax=41.6), color="black", fill=NA) + 
-geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
-ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
-ggsn::north(data=nymap, location="topleft", symbol=12) 
-vsites8
-lmresults <- Bspatial(model="lm",formula=yo3~xmaxtemp+xwdsp+xrh, 
-data=nyspatial, coordtype="utm", coords=4:5, validrows= s) 
-phi1res <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-data=nyspatial, coordtype="utm", coords=4:5,validrows= s) 
-phi2res <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-data=nyspatial, coordtype="utm", coords=4:5,validrows= s, phi=2)
-phihalfres <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh,
- data=nyspatial, coordtype="utm", coords=4:5,validrows= s, phi=0.5)
- validation_results <- cbind(unlist(lmresults$stats), 
- unlist(phihalfres$stats),unlist(phi1res$stats), unlist(phi2res$stats))
- dimnames(validation_results)[[2]] <- c("lm", "phi=0.5", "phi=1", "phi=2")
- round(validation_results, 3)
+\donttest{
  # Use grid search to find optimal phi for spatial model fitting (M2)
  asave <- phichoice_sp()
  # optimal phi = 0.4
+ }
  # Fit model 2 on the square root scale 
  M2root <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
  data=nyspatial,  coordtype="utm", coords=4:5, scale.transform = "SQRT")
- plot(M2root)
+ summary(M2root)
  ## Spatial model fitting using spBayes 
  M3 <- Bspatial(package="spBayes", formula=yo3~xmaxtemp+xwdsp+xrh, 
  data=nyspatial, coordtype="utm", coords=4:5, prior.phi=c(0.005, 2), 
- mchoice=T)
+ mchoice=T, N=N, burn.in=burn.in, n.report=n.report)
  summary(M3)
  # Spatial model fitting using stan (with a small number of iterations)
  M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, 
- data=nyspatial, coordtype="utm", coords=4:5,phi=0.4, N=25, burn.in = 5, 
+ data=nyspatial, coordtype="utm", coords=4:5,phi=0.4, N=N, burn.in = burn.in, 
  mchoice=T)
  summary(M4)
  # Spatial model fitting using INLA
@@ -307,16 +281,11 @@ phihalfres <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh,
  prior.phi=c(0.005, 2))
  M5.v <- Bspatial(package="inla", formula=yo3~xmaxtemp+xwdsp+xrh, 
  data=nyspatial, coordtype="utm", coords=4:5, validrows=s)
- # Takes about 3 mins 
- M4.v <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, 
- data=nyspatial, coordtype="utm", coords=4:5,validrows=s, phi=0.4, 
- N=500, burn.in = 250)
  # Collect all the results 
  Mall.table <- cbind(unlist(M1.v$stats), unlist(M2.v$stats), 
- unlist(M3.v$stats), unlist(M4.v$stats), unlist(M5.v$stats))
- colnames(Mall.table) <- paste("M", 1:5, sep="")
+ unlist(M3.v$stats), unlist(M5.v$stats))
+ colnames(Mall.table) <- paste("M", c(1:3, 5), sep="")
  round(Mall.table, 3)
- }
 }
 \seealso{
 \code{\link{Bsptime}} for Bayesian spatio-temporal model fitting.

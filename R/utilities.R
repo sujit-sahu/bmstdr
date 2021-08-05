@@ -660,14 +660,14 @@ fancy.time<-function(t)
   if(t < 60){
     t <- round(t ,2)
     tt <- paste(t ," - Sec.")
-    message(paste("##\n# Total time taken::",t,"Sec.\n##\n"))
+    # message(paste("##\n# Total time taken::",t,"Sec.\n##\n"))
   }
   #
   if(t < (60*60) && t >= 60){
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t1," - Mins.",t," - Sec.")
-    message(paste("##\n# Total time taken::",t1,"Min.",t,"Sec.\n##\n"))
+    # message(paste("##\n# Total time taken::",t1,"Min.",t,"Sec.\n##\n"))
   }
   #
   if(t < (60*60*24) && t >= (60*60)){
@@ -676,7 +676,7 @@ fancy.time<-function(t)
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t2," - Hour/s.",t1," - Mins.",t," - Sec.")
-    message(paste("##\n# Total time taken::",t2,"Hour/s.",t1,"Min.",t,"Sec.\n##\n"))
+    # message(paste("##\n# Total time taken::",t2,"Hour/s.",t1,"Min.",t,"Sec.\n##\n"))
   }
   #
   if(t >= (60*60*24)){
@@ -687,9 +687,9 @@ fancy.time<-function(t)
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t3," - Day/s.",t2," - Hour/s.",t1," - Mins.",t," - Sec.")
-    message(paste("##\n# Total time taken::",t3,"Day/s.",t2,"Hour/s.",t1,"Mins.",t,"Sec.\n##\n"))
+    # message(paste("##\n# Total time taken::",t3,"Day/s.",t2,"Hour/s.",t1,"Mins.",t,"Sec.\n##\n"))
   }
-  #
+  tt <- paste("##\n# Total time taken::", tt, sep=" ")
   tt
 }
 
