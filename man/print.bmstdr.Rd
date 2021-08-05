@@ -13,6 +13,9 @@
 
 \item{...}{Any other additional arguments}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Provides basic information regarding the fitted model.
 }

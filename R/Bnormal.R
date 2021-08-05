@@ -15,9 +15,10 @@
 #' @param N is the number of Gibbs sampling iterations
 #' @param burn.in is the number of initial iterations to discard before 
 #' making inference. 
+#' @param rseed is the random number seed defaults to 44. 
 #' @return A list containing the exact posterior means and variances of theta and sigma2
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' Bnormal(kprior=1, prior.M=1, prior.sigma2=c(2,1))
 #' Bnormal(mu0=0) ## non-informative prior
 #' # Start creating table 
@@ -49,11 +50,11 @@
 #' } 
 #' @export
 Bnormal <- function(package="exact", y=ydata, mu0=mean(y), kprior=0, prior.M=0.0001, 
-                     prior.sigma2=c(0, 0),  N=2000, burn.in=1000){
+                     prior.sigma2=c(0, 0),  N=2000, burn.in=1000, rseed=44){
   if (!is.vector(y)) {
     stop("The argument must be a vector\n")
   }
-  
+  set.seed(rseed)
   implemented <- c("exact",  "RGibbs", "stan", "inla")
   a <- grepl(package,  x=implemented, ignore.case = TRUE)
   if (any(a)) { 
@@ -62,17 +63,17 @@ Bnormal <- function(package="exact", y=ydata, mu0=mean(y), kprior=0, prior.M=0.0
  
   if (package=="exact") { 
      results <- normal_theta_sigma2_exact(y=y, mu0=mean(y), kprior=kprior,prior.M=prior.M, prior.sigma2=prior.sigma2)
-     cat("Results from exact methods\n")
+     message("Results from exact methods.\n")
   } else if (package=="RGibbs") { 
     results <- normal_theta_sigma2_gibbs(y=y, mu0=mean(y), kprior=kprior,  prior.M=prior.M, prior.sigma2=prior.sigma2, N=N)   
-    cat("Results from Gibbs sampler coded in R\n")
+    message("Results from Gibbs sampler coded in R.\n")
   } else if (package=="stan") { 
     results <- normal_theta_sigma2_by_stan(y, mu0=mean(y), kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2, N=N, burn.in=burn.in) 
-    cat("Results from Hamiltonian Monte Carlo in Stan\n")
+    message("Results from Hamiltonian Monte Carlo in Stan.\n")
   } else if (package=="inla") {   
     results <- normal_theta_sigma2_by_inla(y, mu0=mean(y), kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2, N=N)  
-    cat("Results from INLA\n")
-  } else { stop("method or package not implemented")}
+    message("Results from INLA.\n")
+  } else { stop("Either the method or package has not been implemented")}
   results
 }
 ## N(theta, sigma^2) example computed using several methods
@@ -131,7 +132,7 @@ normal_theta_sigma2_gibbs <- function(y=ydata, mu0=mean(y), kprior=0, prior.M=0.
 
   theta[1] <- ybar ## Any reasonable starting value will do
   sigma2[1] <- 1  ## Any reasonable starting value will do
-  set.seed(44) ## Set the random number seed to reproduce results
+  # set.seed(44) ## Set the random number seed to reproduce results
   for (j in 1:(N-1)) {
     theta[j+1] <- rnorm(n=1, mean=mup, sd=sqrt(sigma2[j]/(n+prior.M)))
     u <-  prior.sigma2[2] + 0.5  * ( sum((y-theta[j+1])^2) + prior.M * (theta[j+1] - mu)^2)  ## Keep this
@@ -212,7 +213,7 @@ normal_theta_sigma2_by_inla <- function(y=ydata, mu0=mean(y), kprior=1, prior.M=
   s2y <- var(y)
   mu <- mu0 + kprior * sqrt(s2y/n) # prior mean
 
-  set.seed(44)
+  # set.seed(44)
   ydf <- data.frame(y=y)
   formula <- y~1
   hyper <- list(prec=list(prior="loggamma",param=prior.sigma2))

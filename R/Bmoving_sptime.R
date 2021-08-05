@@ -1,10 +1,10 @@
 #' Model fitting and validation for spatio-temporal data from moving sensors in time. 
 #' @inheritParams Bsptime
 #' @param coords A vector of size 2 giving the column numbers of the data 
-#' frame which contain the coordinates of the locations.  
+#' frame which contain the coordinates of the lomessageions.  
 #' @param validrows Either a number of randomly selected data rows to validate
 #' or a vector giving the row numbers of the data set for validation.
-#' @param predspace A 0-1 flag indicating whether spatial predictions are to be made.
+#' @param predspace A 0-1 flag indimessageing whether spatial predictions are to be made.
 #' @param newdata A new data frame with the same column structure as the model fitting data set. 
 #' @seealso \code{\link{Bsptime}} for spatio-temporal  model fitting.
 #' @return A list containing:
@@ -28,13 +28,13 @@
 #'    the model.  
 #'    \item scale.transform  -   The transformation adopted by the 
 #'     input argument with the same name.  
-#'    \item sn   -   The number of data locations used in fitting.  
-#'    \item tn   -   The number of time points used in fitting for each location.  
+#'    \item sn   -   The number of data lomessageions used in fitting.  
+#'    \item tn   -   The number of time points used in fitting for each lomessageion.  
 #'    \item computation.time  -   Computation time required 
 #'    to run the model fitting.     
 #' }
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 #' deep$x2inter <- deep$xinter*deep$xinter
 #' deep$month <- factor(deep$month)
@@ -62,14 +62,14 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
                         scale.transform ="NONE",
                         ad.delta = 0.80,  t.depth=12,   s.size=0.01,  
                         N=2500,   burn.in=1000,    no.chains=1,  
-                        validrows = 10, predspace =F, newdata=NULL, 
-                        mchoice=TRUE,   plotit=FALSE,   rseed=44,   verbose=T, 
+                        validrows = 10, predspace =FALSE, newdata=NULL, 
+                        mchoice=TRUE,   plotit=FALSE,   rseed=44,   verbose=TRUE, 
                         knots.coords = NULL,  g_size = 5)
 {
   start.time<-proc.time()[3]
   set.seed(rseed)
   dcoords <- data[, coords]
-  ## For predictions at new locations 
+  ## For predictions at new lomessageions 
   
   data$mod <- 1 ## Flag for modelling data
   data$val <- 0
@@ -84,14 +84,15 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   vdat <-  data[validrows, ]
   
   if (predspace) { 
-    cat("For spatial predictions make sure the new data fore prediction is in \n 
-        exact same form as fitting data. Otherwise this method will not work.")
+    message("For spatial predictions make sure the new data for prediction is in 
+        the exact same form as fitting data. Otherwise this method will not work.")
     newdata$mod <- 0
     newdata$val <- 0
     r1 <- ncol(data)
     r2 <- ncol(newdata)
-    if (r1 !=r2) stop("new data for predictions should have the same number of columns as the modelling data")
-    newdata$mod <- 0 ## these data won't be modelled 
+    if (r1 !=r2) stop("new data for predictions should have the 
+                      same number of columns as the modelling data")
+    newdata$mod <- 0 ## these data won't be modeled 
     newdata$val <- 0
     
     a <- rbind(data, newdata)
@@ -108,7 +109,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   ## For knots 
   kmn <- length(knots.coords[,1]) ## length of supplied knots.coords
   gmn <- length(g_size) ## length of given  grid size
-    #  cat("kmn= ", kmn, " gmn =", gmn, "\n")
+    #  message("kmn= ", kmn, " gmn =", gmn, "\n")
     if (gmn ==1) g_size <- rep(g_size, 2)
     if ( (kmn ==0) & (gmn ==0))
       stop("Need either the knots (knots.coords) or the grid size (g_size) for the GPP model")
@@ -127,17 +128,17 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
     
     b <- c(t(knots.coords)) # b is a vector of longs/lats
     n <- nrow(dcoords)
-    B <- matrix(rep(b, each=n), nrow=n) # Replicates B as rows n times 
+    B <- matrix(rep(b, each=n), nrow=n) # Replimessagees B as rows n times 
     a <- cbind(dcoords, B) 
     rd <- apply(a, 1, row_dists, coordtype=coordtype)
     Cdist <- t(rd)
     m <- nrow(knots.coords)
     dmat <- dist_mat(knots.coords, coordtype)
-    max(dmat)
+    # max(dmat)
     max.d <- max(Cdist)
 
-  head(data)
-  dim(data)
+  # head(data)
+  # dim(data)
   
   nvec <- data$time 
   a <- table(nvec)
@@ -153,7 +154,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   ontime <- length(k)
   
   if (ontime<tn) { 
-    cat("There are missing times\n")
+    message("There are missing times\n")
     misst <- alltime[-k]
     } else misst <- NULL
   
@@ -190,7 +191,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   summary(y)
   vdaty <- y[data$val>0]  ## Saving the y's for validations 
   y[data$val>0] <- NA ## setting the validations to NA
-  summary(y)
+  # print(summary(y))
  
  ## Figure out which values of y are missing
  
@@ -262,7 +263,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   p <- ncol(X)
   missing <- 0
   if (ntmiss>0) missing <- 1
-  print(prior.phi.param)
+  # print(prior.phi.param)
   
   datatostan <- list(n=n, tn=tn, m2=nrow(knots.coords), p=p, 
                      missing=missing,  ntmiss=ntmiss, ntobs = ntobs, 
@@ -280,7 +281,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
     # variations will work as well
     list(sigma_sq = 1, tau_sq=1, beta=rep(0, p), phi=mean(prior.phi.param))
   }
-  cat("ATTENTION: this run can be computationally intensive!\n")
+  message("ATTENTION: this run can be computationally intensive!\n")
  
   mfit <- rstan::sampling(stanmodels$ind_gpp_marginal, data=datatostan,  seed =rseed, init=initfun,
                            chains = no.chains, iter = N, warmup = burn.in,
@@ -307,7 +308,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   if (verbose)  print(allres$params$summary)
   
   if (nvalid>0) {
-    cat("validating ", length(vdaty), " space time observations", "\n")
+    message("validating ", length(vdaty), " space time observations", "\n")
   
     # a <- cbind(missing_flag, val_flag)
     # b <- a[a[,1]>0, ]
@@ -332,7 +333,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
     
   }
   if (predspace) {
-    cat("Retrieving the requested predictions \n")
+    message("Retrieving the requested predictions \n")
     
     ypreds <- listofdraws$z_miss[, pindex]
     if (scale.transform == "SQRT") ypreds <-  ypreds^2
@@ -347,7 +348,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
     ## logliks <- loo::extract_log_lik(gp_fit_stan)
     ## allres$mchoice <- loo::waic(logliks)
   
-    cat("Calculating model choice statistics\n")
+    message("Calculating model choice statistics\n")
     v <- logliks_from_moving_gpp_marginal_stanfit (y=ynavec, d=datatostan, stanfit=mfit)
     waic_results <- calculate_waic(v$loglik)
     dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
@@ -386,7 +387,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   comp.time<-end.time-start.time
   comp.time<-fancy.time(comp.time)
   allres$computation.time<-comp.time
-  print(comp.time)
+  message(comp.time)
   
   allres
 }
@@ -468,9 +469,9 @@ logliks_from_moving_gpp_marginal_stanfit <- function(y, d, stanfit) {
           logden_contr <- dnorm(zt[1], mean=mut[1], sd =sqrt(sigma2+tau2), log=T)  
         }
         u <- u +  logden_contr
-        # cat("i=", i, " logden= ", logden_contr, "\n")
-     #   cat("i=", i, " mean= ", condmean, "\n")
-      #  cat("i=", i, " var= ", condvar, "\n")
+        # message("i=", i, " logden= ", logden_contr, "\n")
+     #   message("i=", i, " mean= ", condmean, "\n")
+      #  message("i=", i, " var= ", condvar, "\n")
         
         cond_mean_vec[d$start_row[i]:d$fin_row[i]] <- condmean
         cond_var_vec[d$start_row[i]:d$fin_row[i]] <- condvar

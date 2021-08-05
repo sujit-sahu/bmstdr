@@ -10,9 +10,7 @@ and deep (975 to 1025 meters) during 2003.}
 An object of class \code{data.frame} with 6978 rows and 11 columns.
 }
 \source{
-Sahu, S. K. and Challenor, P. (2008) A space-time model for 
-joint modeling of ocean temperature and salinity levels as measured by Argo floats, 
- Environmetrics, volume 19, pages  509--528.
+\insertCite{SahuandChallenor2008;textual}{bmstdr}
  @format A data frame with 6978 rows and 11 columns:
 \describe{
  \item{lon}{Longitude of the argo float}
@@ -36,7 +34,6 @@ three layers of depth: surface (less than 50 meters),  mid-layer (between 475-52
 and deep (975 to 1025 meters) during 2003.
 }
 \examples{
-\dontrun{
  head(argo_floats_atlantic_2003)
  # Data for the surface layer 
  surface <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==1, ] 
@@ -45,5 +42,7 @@ and deep (975 to 1025 meters) during 2003.
  # Data at the deep ocean 
  deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]  
 }
+\references{
+\insertAllCited{}
 }
 \keyword{datasets}

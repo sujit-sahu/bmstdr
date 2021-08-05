@@ -13,7 +13,8 @@ Bmchoice(
   kprior = 1,
   prior.M = 1,
   prior.sigma2 = c(2, 1),
-  N = 10000
+  N = 10000,
+  rseed = 44
 )
 }
 \arguments{
@@ -41,11 +42,16 @@ mean is from the data mean. Default value is 0.}
 \item{prior.sigma2}{Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision.}
 
 \item{N}{The number of samples to generate.}
+
+\item{rseed}{The random number seed. Defaults to 44 to reproduce the results
+in the book  \insertCite{Sahubook;textual}{bmstdr}.}
 }
 \value{
 A list containing the exact values of pdic, dic, pdicalt, dicalt,
  pwaic1, waic1, pwaic2, waic2, gof, penalty and pmcc.
  Also prints out the posterior mean and variance.
+ @references
+\insertAllCited{}
 }
 \description{
 Model choice criteria calculation for univariate 

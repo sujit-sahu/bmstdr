@@ -30,18 +30,18 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   miss <- which(is.na(y))
   nmiss <- length(miss)
   if (length(miss)>0) { # Impute the missing observations
-    omean <- mean(y, na.rm=T)
+    omean <- mean(y, na.rm=TRUE)
     y[miss] <- omean
-    cat("Replaced ", nmiss,  " missing observations by the grand mean of the data\n")
+    message("Replaced ", nmiss,  " missing observations by the grand mean of the data\n")
   }
   if (scale.transform == "SQRT") { 
-    if (min(y, na.rm=T) < 0) stop("Can't use the square root transformation. \n 
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the square root transformation. \n 
                                 There are negative observations.") 
     else y <- sqrt(y)
   } 
 
   if (scale.transform == "LOG") {
-    if (min(y, na.rm=T) < 0) stop("Can't use the log transformation. \n 
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the log transformation. \n 
                                   There are negative observations. \n") 
     else y <- log(y)
   } 
@@ -111,7 +111,7 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     v <- t(sqrtmat) %*% v
     dim(v)
     sigmas <- sqrt(sigma2.samples)
-    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=TRUE)
     # sigmamat[, 1:5]
     # sigmas[1:4]
     betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
@@ -174,7 +174,7 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   
   ## validation statistics
   if (nvalid>0) { # Perform validation if there are sites set up for validation
-    cat("validating ", length(vdaty), " space time observations", "\n")
+    message("validating ", length(vdaty), " space time observations", "\n")
     k <- nrow(vdat)
     deltasquare <- diag(1, k, k)
     meanpred <- xpreds %*% betastar
@@ -193,8 +193,8 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
       upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
       # predsums <- data.frame(meanpred=meanpred,  sdpred=sdpred, medianpred=meanpred, low=low, up=upr)
       predsums <- get_validation_summaries(t(ypreds))
-      rmseBlm  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
-      maeBlm <- mean(abs(vdaty-meanpred), na.rm=T)
+      rmseBlm  <- sqrt(mean((vdaty-meanpred)^2, na.rm=TRUE))
+      maeBlm <- mean(abs(vdaty-meanpred), na.rm=TRUE)
       cvgBlm <- spT.pCOVER(vdaty, zup=upr, zlow=low)
       tmp <- cbind(vdaty,ypreds)
       tmp <- na.omit(tmp)
@@ -233,8 +233,8 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
 Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordtype="utm", coords=4:5,
                        scale.transform ="SQRT", phi.s=NULL, phi.t =NULL,
                        prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2, 1),
-                       verbose =T,  plotit=TRUE,
-                       N=1000, validrows=NULL, mchoice=T, rseed=44){
+                       verbose =TRUE,  plotit=TRUE,
+                       N=1000, validrows=NULL, mchoice=TRUE, rseed=44){
     ##
   
  
@@ -308,20 +308,20 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   miss <- which(is.na(y))
   nmiss <- length(miss)
   if (length(miss)>0) { # Impute the missing observations
-    cat("This model fitting method cannot handle missing data\n")
-    omean <- mean(y, na.rm=T)
+    message("This model fitting method cannot handle missing data\n")
+    omean <- mean(y, na.rm=TRUE)
     y[miss] <- omean 
-    cat("Replaced ", nmiss,  " missing observations by the grand mean of the data.\n 
+    message("Replaced ", nmiss,  " missing observations by the grand mean of the data.\n 
         Because this function cannot handle missing values.\n")
   }
   if (scale.transform == "SQRT") { 
-    if (min(y, na.rm=T) < 0) stop("Can't use the square root transformation. \n Negative values in response.") 
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the square root transformation. \n Negative values in response.") 
     else y <- sqrt(y)
   } 
   
   
   if (scale.transform == "LOG") {
-    if (min(y, na.rm=T) < 0) stop("Can't use the log transformation. \n Negative values in response.") 
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the log transformation. \n Negative values in response.") 
     else y <- log(y)
   } 
   
@@ -334,7 +334,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
 
   XHinv <- matrix(0, p, sn*tn)
   for (k in 1:p) {
-    Xs <- matrix(X[,k], byrow=T, ncol=tn)
+    Xs <- matrix(X[,k], byrow=TRUE, ncol=tn)
     # print(dim(scov))
     # print(dim(Xs))
     temp1 <- invscov %*% Xs
@@ -353,7 +353,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   # mod1 <- lm(formula=y~-1+X)
   #round(cbind(mod1$coefficients,  betastar), 3) ## Estimates change
   ## Error here
-  ymat <- matrix(y, byrow=T, ncol=tn)
+  ymat <- matrix(y, byrow=TRUE, ncol=tn)
   temp1 <- invscov %*% ymat
   temp <- temp1 %*% invtcov
   ytHinv <- as.vector(t(temp))
@@ -414,7 +414,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
     v <- t(sqrtmat) %*% v
     # dim(v)
     sigmas <- sqrt(sigma2.samples)
-    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=TRUE)
     betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
     betasamples  <- v * sigmamat + betamat
     ###
@@ -488,7 +488,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   
   
   if (r>0) { ## We are performing validation
-    cat("validating ", length(vdaty), " space time observations", "\n")
+    message("validating ", length(vdaty), " space time observations", "\n")
 
     S <- exp(-phi.s * alldistmat)
     S12 <-  as.matrix(S[1:r, (r+1):(r+sn)]) # is r by n
@@ -498,7 +498,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
 
     fitmeans <- X %*% as.vector(betastar)
     errbs <- y - fitmeans
-    materrbs <- matrix(errbs, byrow=T, ncol=tn) ## This is sn by tn
+    materrbs <- matrix(errbs, byrow=TRUE, ncol=tn) ## This is sn by tn
 
     # Here is the additional contribution to the mean from Kriging
     # print(dim(S12))
@@ -553,8 +553,8 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
     upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
     predsums <- data.frame(meanpred=meanpred, sdpred=sdpred, medianpred=meanpred,  low=low, up=upr)
     # predsums <- get_validation_summaries(t(ypreds))  # Alternative using sampling  
-    rmseBsp  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
-    maeBsp <- mean(abs(vdaty-meanpred), na.rm=T)
+    rmseBsp  <- sqrt(mean((vdaty-meanpred)^2, na.rm=TRUE))
+    maeBsp <- mean(abs(vdaty-meanpred), na.rm=TRUE)
     cvgBsp <- cal_cvg(vdaty, yup=upr, ylow=low)
     tmp <- cbind(vdaty,ypreds)
     tmp <- na.omit(tmp)
@@ -599,15 +599,15 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
                            prior.sigma.eta =c(2, 0.001),
                            prior.phi.param = NULL, phi.tuning =NULL, 
                            cov.model="exponential", 
-                           verbose =T, plotit=FALSE,        
+                           verbose =TRUE, plotit=FALSE,        
                            N=2000,  burn.in=N-999, n.report=N/2, 
-                           validrows=NULL, mchoice=T,  rseed=44) {
+                           validrows=NULL, mchoice=TRUE,  rseed=44) {
   ###
  
   nvalid <- length(validrows)
   if (length(coords)==2) coords <-  as.matrix(unique(data[, coords]))
   
- #  cat("I am here\n")
+ #  message("I am here\n")
   sn <- nrow(coords)
   n <- nrow(data)
   tn <- n/sn
@@ -626,10 +626,10 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   
  
   p <- ncol(X)
-  xmat <- matrix(X[,2], byrow=T, ncol=tn)
+  xmat <- matrix(X[,2], byrow=TRUE, ncol=tn)
   if (p > 2) {
     for (j in 2:length(xnames)) {
-        a <- matrix(X[,j+1], byrow=T, ncol=tn)
+        a <- matrix(X[,j+1], byrow=TRUE, ncol=tn)
         xmat <- cbind(xmat, a)
     }
   }
@@ -663,19 +663,19 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     vdat <- data[val_flag>0, ]
   }
   
-  ymat <- matrix(y, byrow=T, ncol=tn)
+  ymat <- matrix(y, byrow=TRUE, ncol=tn)
   dimnames(ymat)[[2]] <- paste(vnames[1], 1:tn, sep=".")
   
 
   if (scale.transform == "SQRT") { 
-    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the square root transformation.  
+    if (min(c(ymat), na.rm=TRUE) < 0) stop("Can't use the square root transformation.  
             \n Negative observations are there in the response. ") 
     else ymat <- sqrt(ymat)
   } 
   
   
   if (scale.transform == "LOG") {
-    if (min(c(ymat), na.rm=T) < 0) stop("Can't use the log transformation. 
+    if (min(c(ymat), na.rm=TRUE) < 0) stop("Can't use the log transformation. 
     \n Negative observations are there in the response.") 
     else ymat <- log(ymat)
   } 
@@ -728,9 +728,9 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   means <- apply(ysamples, 1, mean)
   allres$fitteds <- as.vector(means)
   
-  if (mchoice==T) {
+  if (mchoice==TRUE) {
   vars <- apply(ysamples, 1, var)
-  gof <- sum((y-means)^2, na.rm=T)
+  gof <- sum((y-means)^2, na.rm=TRUE)
   penalty <- sum(vars[!is.na(y)]) 
   pmcc <- gof+penalty
   pmcc_results <- list(gof=gof, penalty=penalty, pmcc=pmcc)
@@ -754,7 +754,7 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
 
 
-    cat("validating ", length(vdaty), " space time observations", "\n")
+    message("validating ", length(vdaty), " space time observations", "\n")
     a <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
     predsums <- get_validation_summaries(t(ypreds))
 
@@ -830,7 +830,7 @@ yobs <- y[data_obs_idx]
 
 
 if (scale.transform == "SQRT") { 
-  if (min(yobs, na.rm=T) < 0) stop("Can't use the square root transformation.  
+  if (min(yobs, na.rm=TRUE) < 0) stop("Can't use the square root transformation.  
             \n Negative observations are there in the response. ") 
   yobs <- sqrt(yobs)
   ynavec <- sqrt(ynavec)  ## keeps the modelling y's
@@ -838,7 +838,7 @@ if (scale.transform == "SQRT") {
 
 
 if (scale.transform == "LOG") {
-  if (min(yobs, na.rm=T) < 0) stop("Can't use the log transformation. 
+  if (min(yobs, na.rm=TRUE) < 0) stop("Can't use the log transformation. 
     \n Negative observations are there in the response.") 
   yobs <- log(yobs)
   ynavec <- log(ynavec) ## keeps the modelling y's
@@ -879,10 +879,10 @@ datatostan <- list(sn=sn, tn=tn, nT=nT, p=p, ntmiss=ntmiss, ntobs = ntobs, missi
 initfun <- function() {
   list(sigma_sq = 1, tau_sq=1, beta=rep(0, p), phi =mean(prior.phi.param))
 }
-# cat("You must keep the supplied file gp_marginal.stan in the sub-folder stanfiles\n")
-# cat("below the current working directory, getwd(). It will give an error if the file is not found.\n")
-cat("ATTENTION: the run is likely to be computationally intensive!\n")
-cat("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
+# message("You must keep the supplied file gp_marginal.stan in the sub-folder stanfiles\n")
+# message("below the current working directory, getwd(). It will give an error if the file is not found.\n")
+message("ATTENTION: the run is likely to be computationally intensive!\n")
+message("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
 # gp_fit_stan <- rstan::stan(data=datatostan, file = "gp_marginal.stan", seed =rseed, init=initfun,
 #                      chains = no_chains, iter = N, warmup = burn.in,
 # 		     control = list(adapt_delta = ad.delta, stepsize=s.size, max_treedepth=t.depth))
@@ -919,7 +919,7 @@ if (verbose)  print(allres$params)
   if (mchoice) {
       ## logliks <- loo::extract_log_lik(gp_fit_stan)
       ## allres$mchoice <- loo::waic(logliks)
-      cat("Calculating model choice statistics\n")
+      message("Calculating model choice statistics\n")
       v <- logliks_from_gp_marginal_stanfit(y=ynavec, X=X, sn=sn, tn=tn,  distmat=alldistmat, stanfit=gp_fit_stan)
       waic_results <- calculate_waic(v$loglik)
       dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
@@ -932,7 +932,7 @@ if (verbose)  print(allres$params)
   }
     
 if (nvalid>0) {
-  cat("validating ", length(vdaty), " space time observations", "\n")
+  message("validating ", length(vdaty), " space time observations", "\n")
   listofdraws <- rstan::extract(gp_fit_stan)
 
   a <- cbind(missing_flag, val_flag)
@@ -1003,7 +1003,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   all.locs <- matrix(rep(coords, each=tn), byrow=F, ncol=2) ## can come from data columns too
 
   if (nvalid >0) {
-  # cat("Will perform validation\n")
+  # message("Will perform validation\n")
   val_flag <- rep(0, sn*tn)
   val_flag[validrows] <- 1
   vdaty <- y[val_flag>0]
@@ -1012,13 +1012,13 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   }
   
   if (scale.transform == "SQRT") { 
-    if (min(y, na.rm=T) < 0) stop("Can't use the square root transformation.  
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the square root transformation.  
             \n Negative observations are there in the response. ") 
     else y <- sqrt(y)
   } 
   
   if (scale.transform == "LOG") {
-    if (min(y, na.rm=T) < 0) stop("Can't use the log transformation. 
+    if (min(y, na.rm=TRUE) < 0) stop("Can't use the log transformation. 
     \n Negative observations are there in the response.") 
     else y <- log(y)
   } 
@@ -1081,13 +1081,13 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   # newformula	<- y ~ -1 + Xcov + f(spatial.field, model = spde, group=spatial.field.group, control.group=list(model="ar1"))
 
 
-  cat("ATTENTION: this INLA run is likely to be computationally intensive!\n")
+  message("ATTENTION: this INLA run is likely to be computationally intensive!\n")
  
   ifit <- inla(newformula, data=inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
                control.predictor=list(A=inla.stack.A(stack), compute=TRUE),
                control.compute = list(config = TRUE, dic = mchoice, waic = mchoice))
-  cat("Finished INLA fitting \n")
+  message("Finished INLA fitting \n")
 
   # Fixed effects betas
   fixed.out <- round(ifit$summary.fixed,3)
@@ -1133,7 +1133,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   a <- grepl("Range", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if ( any(a) ) { 
-    #cat("I am here")
+    #message("I am here")
     range.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     phi.samp 		<- 3/range.samp
     summary(phi.samp)
@@ -1156,7 +1156,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     n <- length(y)
     means <- ifit$summary.fitted.values$mean[1:n]
     vars <- (ifit$summary.fitted.values$sd[1:n])^2
-    gof <- sum((y-means)^2, na.rm=T)
+    gof <- sum((y-means)^2, na.rm=TRUE)
     penalty <- sum(vars[!is.na(y)])
     
     #allres$mchoice <- list(pdic=unlist(ifit$dic$p.eff), dic=unlist(ifit$dic$dic), 
@@ -1175,7 +1175,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   
   ###
   if (nvalid>0) {  
-   cat("validating ", length(vdaty), " space time observations", "\n")
+   message("validating ", length(vdaty), " space time observations", "\n")
    #u <- ifit$summary.fitted.values
   # fits <- u[1:(tn*sn), ]
    # v <- data.frame(y, fits)
@@ -1186,8 +1186,8 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     #dimnames(predsums)[[2]] <- c("meanpred",  "sdpred", "low", "medianpred", "up", "mode")
     #predsums <- predsums[, c("meanpred", "sdpred", "medianpred", "low", "up")]
     ## New code 
-    #rmse  <- sqrt(mean((vdaty - predsums$meanpred)^2, na.rm=T))
-    #mae <- mean(abs(vdaty - predsums$meanpred), na.rm=T)
+    #rmse  <- sqrt(mean((vdaty - predsums$meanpred)^2, na.rm=TRUE))
+    #mae <- mean(abs(vdaty - predsums$meanpred), na.rm=TRUE)
     #cvg <- cal_cvg(vdaty=vdaty, ylow=predsums$low, yup=predsums$up)
   
     ypreds <- matrix(NA,  nrow=nvalid, ncol=N-burn.in)
@@ -1209,7 +1209,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     }
     predsums <- get_validation_summaries(t(ypreds))
     b <- calculate_validation_statistics(vdaty, ypreds)
-   #cat("dim predsums", dim(valframe), "dim predsums ", dim(predsums), "\n")
+   #message("dim predsums", dim(valframe), "dim predsums ", dim(predsums), "\n")
     yvalidrows <- data.frame(valframe,  predsums)
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
@@ -1233,7 +1233,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
                            phi.tuning=NULL, phi.npoints=NULL,
                             rhotp = 0, cov.fnc="exponential", truncation.para = NULL, 
                             N=5000, burn.in=1000, plotit=TRUE, n.report=10, 
-                            mchoice=T, verbose=T, rseed=44) {
+                            mchoice=TRUE, verbose=TRUE, rseed=44) {
   ###
   ###
 
@@ -1315,7 +1315,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
   } 
 
   data$ynavec <- ynavec
-  #  options(warn=-1)
+ 
 
   newformula <- update(formula, ynavec ~ .)
   # library(spTDyn)
@@ -1333,7 +1333,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
   if (verbose) print(round(allres$params, 3))
 
   if (mchoice) {
-    cat("Calculating model choice statistics\n")
+    message("Calculating model choice statistics\n")
     pmcc_results <- list(gof=fit$PMCC[1], penalty=fit$PMCC[2], pmcc=fit$PMCC[3])
     
     sptimermod <- c(unlist(pmcc_results))
@@ -1344,7 +1344,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
   if (nvalid>0) {
     
     itmax <- fit$iterations - fit$nBurn
-    cat("validating ", nvalid, " space time observations", "\n")
+    message("validating ", nvalid, " space time observations", "\n")
     
     a <- matrix(rnorm(nvalid*itmax), nrow=nvalid, ncol=itmax)
     if  (model=="truncated") { 
@@ -1415,7 +1415,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
                             time.data = NULL, newcoords = NULL, newdata =NULL,
                             truncation.para = NULL, annual.aggrn = "NONE",
                             N=5000, burn.in=1000, plotit=TRUE,
-                            mchoice=T, verbose=T, rseed=44,
+                            mchoice=TRUE, verbose=TRUE, rseed=44,
                             g_size = NULL, knots.coords = NULL, n.report=10) {
   ###
   ###
@@ -1485,7 +1485,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   if ( (model == "GPP") || (model=="truncatedGPP") )  {
     kmn <- length(knots.coords[,1]) ## length of supplied knots.coords
     gmn <- length(g_size) ## length of given  grid size
-    #  cat("kmn= ", kmn, " gmn =", gmn, "\n")
+    #  message("kmn= ", kmn, " gmn =", gmn, "\n")
     if (gmn ==1) g_size <- rep(g_size, 2)
     if ( (kmn ==0) & (gmn ==0))
       stop("Need either the knots (knots.coords) or the grid size (g_size) for the GPP model")
@@ -1557,7 +1557,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   allres$fitteds <- fits[,1] 
   
   if (mchoice) {
-    cat("Calculating model choice statistics\n")
+    message("Calculating model choice statistics\n")
     pmcc_results <- list(gof=gp_fit$PMCC[1], penalty=gp_fit$PMCC[2], pmcc=gp_fit$PMCC[3])
     
     if (model=="GP")  {
@@ -1575,7 +1575,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   if (nvalid>0) {
  
     itmax <- gp_fit$iterations-gp_fit$nBurn
-    cat("validating ", nvalid, " space time observations", "\n")
+    message("validating ", nvalid, " space time observations", "\n")
     
     
     a <- matrix(rnorm(nvalid*itmax), nrow=nvalid, ncol=itmax)
@@ -1588,8 +1588,8 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     } else if (model=="GPP") {
       ## Generating the ypreds by approximation from the fitteds
       v <- fitted(gp_fit)[val_flag>0,]
-      meanmat <- matrix(rep(v$Mean, each=itmax), byrow=T, ncol=itmax)
-      sigemat <- matrix(rep(v$SD, each=itmax), byrow=T, ncol=itmax) 
+      meanmat <- matrix(rep(v$Mean, each=itmax), byrow=TRUE, ncol=itmax)
+      sigemat <- matrix(rep(v$SD, each=itmax), byrow=TRUE, ncol=itmax) 
       ypreds <- meanmat + a * sigemat
     } else {
       ovalues <- gp_fit$op

@@ -9,7 +9,8 @@ the decay parameter phi.}
 phichoice_sp(
   phis = seq(from = 0.1, to = 1, by = 0.1),
   s = c(8, 11, 12, 14, 18, 21, 24, 28),
-  ...
+  ...,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -18,6 +19,8 @@ phichoice_sp(
 \item{s}{A vector giving the validation sites}
 
 \item{...}{Any additional parameter that may be passed to \code{Bspatial}}
+
+\item{verbose}{Logical. Should it print progress?}
 }
 \value{
 A data frame giving the phi values and the corresponding validation statistics

@@ -14,7 +14,7 @@ hitandfalsealarm(thresh, yobs, ypred)
 \item{ypred}{Predictions}
 }
 \value{
-A list containing hit and false alarm rates
+A list containing the calculated hit and false alarm rates
 }
 \description{
 Calculate the hit and false alarm rates

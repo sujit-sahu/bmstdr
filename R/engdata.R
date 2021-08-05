@@ -1,7 +1,7 @@
 #' Total number of weekly Covid-19 deaths and cases in the 313 local 
 #' Local Authority Districts, Counties  and Unitary Authorities (LADCUA) in 
 #' England during the first peak from March 13 to July 31, 2020. 
-#' @source See the paper by Sahu and Bohning (2021). 
+#' @source \insertCite{SahuBohning2021;textual}{bmstdr}. 
 #'  @format A data frame with 313 rows and 19 columns:
 #' \describe{
 #'   \item{Areacode}{Areacode identifier of the 313 
@@ -32,19 +32,19 @@
 #'      was greater than 1}      
 #' }
 # usethis::use_data(engtotals, overwrite = TRUE)
+#' @references
+#' \insertAllCited{}
 #' @examples
-#' \dontrun{
 #'  colnames(engtotals)
 #'  dim(engtotals)
 #'  summary(engtotals[, 5:14])
-#' }
 "engtotals"
 
 
 #' Number of weekly Covid-19 deaths and cases in the 313 local 
 #' Local Authority Districts, Counties  and Unitary Authorities (LADCUA) in 
 #' England during the 20 peaks in the first peak from March 13 to July 31, 2020. 
-#' @source See the paper by Sahu and Bohning, 2021. 
+#' @source \insertCite{SahuBohning2021;textual}{bmstdr}. 
 #'  @format A data frame with 6260 rows and 19 columns:
 #' \describe{
 #'   \item{Areacode}{Areacode identifier of the 313 
@@ -79,24 +79,24 @@
 #'   the SMR of Covid-19 death is higher than 1}       
 #' }
 # usethis::use_data(engdeaths, overwrite = TRUE)
+#' @references
+#' \insertAllCited{}
 #' @examples
-#' \dontrun{
 #'  colnames(engdeaths)
 #'  dim(engdeaths)
 #'  summary(engdeaths[, 11:28])
-#' }
 "engdeaths"
 
 
 #' A 313 by 313 proximity matrix for the 313 LADCUAS in England. Each entry is either 0 or 1 
 #' and is 1 if the corresponding row and column LADCUAs share a common boundary.  
-#'
+#' @source \insertCite{SahuBohning2021;textual}{bmstdr}. 
 # usethis::use_data(Weng, overwrite = TRUE)
+#' @references
+#' \insertAllCited{}
 #' @examples
-#' \dontrun{
 #'  dim(Weng)
 #'  summary(apply(Weng, 1, sum))
-#' }
 "Weng"
 
 

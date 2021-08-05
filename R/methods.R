@@ -5,26 +5,27 @@
 #' @param ... Any other additional arguments 
 ## #' @seealso \link{\code{summary}} for summary of model fitting and   \link{\code{plot}} for plotting
 ## #' @seealso \link{\code{fitted}} for fitted values and \link{\code{resid}} for residuals. 
+#' @return No return value, called for side effects. 
 #' @method print bmstdr
 #' @export
 print.bmstdr <- function(x, digits=3, ...)
 {
-  if (x$package == "none") cat("\n The ",  x$model, " model has been fitted using bmstdr code in R. \n")
-  else cat("\n The ",  x$model, " model has been fitted using the ", x$package, ".\n")
+  if (x$package == "none") message("\n The ",  x$model, " model has been fitted using bmstdr code in R. \n")
+  else message("\n The ",  x$model, " model has been fitted using the ", x$package, ".\n")
   
-  cat("Call:\n")
+  message("Call:\n")
   print(x$call)
   
-  cat("\nModel formula\n")
+  message("\nModel formula\n")
   print(x$formula)
-  cat("\n")
+  message("\n")
   
-  cat("\nCoefficients:")
+  message("\nCoefficients:")
   print(round(x$params[, 1], digits = digits))
-  cat("\n")
+  message("\n")
   
   if (exists("computation.time", x))  { #  Validation has been performed  
-    cat("\nComputation time:\n")
+    message("\nComputation time:\n")
     print(x$computation.time)
   }
   
@@ -37,38 +38,39 @@ print.bmstdr <- function(x, digits=3, ...)
 ## #' @seealso \link{\code{print}} for basic information regarding the fitted model. 
 ## #' @seealso \link{\code{plot}} for plotting and  \link{\code{fitted}} for 
 ## #' fitted values and \link{\code{resid}} for residuals.
+#' @return No return value, called for side effects. 
 #' @method summary bmstdr 
 #' @rdname summary
 #' @export
 summary.bmstdr <- function(object, digits=3, ...)
 {
  
-  if (object$package == "none") cat("\n The ",  object$model, " model has been fitted using bmstdr code in R. \n")
-  else cat("\n The ",  object$model, " model has been fitted using the ", object$package, " package.\n")
+  if (object$package == "none") message("\n The ",  object$model, " model has been fitted using bmstdr code in R. \n")
+  else message("\n The ",  object$model, " model has been fitted using the ", object$package, " package.\n")
   
-  cat("Call:\n")
+  message("Call:\n")
   print(object$call)
 
   
   if (exists("computation.time", object))  { #  Validation has been performed  
-    cat("\nComputation time:\n")
+    message("\nComputation time:\n")
     print(object$computation.time)
   }
   
-  cat("\nModel formula\n")
+  message("\nModel formula\n")
   print(object$formula)
-  cat("\n")
+  message("\n")
   
-  cat("\nParameter Estimates:\n")
+  message("\nParameter Estimates:\n")
   print(round(object$params, digits = digits))
   
   if (exists("mchoice", object))  { # Model choice has been performed  
-    cat("\nModel Choice Statistics:\n")
+    message("\nModel Choice Statistics:\n")
     print(round(object$mchoice, digits = digits))
   }
   
   if (exists("stats", object))  { #  Validation has been performed  
-    cat("\nValidation Statistics:\n")
+    message("\nValidation Statistics:\n")
     print(round(unlist(object$stats), digits = digits))
   }
   
@@ -76,18 +78,19 @@ summary.bmstdr <- function(object, digits=3, ...)
 #' Extract fitted values from bmstdr objects. 
 #' @param object A bmstdr model fit object. 
 #' @param ... Any other additional arguments. 
+#' @return Returns a vector of fitted values.
 #' @method fitted bmstdr
 #' @rdname fitted.bmstdr
 #' @export
 fitted.bmstdr <- function(object, ...)
 {
 if (object$scale.transform !="NONE") {  
-  cat("\n Note that the residuals are provided on the transformed scale. 
+  message("\n Note that the residuals are provided on the transformed scale. 
     See the scale.transform argument.\n")
 } 
 if (exists("stats", object)) { 
-  cat("Validation has been performed\n")
-cat("The fitted values include the validation observations as well. 
+  message("Validation has been performed\n")
+message("The fitted values include the validation observations as well. 
 Expect the return value to be of the same length as the supplied data frame. \n")
 }
   
@@ -98,21 +101,22 @@ object$fitteds
 #' @param segments TRUE or FALSE. It decides whether to draw the prediction intervals
 #' as line segments. 
 #' @param ... Any other additional arguments. 
-#' @return It plots the observed values on the original scale 
+#' @return  It plots the observed values on the original scale 
 #' against the predictions and the 95\% prediction intervals if validation has been 
 #' performed. It then plots the residuals against fitted values. It then applies 
-#' plotting method to the model fitted object as returned by the chosen named package.   
+#' plotting method to the model fitted object as returned by the chosen named package. 
+#' There is no return value.   
 #' @method plot bmstdr
 #' @rdname plot.bmstdr 
 #' @export
 plot.bmstdr <- function(x, segments=T, ...) { 
-  # old.par <- par()
+  old.par <- par()
   if (x$package == "spTimer")  {   
     plot(x$fit) 
     par(mfrow=c(1,1))
     par(ask=F)
   } else { 
-    cat("\n No other plots implemented for this model fitting method.\n")
+    message("\n No other plots implemented for this model fitting method.\n")
   }  
   #par(ask=F)
   v <- residuals(x)
@@ -127,7 +131,7 @@ plot.bmstdr <- function(x, segments=T, ...) {
     labs(x="Fitted values", y="Residuals") 
   plot(p)              
   if (exists("stats", x))  { #  Validation has been performed  
-    cat("\nValidation Statistics:\n")
+    message("\nValidation Statistics:\n")
     print(round(unlist(x$stats), digits=3))
     df <- x$yobs_preds
     k <- ncol(df)
@@ -137,15 +141,16 @@ plot.bmstdr <- function(x, segments=T, ...) {
     yobs <- df[, b]
     obs_v_pred_plot(yobs, predsums, segments = segments) 
   }   
-
-  
-  # par(old.par)
+  par(old.par)
 }
 #' Extract residuals from a bmstdr  fitted object. 
 #' @param object A bmstdr model fit object. 
 #' @param numbers a list with two components: sn=number of spatial locations 
 #' tn=number of time points. Residuals will be assumed to follow the arrangement 
 #' of the data frame - sorted by space and then time within space.
+#' @return Returns a vecor of residuals. If appropriate, it draws a 
+#' time series plot of residuals. Otherwise, it draws a plot of residuals 
+#' against observation numbers.     
 #' @param ... Any other additional arguments. 
 ## #' @seealso \link{\code{print}} for basic information regarding the fitted model, 
 ## #' \link{\code{summary}} for summaries of model fitting,  
@@ -157,18 +162,18 @@ plot.bmstdr <- function(x, segments=T, ...) {
 residuals.bmstdr <- function(object, numbers=NULL, ...)
 {
 if (object$scale.transform !="NONE") {  
-cat("\n Note that the residuals are provided on the transformed scale. 
+message("\n Note that the residuals are provided on the transformed scale. 
 See the scale.transform argument.\n")
 } 
   if (exists("stats", object)) { 
-    cat("Validation has been performed\n")
-    cat("The residuals include the validation observations as well. 
+    message("Validation has been performed\n")
+    message("The residuals include the validation observations as well. 
     Expect the return value to be of the same length as the supplied data frame. \n")
   }
   
  # object <- M5 
  a <- object$residuals
- cat("\nSummary of the residuals\n")
+ message("\nSummary of the residuals\n")
  print(summary(a))
  sn <- object$sn 
  tn <- object$tn 
@@ -178,7 +183,7 @@ See the scale.transform argument.\n")
   sn <- numbers$sn
   tn <- numbers$tn
   if (length(tn)==0) { 
-    cat("tn has not been supplied in residuals and it is not possible to figure this out.
+    message("tn has not been supplied in residuals and it is not possible to figure this out.
         Hence I am not drawing a time series plot of the residuals.\n")
     tn <- 0
     }
@@ -218,22 +223,23 @@ See the scale.transform argument.\n")
 resid.bmstdr <- function(x)
 {
  if (x$scale.transform !="NONE") {  
-    cat("\n Note that the residuals are provided on the transformed scale. 
+    message("\n Note that the residuals are provided on the transformed scale. 
     See the scale.transform argument.\n")
  }  
   if (exists("stats", x)) { 
-   cat("Validation has been performed\n")
-   cat("The residuals include the validation observations as well. 
+   message("Validation has been performed.\n")
+   message("The residuals include the validation observations as well. 
     Expect the return value to be of the same length as the supplied data frame. \n")
  }
   
   a <- x$residuals
-  cat("\nSummary of the residuals\n")
+  message("\nSummary of the residuals\n")
   print(summary(a))
   a 
 } 
 #' Is it a bmstdr model fitted object?
 #' @param x Any R object. 
+#' @return A TRUE/FALSE logical output.
 #' @export
 is.bmstdr <- function(x) inherits(x, "bmstdr")
 

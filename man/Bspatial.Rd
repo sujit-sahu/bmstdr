@@ -35,7 +35,7 @@ Bspatial(
   s.size = 0.01,
   t.depth = 15,
   verbose = TRUE,
-  plotit = T,
+  plotit = TRUE,
   mchoice = FALSE,
   ...
 )
@@ -196,7 +196,7 @@ estimated values of several Bayesian model choice criteria.
 \examples{
 a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm")
 a <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, validrows=c(8,11,12,14,18,21,24,28))
-\dontrun{
+\donttest{
 ## Illustration with the nyspatial data set 
 head(nyspatial)
 ## Linear regression model fitting 

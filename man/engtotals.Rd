@@ -10,7 +10,7 @@ England during the first peak from March 13 to July 31, 2020.}
 An object of class \code{data.frame} with 313 rows and 19 columns.
 }
 \source{
-See the paper by Sahu and Bohning (2021). 
+\insertCite{SahuBohning2021;textual}{bmstdr}. 
  @format A data frame with 313 rows and 19 columns:
 \describe{
   \item{Areacode}{Areacode identifier of the 313 
@@ -50,10 +50,11 @@ Local Authority Districts, Counties  and Unitary Authorities (LADCUA) in
 England during the first peak from March 13 to July 31, 2020.
 }
 \examples{
-\dontrun{
  colnames(engtotals)
  dim(engtotals)
  summary(engtotals[, 5:14])
 }
+\references{
+\insertAllCited{}
 }
 \keyword{datasets}

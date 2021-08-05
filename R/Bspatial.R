@@ -122,7 +122,7 @@
 #' @examples
 #' a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm")
 #' a <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, validrows=c(8,11,12,14,18,21,24,28))
-#' \dontrun{
+#' \donttest{
 #' ## Illustration with the nyspatial data set 
 #' head(nyspatial)
 #' ## Linear regression model fitting 
@@ -262,7 +262,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                    cov.model = "exponential",  
                    N=5000, burn.in=1000, rseed =44, n.report = 500, 
                    no.chains =1, ad.delta = 0.99, s.size=0.01,  t.depth=15, 
-                   verbose=TRUE, plotit=T, mchoice=FALSE, ...){
+                   verbose=TRUE, plotit=TRUE, mchoice=FALSE, ...){
   
  start.time<-proc.time()[3]
  set.seed(rseed)
@@ -280,7 +280,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
    } else { stop("Wrong package or model. Please see helpfile")}
    }
   
- # cat("package=", package, "model=", model)
+ # message("package=", package, "model=", model)
  
 
   if (package=="none") { 
@@ -372,7 +372,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
  comp.time<-end.time-start.time
  comp.time<-fancy.time(comp.time)
  results$computation.time <- comp.time
- print(comp.time)
+ message(comp.time)
  class(results) <- "bmstdr"
  results 
 }

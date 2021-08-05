@@ -4,7 +4,7 @@
 \alias{obs_v_pred_plot}
 \title{Observed against predicted plot}
 \usage{
-obs_v_pred_plot(yobs, predsums, segments = T, summarystat = "median")
+obs_v_pred_plot(yobs, predsums, segments = TRUE, summarystat = "median")
 }
 \arguments{
 \item{yobs}{A vector containing the actual observations}

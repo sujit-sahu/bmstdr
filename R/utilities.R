@@ -54,7 +54,7 @@ NULL
 #' plot(oplots$pwithoutseg)
 #' plot(oplots$pwithseg)
 #' @export
-obs_v_pred_plot <- function(yobs, predsums, segments=T, summarystat="median") {
+obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median") {
 ## yobs is r by 1
 ## predsums is r by 4 data frame where the four columns are mean, sd, up and low
 # par(mfrow=c(1,1))
@@ -197,8 +197,8 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
   # if (summarystat="mean") meanpred <- apply(X=yits, 1, mean)
   # else meanpred <- apply(X=yits, 1, median)
   meanpred <- apply(X=yits, 1, summarystat)
-  rmse  <- sqrt(mean((yval - meanpred)^2, na.rm=T))
-  mae <- mean(abs(yval - meanpred), na.rm=T)
+  rmse  <- sqrt(mean((yval - meanpred)^2, na.rm=TRUE))
+  mae <- mean(abs(yval - meanpred), na.rm=TRUE)
   zup <- apply(yits, 1, quantile, probs=up)
   zlow <- apply(yits, 1, quantile, probs=low)
   cvg <- cal_cvg(vdaty=yval, ylow=zlow, yup=zup)
@@ -265,7 +265,7 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
   
   colnames(bigmat) <- c("p1.x", "p1.y", "p2.x", "p2.y", "distance", "variogram" )
   
-  # par(ask=T)
+  # par(ask=TRUE)
   a <- cut(bigmat[,5], nbins)
   mvar <- as.vector(tapply(bigmat[,6], a, mean))
   mdis <- as.vector(tapply(bigmat[,5], a, mean))
@@ -279,7 +279,7 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
   
   p2 <- ggplot(data=z) + 
     geom_point(aes(x=distance, y=variogram), shape=8) + 
-    geom_smooth(method = "loess", se=F, aes(x=distance, y=variogram))
+    geom_smooth(method = "loess", se=FALSE, aes(x=distance, y=variogram))
   plot(p2)
   list(cloud=bigmat, variogram=z, cloudplot=p1, variogramplot=p2)
 }
@@ -290,27 +290,28 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
 #' the decay parameter phi.
 #' @param phis A vector values of phi
 #' @param s A vector giving the validation sites
+#' @param verbose Logical. Should it print progress? 
 #' @param ... Any additional parameter that may be passed to \code{Bspatial}
 #' @return  A data frame giving the phi values and the corresponding validation statistics
 #' @export
 phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
-                         s=c(8,11,12,14,18,21,24,28), ...) {
+                         s=c(8,11,12,14,18,21,24,28), ..., verbose=FALSE) {
   n <- length(phis)
   res <- matrix(NA, nrow=n+2, ncol=4)
   d <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s, mchoice=F, verbose=T, ...)
+                coordtype="utm", coords=4:5, validrows =s, mchoice=FALSE, verbose=TRUE, ...)
   res[n+2, ] <- unlist(d$stats)
   b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s,  mchoice=F, verbose=T, ...)
+                coordtype="utm", coords=4:5, validrows =s,  mchoice=FALSE, verbose=TRUE, ...)
   res[n+1, ] <- unlist(b$stats)
   a <- c(phis, b$phi, 0)
   
   # pb <- txtProgressBar(min = 0, max = n, style = 3)   # set progress bar
   for (i in 1:n) {
-    cat("Now doing ", i, "to go to ", n, "\n")
+    if (verbose) cat("Now doing ", i, "to go to ", n, "\n")
     phi <- phis[i]
     b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                  coordtype="utm", coords=4:5, validrows=s, verbose=T, mchoice=F, phi=phi, ...)
+                  coordtype="utm", coords=4:5, validrows=s, verbose=TRUE, mchoice=FALSE, phi=phi, ...)
     res[i, ] <- unlist(b$stats)
     # setTxtProgressBar(pb, i)
   }
@@ -327,15 +328,16 @@ phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
 #' @param phis A vector values of phi for spatial decay 
 #' @param phit A vector values of phi for temporal decay
 #' @param valids A vector giving the validation sites
+#' @param verbose Logical. Should progress be printed? 
 #' @return  A data frame giving the phi values and the corresponding validation statistics
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' asave <-  phichoicep()
 #' }
 #' @export 
 phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
                        phit=c(0.05, 0.25, 1.25, 6.25), 
-                       valids=c(8,11,12,14,18,21,24,28)) {
+                       valids=c(8,11,12,14,18,21,24,28), verbose=TRUE) {
   a <- expand.grid(phis, phit)
   n <- length(a[,1])
   res <- matrix(NA, nrow=n+2, ncol=4)
@@ -343,22 +345,22 @@ phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
   f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
   b <- Bsptime(model="separable",formula=f2, data=nysptime,
                coordtype="utm", coords=4:5, validrows=vrows,
-               scale.transform = "SQRT", mchoice=F, verbose=T)
+               scale.transform = "SQRT", mchoice=FALSE, verbose=TRUE)
   a[n+1, ] <- c(b$phi.s, b$phi.t)
   res[n+1, ] <- unlist(b$stats)
   
   b <- Bsptime(model="lm", validrows=vrows, formula=f2, data=nysptime,
-               scale.transform = "SQRT", mchoice=F, verbose=T)
+               scale.transform = "SQRT", mchoice=FALSE, verbose=TRUE)
   a[n+2, ] <- c(0, 0)
   res[n+2, ] <- unlist(b$stats)
   
   for (i in 1:n) {
-    cat("Now doing ", i, "to go to ", n, "\n")
+    if (verbose) cat("Now doing ", i, "to go to ", n, "\n")
     phi.s <- a[i,1]
     phi.t <- a[i,2]
     b <- Bsptime(model="separable", formula=f2, data=nysptime,
                  validrows=vrows, coordtype="utm", coords=4:5,
-                 verbose=T, mchoice=F, phi.s=phi.s, phi.t=phi.t,
+                 verbose=TRUE, mchoice=FALSE, phi.s=phi.s, phi.t=phi.t,
                  scale.transform = "SQRT")
     res[i, ] <- unlist(b$stats)
     
@@ -425,8 +427,8 @@ cal_valstats_from_summary <- function(yval, pred_summary, nsample, level=95) {
   ## yval is the actual n observations
   ## pred_summary is summary  (n x 4) matrix of means, sds and intervals
   
-  rmse  <- sqrt(mean((yval - pred_summary$mean)^2, na.rm=T))
-  mae <- mean(abs(yval - pred_summary$mean), na.rm=T)
+  rmse  <- sqrt(mean((yval - pred_summary$mean)^2, na.rm=TRUE))
+  mae <- mean(abs(yval - pred_summary$mean), na.rm=TRUE)
   cvg <- cal_cvg(vdaty=yval, ylow=pred_summary$low, yup=pred_summary$up)
   
   ## now sampling to get the crps
@@ -545,7 +547,7 @@ pred_samples_sptime <- function(pars, y, Xmat, Sinv, Tinv) {
   Qtdiag_Tinv <-  Qtdiag_inv %*% Tinv
 
   err <- y - fitmeans
-  materrbs <- matrix(err, byrow=T, ncol=tn) ## This is sn by tn
+  materrbs <- matrix(err, byrow=TRUE, ncol=tn) ## This is sn by tn
   temp1 <- Qsdiag_Hinv %*% materrbs
   temp <- temp1 %*% Qtdiag_Tinv ## This is sn by
   cmu <- y - as.vector(t(temp))  ## paralls with y and is the conditional mean
@@ -585,7 +587,7 @@ log_likelihoods_lm <- function(pars, y, Xmat) { ## likelihood values for a given
 log_full_likelihood_sp <- function(pars, y, Xmat, H) { ## log likelihood value for a given beta sigma2
   p <- ncol(Xmat)
   fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
-  logden <- mnormt::dmnorm(y, mean=fitmeans, varcov =pars[p+1]*H, log=T)
+  logden <- mnormt::dmnorm(y, mean=fitmeans, varcov =pars[p+1]*H, log=TRUE)
   logden
 }
 
@@ -624,7 +626,7 @@ log_likelihoods_sptime <- function(pars, y, Xmat, Sinv, Tinv) {
   Qtdiag_Tinv <-  Qtdiag_inv %*% Tinv
 
   err <- y - fitmeans
-  materrbs <- matrix(err, byrow=T, ncol=tn) ## This is sn by tn
+  materrbs <- matrix(err, byrow=TRUE, ncol=tn) ## This is sn by tn
   temp1 <- Qsdiag_Hinv %*% materrbs
   temp <- temp1 %*% Qtdiag_Tinv ## This is sn by
   cmu <- y - as.vector(t(temp))  ## paralls with y and is the conditional mean
@@ -641,7 +643,7 @@ log_full_likelihood_sptime <- function(pars, y, Xmat, Sinv, Tinv, log_detSinv, l
   tn <- nrow(Tinv)
   fitmeans <- as.vector(Xmat %*% as.vector(pars[1:p]))
   err <- y - fitmeans
-  Dmat <- matrix(err, ncol=tn, byrow=T) # sn by tn matrix
+  Dmat <- matrix(err, ncol=tn, byrow=TRUE) # sn by tn matrix
   u1 <- Sinv %*% Dmat
   u2 <- Dmat %*% Tinv
   qform <- sum(u1*u2)
@@ -656,16 +658,16 @@ fancy.time<-function(t)
 {
   ## convert seconds into min. hour. and day from spTimer
   if(t < 60){
-    t <- round(t,2)
-    tt <- paste(t," - Sec.")
-    cat(paste("##\n# Elapsed time:",t,"Sec.\n##\n"))
+    t <- round(t ,2)
+    tt <- paste(t ," - Sec.")
+    message(paste("##\n# Total time taken::",t,"Sec.\n##\n"))
   }
   #
   if(t < (60*60) && t >= 60){
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t1," - Mins.",t," - Sec.")
-    cat(paste("##\n# Elapsed time:",t1,"Min.",t,"Sec.\n##\n"))
+    message(paste("##\n# Total time taken::",t1,"Min.",t,"Sec.\n##\n"))
   }
   #
   if(t < (60*60*24) && t >= (60*60)){
@@ -674,7 +676,7 @@ fancy.time<-function(t)
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t2," - Hour/s.",t1," - Mins.",t," - Sec.")
-    cat(paste("##\n# Elapsed time:",t2,"Hour/s.",t1,"Min.",t,"Sec.\n##\n"))
+    message(paste("##\n# Total time taken::",t2,"Hour/s.",t1,"Min.",t,"Sec.\n##\n"))
   }
   #
   if(t >= (60*60*24)){
@@ -685,11 +687,12 @@ fancy.time<-function(t)
     t1 <- as.integer(t/60)
     t <- round(t-t1*60,2)
     tt <- paste(t3," - Day/s.",t2," - Hour/s.",t1," - Mins.",t," - Sec.")
-    cat(paste("##\n# Elapsed time:",t3,"Day/s.",t2,"Hour/s.",t1,"Mins.",t,"Sec.\n##\n"))
+    message(paste("##\n# Total time taken::",t3,"Day/s.",t2,"Hour/s.",t1,"Mins.",t,"Sec.\n##\n"))
   }
   #
   tt
 }
+
 
 ## Provides the likelihood evaluations for calculating DIC and WAIC
 ## Provides the conditional log-likelihoods from the marginal
@@ -725,11 +728,11 @@ logliks_from_gp_marginal_stanfit <- function(y, X, sn, tn,  distmat, stanfit) {
     phi_it <- phi[it]
     yimputed  <- y
     yimputed[is.na(y)] <- zmiss[it, ]
-    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
     Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_it * distmat)
     Qmat <- solve(Sigma)
     meanvec <- xbeta[it, ]
-    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmat <- matrix(meanvec, byrow=TRUE, ncol=tn)
     meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
     
     condmean <- matrix(NA, nrow=sn, ncol=tn)
@@ -739,7 +742,7 @@ logliks_from_gp_marginal_stanfit <- function(y, X, sn, tn,  distmat, stanfit) {
     tmp <- meanmult %*% errs
     cmean <- ymat - tmp 
     
-    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=TRUE)
     log_full_like_vec[it] <- sum(udens)
     
     condmean_vec <- as.vector(t(cmean))
@@ -747,7 +750,7 @@ logliks_from_gp_marginal_stanfit <- function(y, X, sn, tn,  distmat, stanfit) {
     yobs <- y[!is.na(y)]
     ymean <-   condmean_vec[!is.na(y)]
     yvar <- condvar_vec[!is.na(y)]
-    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=TRUE)
     yrep[it, ] <- ymean + rnorm(ntobs) * sqrt(yvar)
     
   }
@@ -762,13 +765,13 @@ logliks_from_gp_marginal_stanfit <- function(y, X, sn, tn,  distmat, stanfit) {
   zmissmean <- apply(zmiss, 2, mean)
   yimputed  <- y
   yimputed[is.na(y)] <- zmissmean
-  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
   Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_mean * distmat)
   meanxbeta <-  apply(xbeta, 2, mean)
-  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+  meanmat <- matrix(meanxbeta, byrow=TRUE, ncol=tn)
   errs  <- ymat - meanmat
   tmp <- meanmult %*% errs
-  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=TRUE)
   log_full_like_at_thetahat <- sum(udens)
   
 
@@ -824,7 +827,7 @@ logliks_from_full_gp_spTimer <- function(gpfit) {
   omissing <- ovalues[missing_flag>0, ]
   sige <- sqrt(sig2eps)
   
-  sigemat <- matrix(rep(sige, each=ntmiss), byrow=F, ncol=itmax)
+  sigemat <- matrix(rep(sige, each=ntmiss), byrow=FALSE, ncol=itmax)
   a <- matrix(rnorm(ntmiss*itmax), nrow=ntmiss, ncol=itmax)
   yits <- omissing + a * sigemat
   zmiss <- t(yits)
@@ -840,11 +843,11 @@ logliks_from_full_gp_spTimer <- function(gpfit) {
     phi_it <- phi[it]
     yimputed  <- y
     yimputed[is.na(y)] <- zmiss[it, ]
-    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
     Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_it * distmat)
     Qmat <- solve(Sigma)
     meanvec <- xbeta[it, ]
-    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmat <- matrix(meanvec, byrow=TRUE, ncol=tn)
     meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
     
     condmean <- matrix(NA, nrow=sn, ncol=tn)
@@ -854,7 +857,7 @@ logliks_from_full_gp_spTimer <- function(gpfit) {
     tmp <- meanmult %*% errs
     cmean <- ymat - tmp 
     
-    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+    udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=TRUE)
     log_full_like_vec[it] <- sum(udens)
 
     condmean_vec <- as.vector(t(cmean))
@@ -862,7 +865,7 @@ logliks_from_full_gp_spTimer <- function(gpfit) {
     yobs <- y[!is.na(y)]
     ymean <-   condmean_vec[!is.na(y)]
     yvar <- condvar_vec[!is.na(y)]
-    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=TRUE)
     
     
   }
@@ -877,13 +880,13 @@ logliks_from_full_gp_spTimer <- function(gpfit) {
   zmissmean <- apply(zmiss, 2, mean)
   yimputed  <- y
   yimputed[is.na(y)] <- zmissmean
-  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
   Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi_mean * distmat)
   meanxbeta <-  apply(xbeta, 2, mean)
-  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+  meanmat <- matrix(meanxbeta, byrow=TRUE, ncol=tn)
   errs  <- ymat - meanmat
   tmp <- meanmult %*% errs
-  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=T)
+  udens <- apply(errs, 2,  mnormt::dmnorm, varcov=Sigma, log=TRUE)
   log_full_like_at_thetahat <- sum(udens)
   
 
@@ -927,7 +930,7 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
   omissing <- ovalues[missing_flag>0, ]
   sige <- sqrt(sig2eps)
 
-  sigemat <- matrix(rep(sige, each=ntmiss), byrow=F, ncol=itmax)
+  sigemat <- matrix(rep(sige, each=ntmiss), byrow=FALSE, ncol=itmax)
   a <- matrix(rnorm(ntmiss*itmax), nrow=ntmiss, ncol=itmax)
   yits <- omissing + a * sigemat
   zmiss <- t(yits)
@@ -943,13 +946,13 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
     phi_it <- phi[it]
     yimputed  <- y
     yimputed[is.na(y)] <- zmiss[it, ]
-    ymat <- matrix(yimputed, byrow=T, ncol=tn)
+    ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
     Sigma <- diag(tau2, nrow=sn, ncol=sn) # + sigma2 * exp(-phi_it * distmat)
     Qmat <- solve(Sigma)
     ##
-    omat <-  matrix(ovalues[, it], byrow=T, ncol=tn)
+    omat <-  matrix(ovalues[, it], byrow=TRUE, ncol=tn)
     meanvec <- xbeta[it, ]
-    meanmat <- matrix(meanvec, byrow=T, ncol=tn)
+    meanmat <- matrix(meanvec, byrow=TRUE, ncol=tn)
     meanmult <- diag(1/diag(Qmat), nrow=sn, ncol=sn) %*% Qmat
 
     condmean <- matrix(NA, nrow=sn, ncol=tn)
@@ -964,7 +967,7 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
       yvec <- ymat[, k]  # sn by 1
       condmean[, k] <- yvec - meanmult %*% (yvec - meanvec)
       condvar[, k] <- 1/diag(Qmat)
-      logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=T)
+      logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=TRUE)
       u <- u +  logden_contr
     }
     log_full_like_vec[it] <- u
@@ -974,7 +977,7 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
     yobs <- y[!is.na(y)]
     ymean <-   condmean_vec[!is.na(y)]
     yvar <- condvar_vec[!is.na(y)]
-    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=T)
+    loglik[it, ] <- dnorm(yobs, mean=ymean, sd=sqrt(yvar), log=TRUE)
   }
   # print(calculate_waic(loglik))
 
@@ -987,16 +990,16 @@ logliks_from_full_AR_spTimer <- function(gpfit) {
   zmissmean <- apply(zmiss, 2, mean)
   yimputed  <- y
   yimputed[is.na(y)] <- zmissmean
-  ymat <- matrix(yimputed, byrow=T, ncol=tn)
+  ymat <- matrix(yimputed, byrow=TRUE, ncol=tn)
   Sigma <- diag(tau2, nrow=sn, ncol=sn) # + sigma2 * exp(-phi_mean * distmat)
   meanxbeta <-  apply(xbeta, 2, mean)
-  meanmat <- matrix(meanxbeta, byrow=T, ncol=tn)
+  meanmat <- matrix(meanxbeta, byrow=TRUE, ncol=tn)
 
   u <- 0.0
   for (k in 1:tn) {
     meanvec <- meanmat[,k]
     yvec <- ymat[, k]  # sn by 1
-    logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=T)
+    logden_contr <- mnormt::dmnorm(yvec, mean=meanvec, varcov =Sigma, log=TRUE)
     u <- u +  logden_contr
   }
   log_full_like_at_thetahat <- u
@@ -1023,7 +1026,7 @@ row_dists <- function(u, coordtype) {
   ## u has the rows of the form lon/lat, lon/lat or utmx/utmy utmx  
   k <- length(u)/2 - 1
   p0 <- u[1:2]
-  v <- matrix(u[-(1:2)], byrow=T, ncol=2)
+  v <- matrix(u[-(1:2)], byrow=TRUE, ncol=2)
   d <- rep(NA, k)
   for (i in 1:k) { 
     pi <- v[i, ]
@@ -1105,7 +1108,7 @@ dist_mat_loop <- function(coords, coordtype) {
   if (coordtype=="lonlat") { 
     for (i in 1:(m-1)) { 
       for (j in (i+1):m) {
-        # cat("i=", i, "j=", j, "\n")
+        # message("i=", i, "j=", j, "\n")
         d[i, j] <-   as.numeric(geodetic.distance(coords[i,], coords[j,]))
         d[j, i] <- d[i, j]
       }

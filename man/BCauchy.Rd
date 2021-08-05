@@ -44,7 +44,7 @@ Mean of the simulated data values are returned as ybar.
 Cauchy prior simulation example.
 }
 \examples{
-\dontrun{
+\donttest{
 BCauchy(true.theta = 1, n=25) 
 BCauchy(true.theta = 5, n=100) 
 BCauchy(method="importance", true.theta = 1, n=25) 

@@ -1,11 +1,17 @@
 Package: bmstdr
 Type: Package
-Title: Bayesian Modeling of Space Time Data with R
+Title: Bayesian Modeling of Spatio-Temporal Data with R
 Version: 0.1.1
 Author: Sujit K. Sahu [aut, cre]
 Maintainer: Sujit K. Sahu <S.K.Sahu@soton.ac.uk>
 URL: https://www.soton.ac.uk/~sks/bmbook/
-Description: Fits, validates and compares a number of Bayesian models for spatial and space time point referenced and areal unit data. Model fitting is done using several packages: rstan, INLA, spBayes, spTimer, spTDyn, CARBayes and CARBayesST. Model  comparison is performed using  the well known model choice criteria,  such as the DIC and WAIC,  and also K-fold cross-validation where the user is free to select their own subsets of data for validation. Familiar linear model diagnostic plots and model fit  exploration using the S3 methods such as  print, summary and plot are included.  
+Description: Fits, validates and compares a number of Bayesian models for 
+    spatial and space time point referenced and areal unit data. Model fitting
+    is done using several packages: 'rstan', 'INLA', 'spBayes', 'spTimer', 
+    'spTDyn', 'CARBayes' and 'CARBayesST'. Model comparison is performed using 
+    the DIC and WAIC,  and K-fold cross-validation where the user is free 
+    to select their own subset of data rows for validation. Sahu (2021) 
+    <https://www.soton.ac.uk/~sks/bmbook/> describes the methods in detail.  
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
@@ -19,7 +25,8 @@ Imports:
     spBayes, 
     CARBayes, 
     CARBayesST,  
-    Rdpack
+    Rdpack, 
+    BiocStyle
 RdMacros: Rdpack
 Depends:
     R (>= 3.4.0),

@@ -18,7 +18,8 @@ as line segments.}
 It plots the observed values on the original scale 
 against the predictions and the 95\% prediction intervals if validation has been 
 performed. It then plots the residuals against fitted values. It then applies 
-plotting method to the model fitted object as returned by the chosen named package.
+plotting method to the model fitted object as returned by the chosen named package. 
+There is no return value.
 }
 \description{
 Plot method for  bmstdr objects.

@@ -9,6 +9,9 @@ is.bmstdr(x)
 \arguments{
 \item{x}{Any R object.}
 }
+\value{
+A TRUE/FALSE logical output.
+}
 \description{
 Is it a bmstdr model fitted object?
 }

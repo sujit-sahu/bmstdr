@@ -20,7 +20,7 @@
 Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                    validrows=NULL, scale.transform="NONE",
                    prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2, 1),
-                   N=5000, plotit=T, rseed =44,
+                   N=5000, plotit=TRUE, rseed =44,
                    verbose=TRUE, mchoice=TRUE){
   
 
@@ -114,7 +114,7 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     v <- t(sqrtmat) %*% v
     dim(v)
     sigmas <- sqrt(sigma2.samples)
-    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=TRUE)
     # sigmamat[, 1:5]
     # sigmas[1:4]
     betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
@@ -194,8 +194,8 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
       upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
       predsums <- data.frame(meanpred=meanpred, sdpred=sdpred, medianpred=meanpred, low=low, up=upr)
 
-      rmseBlm  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
-      maeBlm <- mean(abs(vdaty-meanpred), na.rm=T)
+      rmseBlm  <- sqrt(mean((vdaty-meanpred)^2, na.rm=TRUE))
+      maeBlm <- mean(abs(vdaty-meanpred), na.rm=TRUE)
       cvgBlm <- spT.pCOVER(vdaty, zup=upr, zlow=low)
       tmp <- cbind(vdaty,ypreds)
       tmp <- na.omit(tmp)
@@ -234,8 +234,8 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL,
                             coordtype="utm", coords=4:5, phi=NULL, scale.transform="NONE",
                             prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2, 1),
-                           mchoice=T, N=5000, verbose =T, rseed =44,
-                           plotit=T){
+                           mchoice=TRUE,N=5000, verbose =TRUE,rseed =44,
+                           plotit=TRUE){
 
   set.seed(rseed)
   if (length(coords)==2) coords <-  as.matrix(unique(data[, coords]))  
@@ -347,7 +347,7 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
     v <- t(sqrtmat) %*% v
     # dim(v)
     sigmas <- sqrt(sigma2.samples)
-    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=T)
+    sigmamat <-  matrix(rep(sigmas, p), nrow=p, ncol=N, byrow=TRUE)
     betamat <- matrix(rep(as.vector(betastar), N), nrow=p, ncol=N)
     betasamples  <- v * sigmamat + betamat
     ###
@@ -425,8 +425,8 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
     upr <- meanpred + qt(0.975, df=n+2*prior.sigma2[1]) * sdpred
     predsums <- data.frame(meanpred=meanpred, sdpred=sdpred, medianpred=meanpred, low=low, up=upr)
 
-    rmseBsp  <- sqrt(mean((vdaty-meanpred)^2, na.rm=T))
-    maeBsp <- mean(abs(vdaty-meanpred), na.rm=T)
+    rmseBsp  <- sqrt(mean((vdaty-meanpred)^2, na.rm=TRUE))
+    maeBsp <- mean(abs(vdaty-meanpred), na.rm=TRUE)
     cvgBsp <- cal_cvg(vdaty, yup=upr, ylow=low)
     tmp <- cbind(vdaty,ypreds)
     tmp <- na.omit(tmp)
@@ -468,12 +468,12 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
 ##  p_waic1, waic1, p_waic2, waic2, gof, penalty and pmcc.
 ## @examples
 ## b <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28))
-## b <- BspBayes_sp(mchoice=T)
-## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=F, validrows= c(8,11,12,14,18,21,24,28))
-## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=F, validrows= c(8,11,12,14,18,21,24,28))
+## b <- BspBayes_sp(mchoice=TRUE)
+## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=FALSE, validrows= c(8,11,12,14,18,21,24,28))
+## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=FALSE, validrows= c(8,11,12,14,18,21,24,28))
 ## b <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28))
-## a <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28), mchoice=F)
-## a <- BspBayes_sp(formula=yo3~xmaxtemp+xwdsp+xrh, mchoice=T, phi=0.05)
+## a <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28), mchoice=FALSE)
+## a <- BspBayes_sp(formula=yo3~xmaxtemp+xwdsp+xrh, mchoice=TRUE,phi=0.05)
 # ## @export
 BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                                   validrows=NULL,
@@ -488,7 +488,7 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                                 n.report = 500,
                                 verbose = FALSE,
                                     mchoice=TRUE,
-                                N=5000, burn.in=1000, rseed =44, plotit=T, ...){
+                                N=5000, burn.in=1000, rseed =44, plotit=TRUE,...){
 
   set.seed(rseed)
   if (length(coords)==2) coords <-  as.matrix(unique(data[, coords]))  
@@ -592,10 +592,10 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
       
       condmean <- newy - meanmult %*% (newy - meanvec)
       condvar <- 1/diag(Qmat)
-      logden <- mnormt::dmnorm(newy, mean=meanvec, varcov =Sigma, log=T)
+      logden <- mnormt::dmnorm(newy, mean=meanvec, varcov =Sigma, log=TRUE)
       log_full_like_vec[it] <- logden
       
-      loglik[it, ] <- dnorm(newy, mean=condmean, sd=sqrt(condvar), log=T)
+      loglik[it, ] <- dnorm(newy, mean=condmean, sd=sqrt(condvar), log=TRUE)
       yrep[it, ] <- condmean + rnorm(n) * sqrt(condvar)
     }
     # print(calculate_waic(loglik))
@@ -607,7 +607,7 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     tau2   <- mean(tau_sq)
     Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi * distmat)
     meanxbeta <-  apply(xbeta, 2, mean)
-    logden <- mnormt::dmnorm(newy, mean=meanxbeta, varcov =Sigma, log=T)
+    logden <- mnormt::dmnorm(newy, mean=meanxbeta, varcov =Sigma, log=TRUE)
     log_full_like_at_thetahat <- logden
     
     yrepmeans <- as.vector(apply(yrep, 2, mean))
@@ -667,7 +667,7 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                             mchoice=TRUE,
                             no.chains =1,
                             rseed =44,  ad.delta = 0.99, s.size=0.01,  t.depth=15,
-                            N=1500, burn.in=500, plotit=T, ...){
+                            N=1500, burn.in=500, plotit=TRUE,...){
 
  
   if (length(coords)==2) coords <-  as.matrix(unique(data[, coords]))
@@ -731,10 +731,10 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     list(sigma_sq = 1, tau_sq=1, beta=coefficients(mod1))
   }
 
- # cat("You must keep the supplied file spatial_model.stan in the sub-folder stanfiles \n")
- #  cat("below the current working directory, getwd(). It will give an error if the file is not found.\n")
-  cat("ATTENTION: the run is computationally intensive!\n")
-    cat("The run with supplied default arguments takes about 15 minutes to run in a fast PC\n")
+ # message("You must keep the supplied file spatial_model.stan in the sub-folder stanfiles \n")
+ #  message("below the current working directory, getwd(). It will give an error if the file is not found.\n")
+  message("ATTENTION: this run is likely to be computationally intensive!\n")
+  #message("The run with supplied default arguments takes about 15 minutes to run in a fast PC\n")
     
 #  stanfit <- stan(data=datatostan, file = "stanfiles/spatial_model.stan", seed = rseed,
 #                  chains = no_chains, iter = N, warmup = burn.in, init=initfun,
@@ -788,10 +788,10 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
       
       condmean <- newy - meanmult %*% (newy - meanvec)
       condvar <- 1/diag(Qmat)
-      logden <- mnormt::dmnorm(newy, mean=meanvec, varcov =Sigma, log=T)
+      logden <- mnormt::dmnorm(newy, mean=meanvec, varcov =Sigma, log=TRUE)
       log_full_like_vec[it] <- logden
 
-      loglik[it, ] <- dnorm(newy, mean=condmean, sd=sqrt(condvar), log=T)
+      loglik[it, ] <- dnorm(newy, mean=condmean, sd=sqrt(condvar), log=TRUE)
       yrep[it, ] <- condmean + rnorm(n) * sqrt(condvar)
     }
     # print(calculate_waic(loglik))
@@ -803,7 +803,7 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     tau2   <- mean(tau_sq)
     Sigma <- diag(tau2, nrow=sn, ncol=sn) + sigma2 * exp(-phi * distmat)
     meanxbeta <-  apply(xbeta, 2, mean)
-    logden <- mnormt::dmnorm(newy, mean=meanxbeta, varcov =Sigma, log=T)
+    logden <- mnormt::dmnorm(newy, mean=meanxbeta, varcov =Sigma, log=TRUE)
     log_full_like_at_thetahat <- logden
 
     yrepmeans <- as.vector(apply(yrep, 2, mean))
@@ -880,7 +880,7 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                             prior.sigma = c(1, 0.005),
                             offset = c(10, 140), 
                             max.edge=c(50, 1000),  
-                            N=1000, rseed=44,  plotit=T){
+                            N=1000, rseed=44,  plotit=TRUE){
 
 
   set.seed(rseed)
@@ -983,7 +983,7 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     n <- length(newy)
     means <- ifit$summary.fitted.values$mean[1:n]
     vars <- (ifit$summary.fitted.values$sd[1:n])^2
-    gof <- sum((newy-means)^2, na.rm=T)
+    gof <- sum((newy-means)^2, na.rm=TRUE)
     penalty <- sum(vars[!is.na(newy)])
     pmcc <- gof+penalty
     umod <- c(unlist(ifit$dic$p.eff), unlist(ifit$dic$dic), unlist(ifit$waic$p.eff), unlist(ifit$waic$waic),

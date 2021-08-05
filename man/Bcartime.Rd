@@ -22,7 +22,7 @@ Bcartime(
   W = NULL,
   adj.graph = NULL,
   residtype = "response",
-  interaction = T,
+  interaction = TRUE,
   Z = NULL,
   W.binary = NULL,
   changepoint = NULL,
@@ -49,14 +49,14 @@ Bcartime(
   rho = NULL,
   rho.slo = NULL,
   rho.int = NULL,
-  MALA = F,
+  MALA = FALSE,
   N = 2000,
   burn.in = 1000,
   thin = 10,
   rseed = 44,
   Nchains = 4,
   verbose = TRUE,
-  plotit = T
+  plotit = TRUE
 )
 }
 \arguments{
@@ -69,13 +69,13 @@ Each covariate (or an offset) needs to be a vector of length K*1.
 Only required for zero-inflated Poisson models.}
 
 \item{data}{The data frame for which the model formula is to be fitted.
-The data frame should be in long format having one row for each location and  time
+The data frame should be in long format having one row for each lomessageion and  time
 combination. The data frame must be ordered by time within each site, and should
 optionally have a column, named s.index,  providing the site indices.
 Thus the data,  with n sites and T times within each site, should be
 organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
 The data frame should also contain two columns giving the coordinates of the
-locations for spatio temporal model fitting.}
+lomessageions for spatio temporal model fitting.}
 
 \item{family}{One of either "gaussian", "binomial","poisson" or "zip", 
 which respectively specify a Gaussian, binomial likelihood model with the 
@@ -133,7 +133,7 @@ The order of the autoregressive time series process that must be either 1 or 2.
 }
 
 \item{W}{A non-negative K by K neighbourhood matrix (where K is the number of spatial units). 
-Typically a binary specification is used, where the jkth element equals one if areas (j, k) 
+Typically a binary specifimessageion is used, where the jkth element equals one if areas (j, k) 
 are spatially close (e.g. share a common border) and is zero otherwise. 
 The matrix can be non-binary, but each row must contain at least one non-zero entry.
 This argument may not need to be specified if \code{adj.graph} is specified instead.}
@@ -148,7 +148,7 @@ Default is "response" type observed minus fitted. The other option "pearson" is 
 Pearson residuals in GLM. For INLA based model fitting only the default response 
 residuals are calculated.}
 
-\item{interaction}{TRUE or FALSE indicating whether the spatio-temporal interaction 
+\item{interaction}{TRUE or FALSE indimessageing whether the spatio-temporal interaction 
 random effects should be included. Defaults to TRUE unless family="gaussian" in which 
 case interactions are not allowed.}
 
@@ -336,7 +336,7 @@ Calculates parameter estimates, validation statistics, and
 estimated values of several Bayesian model choice criteria.
 }
 \examples{
-\dontrun{
+\donttest{
 # Only spatial modeling for the engtotals data set 
 # Please scroll below for spatio-temporal modeling 
 names(engtotals)

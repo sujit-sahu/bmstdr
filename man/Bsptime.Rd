@@ -43,13 +43,13 @@ Bsptime(
   N = 2000,
   burn.in = 1000,
   rseed = 44,
-  n.report = N/2,
+  n.report = 2,
   no.chains = 1,
   ad.delta = 0.8,
   t.depth = 15,
   s.size = 0.01,
   verbose = FALSE,
-  plotit = T,
+  plotit = TRUE,
   mchoice = FALSE,
   ...
 )
@@ -258,7 +258,7 @@ A list containing:
    is set as \code{plain}.     
    \item fitteds  -   A vector of fitted values.   
     \item mchoice -   Calculated model choice statistics if 
-    those have been requested by the input argument \code{mchoice=T}.
+    those have been requested by the input argument \code{mchoice=TRUE}.
      Not all model fits will contain  all the model choice statistics. 
     \item stats   -   The four validation statistics: 
     rmse, mae, crps and coverage.  This is present only if 
@@ -321,7 +321,7 @@ names(M1)
 M2 <- Bsptime(model="separable", data=nysptime, 
 formula=y8hrmax~xmaxtemp+xwdsp+xrh, coordtype="utm", coords=4:5) 
 names(M2)
-\dontrun{
+\donttest{
 f2 <- y8hrmax~xmaxtemp+xwdsp+xrh
 M1 <- Bsptime(model="lm", formula=f2, data=nysptime, 
 scale.transform = "SQRT", N=5000)
@@ -373,8 +373,8 @@ labs( title= "28 air pollution monitoring sites in New York", x="Longitude", y =
 geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
 geom_rect(mapping=aes(xmin=-80.2, xmax=-77.3, ymin=41, ymax=41.6), color="black", fill=NA) + 
 geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
-scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+scalebar(data =nymap, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km",
+st.dist = .05, st.size = 5, height = .06, st.bottom=TRUE, model="WGS84") +
 north(data=nymap, location="topleft", symbol=12) 
 vsites3
 set.seed(44)
@@ -382,7 +382,7 @@ tn <- 62
 valids <- c(1, 5, 10)
 validt <- sort(sample(1:62, size=31))
 vrows <- getvalidrows(sn=28, tn=62, valids=valids, validt=validt)
-ymat <- matrix(nysptime$y8hrmax, byrow=T, ncol=tn)
+ymat <- matrix(nysptime$y8hrmax, byrow=TRUE, ncol=tn)
 yholdout <- ymat[valids, validt]
 M31 <- Bsptime(package="spTimer",formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, validrows=vrows, model="GP",  
@@ -401,10 +401,10 @@ fitvalid$low <- fitvalid$Mean - 1.96 * fitvalid$SD
 fitvalid$up <- fitvalid$Mean + 1.96 * fitvalid$SD
 fitvalid$yobs <- sqrt(vdat$y8hrmax)
 fitvalid$yobs <- vdat$y8hrmax
-yobs <- matrix(fitvalid$yobs, byrow=T, ncol=tn)
-y.valids.low <- matrix(fitvalid$low, byrow=T, ncol=tn)
-y.valids.med <- matrix(fitvalid$Mean, byrow=T, ncol=tn)
-y.valids.up <- matrix(fitvalid$up, byrow=T, ncol=tn)
+yobs <- matrix(fitvalid$yobs, byrow=TRUE, ncol=tn)
+y.valids.low <- matrix(fitvalid$low, byrow=TRUE, ncol=tn)
+y.valids.med <- matrix(fitvalid$Mean, byrow=TRUE, ncol=tn)
+y.valids.up <- matrix(fitvalid$up, byrow=TRUE, ncol=tn)
 p1 <- fig11.13.plot(yobs[1, ], y.valids.low[1, ], y.valids.med[1, ], y.valids.up[1, ], misst=validt)
 p1 <- p1 + ggtitle("Validation for Site 1")
 p1
@@ -436,7 +436,7 @@ if (scale.transform == "SQRT")
 ypreds <-  (ypreds)^2
 dim(ypreds)
 sitemeans <- function(a, sn=100, tn=62) { 
-u <- matrix(a, nrow=sn, ncol=tn, byrow=T)
+u <- matrix(a, nrow=sn, ncol=tn, byrow=TRUE)
 b <- apply(u, 1, mean)
 as.vector(b)
 }
@@ -468,7 +468,7 @@ interp1 <- gather(interp1,key = lat,value =Predicted,-long,convert = TRUE)
 library(ggplot2)
 nymap <- map_data(database="state",regions="new york")
 mappath <- cbind(nymap$long, nymap$lat)
-zr <- range(interp1$Predicted, na.rm=T)
+zr <- range(interp1$Predicted, na.rm=TRUE)
 com <- rev(c("firebrick4","firebrick2","white","dodgerblue2","dodgerblue4"))#colour palette
 P <- ggplot() +  
 geom_raster(data=interp1, aes(x = long, y = lat,fill = Predicted)) +
@@ -478,8 +478,8 @@ stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = Predicted),
 colour = "black", binwidth =2) +
 scale_fill_gradientn(colours=com, na.value="gray95", limits=zr) +
 theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km",
+st.dist = .05, st.size = 5, height = .06, st.bottom=TRUE, model="WGS84") +
 ggsn::north(data=interp1, location="topleft", symbol=12) +
 labs(title= "Predicted map of average ozone air pollution in New York",
  x="Longitude", y = "Latitude", size=2.5) 
@@ -493,7 +493,7 @@ names(interp1)[1:length(v$y)+1] <- v$y
 interp1 <- gather(interp1,key = lat,value =sd,-long,convert = TRUE)
 nymap <- map_data(database="state",regions="new york")
 mappath <- cbind(nymap$long, nymap$lat)
-zr <- range(interp1$sd, na.rm=T)
+zr <- range(interp1$sd, na.rm=TRUE)
 Psd <- ggplot() +  
 geom_raster(data=interp1, aes(x = long, y = lat,fill = sd)) +
 geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) + 
@@ -502,29 +502,29 @@ stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = sd),
 colour = "black", binwidth =0.1) +  
 scale_fill_gradientn(colours=com, na.value="gray95", limits=zr) +
 theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km",
+st.dist = .05, st.size = 5, height = .06, st.bottom=TRUE, model="WGS84") +
 ggsn::north(data=interp1, location="topleft", symbol=12) +
 labs(title= "Sd map of predicted air pollution in New York", 
 x="Longitude", y = "Latitude", size=2.5) 
 Psd
 
 
-## Refit M1, M2, M3 with mchoice=T
+## Refit M1, M2, M3 with mchoice=TRUE
 M1.c <- Bsptime(model="lm", formula=f2, data=nysptime, 
-scale.transform = "SQRT", mchoice=T)
+scale.transform = "SQRT", mchoice=TRUE)
 M2.c <- Bsptime(model="separable",  formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, 
-phi.s=0.005, phi.t=0.05, scale.transform = "SQRT", mchoice=T)
+phi.s=0.005, phi.t=0.05, scale.transform = "SQRT", mchoice=TRUE)
 M3.c <- Bsptime(package="spTimer", model="GP", formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", n.report=5,
- mchoice=T, N=5000)
+ mchoice=TRUE, N=5000)
 M4.c <- Bsptime(package="stan",formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", N=1500, burn.in=500,
- mchoice=T, verbose = F)
+ mchoice=TRUE, verbose = F)
  aresid <- residuals(M4.c)
  valids <- c(8,11,12,14,18,21,24,28)
- vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+ vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=TRUE)
  M1.v <- Bsptime(model="lm", formula=f2, data=nysptime, 
  scale.transform = "SQRT", validrows=vrows)
  M2.v <- Bsptime(model="separable",  formula=f2, data=nysptime, 
@@ -532,10 +532,10 @@ coordtype="utm", coords=4:5, scale.transform = "SQRT", N=1500, burn.in=500,
  scale.transform = "SQRT", validrows=vrows)
  M3.v <- Bsptime(package="spTimer", model="GP", formula=f2, data=nysptime, 
  coordtype="utm", coords=4:5, scale.transform = "SQRT", 
- mchoice=T, validrows=vrows, n.report =5, N=5000)
+ mchoice=TRUE, validrows=vrows, n.report =5, N=5000)
  M4.v <- Bsptime(package="stan",formula=f2, data=nysptime, 
  coordtype="utm", coords=4:5, scale.transform = "SQRT", 
- N=1500, burn.in=500, mchoice=T, validrows=vrows, verbose = F)
+ N=1500, burn.in=500, mchoice=TRUE, validrows=vrows, verbose = F)
  plot(M4.v, segments = F)
  tablemchoice <- cbind(M1.c$mchoice, M2.c$mchoice, M3.c$mchoice, M4.c$mchoice)
  round(tablemchoice, 2)
@@ -551,22 +551,22 @@ coordtype="utm", coords=4:5, scale.transform = "SQRT", N=1500, burn.in=500,
  pall <- obs_v_pred_plot(obs, predsums, segments=F)
  names(pall)
  M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime,
- coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T,  
+ coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE,  
  n.report=5, N=5000)
  summary(M5)
  a <- residuals(M5)
  M6 <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime,
- coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T)
+ coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE)
  # 5 minutes 
  summary(M6)
  valids <- c(8,11,12,14,18,21,24,28)
- vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+ vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=TRUE)
  M5.v <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
  coordtype="utm", coords=4:5, scale.transform = "SQRT", 
- validrows=vrows, mchoice=T, n.report=5, N=5000)
+ validrows=vrows, mchoice=TRUE, n.report=5, N=5000)
  M6.v <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime, 
  coordtype="utm", coords=4:5, scale.transform = "SQRT", 
- validrows=vrows, mchoice=T)
+ validrows=vrows, mchoice=TRUE)
  a1 <- c(M5$mchoice, unlist(M5.v$stats))
  b <- as.list(M6$mchoice)
  b
@@ -579,7 +579,7 @@ coordtype="utm", coords=4:5, scale.transform = "SQRT", N=1500, burn.in=500,
  ## spatio-temporally varying
  f3 <- y8hrmax~ xmaxtemp + sp(xmaxtemp)+ tp(xwdsp) + xrh
  M7 <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime,
- coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T,  
+ coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE,  
  N=5000, n.report=2)
  summary(M7)
  a <- residuals(M7)
@@ -621,42 +621,27 @@ geom_segment(data=tstat, aes(x=Days, y=median, xend=Days, yend=up), linetype=1) 
 geom_abline(intercept=0, slope=0, col="blue") +
 labs(title="Temporal effects of wind speed", x="Days", y="Temporal effects") 
 p 
-## Figure: 5, Section: 4.2 ##
-temporal_effects_plot <- function(tids=1:nrow(out$betatp)){
-stat <- apply(out$betatp[tids,],1,quantile,prob=c(0.025,0.5,0.975))
-plot(stat[2,],type="p",lty=3,col=1,ylim=c(min(c(stat)),max(c(stat))),
-pch=19,ylab="",xlab="Days",axes=FALSE,main="Wind Speed",cex=0.8)
-k <- length(tids)
-for(i in 1:k){
-segments(i, stat[2,i], i, stat[3,i])
-segments(i, stat[2,i], i, stat[1,i])
-}
-axis(1,tids,labels=tids);axis(2)
-# abline(v=31.5,lty=2)
-abline(h=0, col=2)
-#   text(15,0.32,"July");  text(45,0.32,"August");
-}
-# spBayes 
+# spBayes Examples
 set.seed(44)
 validt <- sort(sample(1:62, size=31))
 valids <- c(1, 5, 10)
 vrows <- getvalidrows(sn=28, tn=62, valids=valids, validt=validt)
-ymat <- matrix(nysptime$y8hrmax, byrow=T, ncol=62)
+ymat <- matrix(nysptime$y8hrmax, byrow=TRUE, ncol=62)
 yholdout <- ymat[valids, validt]
 scale.transform <- "SQRT"
 library(spTDyn)
 M7.v <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-mchoice=T,  N=5000, validrows=vrows, n.report=2)
+mchoice=TRUE,  N=5000, validrows=vrows, n.report=2)
 M8 <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
 prior.sigma2=c(2, 25), prior.tau2 =c(2, 25),
 prior.sigma.eta =c(2, 0.001),
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-mchoice=T,  N=5000,  n.report=200)
+mchoice=TRUE,  N=5000,  n.report=200)
 M8.v <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
 prior.sigma2=c(2, 25), prior.tau2 =c(2, 25),
-prior.sigma.eta =c(2, 0.001),mchoice=T,  N=5000, validrows=vrows,  
+prior.sigma.eta =c(2, 0.001),mchoice=TRUE,  N=5000, validrows=vrows,  
 n.report=200)
 summary(M8.v)
 a1 <- c(M7$mchoice, unlist(M7.v$stats))
@@ -700,18 +685,7 @@ theta <- apply(modfit$p.theta.samples[burn.in:N,], 2, quant95)
 sigma.sq <- theta[,grep("sigma.sq", colnames(theta))]
 tau.sq <- theta[,grep("tau.sq", colnames(theta))]
 phi <- theta[,grep("phi", colnames(theta))]
-cat("\nOnly first 3 theta parameters are plotted\n")
-par(mfrow=c(3,1))
-plot(1:tn, sigma.sq[1,], pch=19, cex=0.5, xlab="Time", ylab="sigma.sq", ylim=range(sigma.sq))
-arrows(1:tn, sigma.sq[1,], 1:tn, sigma.sq[3,], length=0.02, angle=90)
-arrows(1:tn, sigma.sq[1,], 1:tn, sigma.sq[2,], length=0.02, angle=90)
-plot(1:tn, tau.sq[1,], pch=19, cex=0.5, xlab="Time", ylab="tau.sq", ylim=range(tau.sq))
-arrows(1:tn, tau.sq[1,], 1:tn, tau.sq[3,], length=0.02, angle=90)
-arrows(1:tn, tau.sq[1,], 1:tn, tau.sq[2,], length=0.02, angle=90)
-plot(1:tn, 3/phi[1,], pch=19, cex=0.5, xlab="Time", ylab="eff. range (km)", ylim=range(3/phi))
-arrows(1:tn, 3/phi[1,], 1:tn, 3/phi[3,], length=0.02, angle=90)
-arrows(1:tn, 3/phi[1,], 1:tn, 3/phi[2,], length=0.02, angle=90)
-par(mfrow=c(1,1))
+message("\nOnly first 3 theta parameters are plotted\n")
 adat <- data.frame(x=1:tn, low=sigma.sq[1, ], med=sigma.sq[2, ], up=sigma.sq[3, ])
 head(adat)
 psigma <- ggplot() + 
@@ -741,19 +715,8 @@ ggarrange(psigma, ptau, prange, common.legend = TRUE, legend = "none", nrow = 3,
 vnames <- all.vars(f2)
 xnames <- vnames[-1]
 k <- 4
-cat("\nOnly first 4 beta parameters are plotted\n")
+message("\nOnly first 4 beta parameters are plotted\n")
 beta.0 <- beta[,grep("Intercept", colnames(beta))]
-par(mfrow=c(k,1))
-plot(1:tn, beta.0[1,], pch=19, cex=0.5, xlab="Time", ylab="Intercept", ylim=range(beta.0))
-arrows(1:tn, beta.0[1,], 1:tn, beta.0[3,], length=0.02, angle=90)
-arrows(1:tn, beta.0[1,], 1:tn, beta.0[2,], length=0.02, angle=90) 
-for (j in 2:k) {
-betaj <- beta[,grep(xnames[j-1], colnames(beta))]
-plot(1:tn, betaj[1,], pch=19, cex=0.5, xlab="Time", ylab=xnames[j-1], ylim=range(betaj))
-abline(h=0, col=2)
-arrows(1:tn, betaj[1,], 1:tn, betaj[3,], length=0.02, angle=90)
-arrows(1:tn, betaj[1,], 1:tn, betaj[2,], length=0.02, angle=90)
-}
 adat <- data.frame(x=1:tn, low=beta.0[1,], med=beta.0[2,], up=beta.0[3,]
 head(adat)
 pint <- ggplot() + 
@@ -804,16 +767,16 @@ table7.11 <- M9$params
 table7.11
 aresid <- residuals(M9)
 valids <- c(8,11,12,14,18,21,24,28)
-vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=TRUE)
 M9.5 <-   Bsptime(package="spTimer", model="GPP", g_size=5, 
 formula=f2, data=nysptime, validrow=vrows, 
-coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T)
+coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE)
 M9.4 <-   Bsptime(package="spTimer", model="GPP", g_size=4, 
 formula=f2, data=nysptime, validrow=vrows, 
-coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T)
+coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE)
 M9.3 <-   Bsptime(package="spTimer", model="GPP", g_size=3, 
 formula=f2, data=nysptime, validrow=vrows, 
-coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T)
+coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE)
 u3 <-  c(3, M9.3$mchoice, unlist(M9.3$stats))
 u4 <-  c(4, M9.4$mchoice, unlist(M9.4$stats))
 u5 <-  c(5, M9.5$mchoice, unlist(M9.5$stats))
@@ -824,38 +787,38 @@ head(nysptime)
 f2 <- y8hrmax~xmaxtemp+xwdsp+xrh
 f3 <- y8hrmax~ xmaxtemp + sp(xmaxtemp)+ tp(xwdsp) + xrh
 valids <- c(8,11,12,14,18,21,24,28)
-vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=TRUE)
 M1.v <- Bsptime(model="lm", formula=f2, data=nysptime, 
-scale.transform = "SQRT", validrows=vrows, N=5000, mchoice=T)
+scale.transform = "SQRT", validrows=vrows, N=5000, mchoice=TRUE)
 M2.v <- Bsptime(model="separable",  formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, phi.s=0.005, phi.t=0.05, 
-scale.transform = "SQRT", validrows=vrows, N=5000, mchoice=T)
+scale.transform = "SQRT", validrows=vrows, N=5000, mchoice=TRUE)
 M3.v <- Bsptime(package="spTimer", model="GP", formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-mchoice=T, validrows=vrows, N=5000,  n.report=2)
+mchoice=TRUE, validrows=vrows, N=5000,  n.report=2)
 M4.v <- Bsptime(package="stan",formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-N=5000, mchoice=T, validrows=vrows, verbose = F)
+N=5000, mchoice=TRUE, validrows=vrows, verbose = F)
 # 8 mins 
 M5.v <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-validrows=vrows, mchoice=T,  N=5000, n.report = 2)
+validrows=vrows, mchoice=TRUE,  N=5000, n.report = 2)
 M6.v <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime,
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-validrows=vrows,  N=5000, mchoice=T)
+validrows=vrows,  N=5000, mchoice=TRUE)
 #6 mins 41s
 library(spTDyn)
 M7.v <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-mchoice=T,  N=5000, validrows=vrows, n.report=2)
+mchoice=TRUE,  N=5000, validrows=vrows, n.report=2)
 M8.v <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
 prior.sigma2=c(2, 25),prior.tau2 =c(2, 25),
-prior.sigma.eta =c(2, 0.001),mchoice=T,  N=5000, validrows=vrows,  
+prior.sigma.eta =c(2, 0.001),mchoice=TRUE,  N=5000, validrows=vrows,  
 n.report=200)
 M9.v <-   Bsptime(package="spTimer", model="GPP", g_size=5, 
 formula=f2, data=nysptime, validrow=vrows, 
-coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T, 
+coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE, 
 n.report=20, N=5000)
 results <- cbind.data.frame(lm=unlist(M1.v$stats), 
 separable=unlist(M2.v$stats), spTimerGP=unlist(M3.v$stats), 

@@ -8,7 +8,8 @@ the decay parameter phi.}
 phichoicep(
   phis = c(0.001, 0.005, 0.025, 0.125, 0.625),
   phit = c(0.05, 0.25, 1.25, 6.25),
-  valids = c(8, 11, 12, 14, 18, 21, 24, 28)
+  valids = c(8, 11, 12, 14, 18, 21, 24, 28),
+  verbose = TRUE
 )
 }
 \arguments{
@@ -17,6 +18,8 @@ phichoicep(
 \item{phit}{A vector values of phi for temporal decay}
 
 \item{valids}{A vector giving the validation sites}
+
+\item{verbose}{Logical. Should progress be printed?}
 }
 \value{
 A data frame giving the phi values and the corresponding validation statistics
@@ -26,7 +29,7 @@ Calculates the validation statistics using the spatial model with a given range 
 the decay parameter phi.
 }
 \examples{
-\dontrun{
+\donttest{
 asave <-  phichoicep()
 }
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/newfunctions.R
 \name{materncov}
 \alias{materncov}
-\title{Banerjee, Carlin and Gelfand (2015) Matern covariance function}
+\title{Banerjee, Carlin and Gelfand (2015) Mat'ern covariance function}
 \usage{
 materncov(d, phi, nu)
 }
@@ -14,8 +14,8 @@ materncov(d, phi, nu)
 \item{nu}{is the smoothness parameter}
 }
 \value{
-Returns the Matern covariance for distance object d
+Returns the Mat'ern covariance for distance object d
 }
 \description{
-Banerjee, Carlin and Gelfand (2015) Matern covariance function
+Banerjee, Carlin and Gelfand (2015) Mat'ern covariance function
 }

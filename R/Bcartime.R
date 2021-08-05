@@ -9,13 +9,13 @@
 #' Each covariate (or an offset) needs to be a vector of length K*1. 
 #' Only required for zero-inflated Poisson models.
 #' @param data The data frame for which the model formula is to be fitted.
-#' The data frame should be in long format having one row for each location and  time
+#' The data frame should be in long format having one row for each lomessageion and  time
 #' combination. The data frame must be ordered by time within each site, and should
 #' optionally have a column, named s.index,  providing the site indices.
 #' Thus the data,  with n sites and T times within each site, should be
 #' organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
 #' The data frame should also contain two columns giving the coordinates of the
-#' locations for spatio temporal model fitting.  
+#' lomessageions for spatio temporal model fitting.  
 #' @param package Which package is to be used in model fitting? Currently available 
 #' packages are:
 #' \itemize{  
@@ -48,7 +48,7 @@
 #' Pearson residuals in GLM. For INLA based model fitting only the default response 
 #' residuals are calculated.  
 #' @param W	A non-negative K by K neighbourhood matrix (where K is the number of spatial units). 
-#' Typically a binary specification is used, where the jkth element equals one if areas (j, k) 
+#' Typically a binary specifimessageion is used, where the jkth element equals one if areas (j, k) 
 #' are spatially close (e.g. share a common border) and is zero otherwise. 
 #' The matrix can be non-binary, but each row must contain at least one non-zero entry.
 #' This argument may not need to be specified if \code{adj.graph} is specified instead. 
@@ -94,7 +94,7 @@
 #' @param rho.int	The value in the interval [0, 1] that the spatial dependence parameter for 
 #' the intercept of the linear time trend, rho.int, is fixed at if it should not 
 #' be estimated. If this arugment is NULL then rho.int is estimated in the model.
-#' @param interaction	TRUE or FALSE indicating whether the spatio-temporal interaction 
+#' @param interaction	TRUE or FALSE indimessageing whether the spatio-temporal interaction 
 #' random effects should be included. Defaults to TRUE unless family="gaussian" in which 
 #' case interactions are not allowed.
 #' @param rho	The value in the interval [0, 1] that the spatial dependence parameter rho 
@@ -151,7 +151,7 @@
 #' @references
 #' \insertAllCited{}
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Only spatial modeling for the engtotals data set 
 #' # Please scroll below for spatio-temporal modeling 
 #' names(engtotals)
@@ -413,7 +413,7 @@ Bcartime <- function(formula,
                    W = NULL, 
                    adj.graph=NULL,  
                    residtype="response", 
-                   interaction =T, 
+                   interaction =TRUE, 
                    Z = NULL, 
                    W.binary = NULL, 
                    changepoint=NULL, 
@@ -436,10 +436,10 @@ Bcartime <- function(formula,
                    ind.re = NULL, 
                    trends = NULL, 
                    rho.T =NULL, rho.S=NULL, rho = NULL, rho.slo=NULL, rho.int=NULL, 
-                   MALA = F, 
+                   MALA = FALSE, 
                    N=2000, burn.in=1000, thin=10, rseed =44,
                    Nchains=4, 
-                   verbose=TRUE, plotit=T){
+                   verbose=TRUE, plotit=TRUE){
   
  set.seed(rseed)
  start.time<-proc.time()[3]
@@ -447,29 +447,29 @@ Bcartime <- function(formula,
  s1 <- length(scol)
  t1 <- length(tcol)
  
- # cat("in Bcartime N=", N, " burn in=", burn.in, " thin =", thin, "\n")
+ # message("in Bcartime N=", N, " burn in=", burn.in, " thin =", thin, "\n")
  indep <- F
  spatialonly <- F
  sptemporal <- F 
  
  if ( (s1==0) & (t1==0) ) { 
-   cat("No column has been identified as either spatial or temporal identifier columns\n")
-   cat("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
-   cat("If this is a mistake, please specify at least the 
-       scol argument for spatial data and also the tcol argument if data are temporal.\n") 
+   message("No column has been identified as either spatial or temporal identifier columns\n")
+   message("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
+   message("If this is a mistake, please specify at least the 
+       scol argument for spatial data and the tcol argument if data are temporal too.\n") 
    indep <- T
    sn <- nrow(data)
    tn <- 0
  } else if ( (s1==0) & (t1>0) ) { 
-   cat("I can't fit models for only temporal data\n")
-   cat("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
+   message("It is not possible to fit models for temporal data only.\n")
+   message("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
    indep <- T
    sn <- nrow(data)
    tn <- 0
  } else if ( (s1>0) & (t1==0) ) { 
    spatialonly <- T
-   cat("No temporal column has been supplied \n")
-   cat("Only spatial models will be fitted\n")
+   message("No temporal column has been supplied, 
+           hence only spatial models will be fitted. \n")
    sids <- data[, scol]
    scode <- unique(sids)
    tn <- 1
@@ -480,7 +480,7 @@ Bcartime <- function(formula,
    } else stop("Wrong package. Please see helpfile")
  } else { 
    sptemporal <- T
-   cat("Spatio-temporal models will be fitted\n")
+   message("Spatio-temporal models will be fitted.\n")
    sids <- data[, scol]
    tids <- data[, tcol]
    scode <- unique(sids)
@@ -490,8 +490,7 @@ Bcartime <- function(formula,
    a <- grepl(package, x=implemented, ignore.case = TRUE)
    if (any(a)) { 
      package <- implemented[which(a)]
-   } else stop("Wrong package. Please see helpfile")
-  # cat("Here the package is", package, "\n")
+   } else stop("Wrong package. Please see the helpfile.")
 }
 
  ## Prepare for validation 
@@ -516,8 +515,9 @@ Bcartime <- function(formula,
    # validrows <- c(5, 7)
    allmissings <- which(is.na(ynavec))
    allmissings
-   validsamongallmissings  <- match(validrows, allmissings) # Find the position of the validation
-   validsamongallmissings
+   validsamongallmissings  <- match(validrows, allmissings) 
+   # Find the position of the validation
+   # if (verbose) print(validsamongallmissings)
  }
  nmissing <- length(which(is.na(ynavec)))
  
@@ -537,7 +537,8 @@ if (indep ==T) {
 } else { 
   
   if (is.null(W)) {
-    if (is.null(adj.graph) ) stop("You must specify either the W matrix or the adjacency graph")
+    if (is.null(adj.graph) ) stop("You must specify either the W matrix or 
+                                  the adjacency graph")
     a <- inla.read.graph(adj.graph)
     W <- inla.graph2matrix(a)
   } 
@@ -546,8 +547,9 @@ if (indep ==T) {
   n2 <- ncol(W)
   if (n1 != n2) stop("W matrix not square! \n")
   sn <- length(scode)
-  if (sn !=n1)  stop("number of areal units and the dimension of W do not match \n")
-  if (sn * tn !=nrow(data) ) stop("More than one data for each space-time combination")
+  if (sn !=n1)  stop("Number of areal units and the dimension of W do not match \n")
+  if (sn * tn !=nrow(data) ) stop("There is more than one data for each 
+                                  space-time combination")
  
  if (spatialonly) { 
    if (package == "CARBayes") {
@@ -575,7 +577,7 @@ if (indep ==T) {
  } else stop("No other package implemented yet \n")
  }  # Done spatial only 
  if (sptemporal) { 
-    # cat("I am in sptemporal\n")
+    # message("I am in sptemporal\n")
      if (package=="CARBayesST") {
        results <- BcarBayesST(formula=formula, 
                               data=data,
@@ -586,9 +588,7 @@ if (indep ==T) {
                               AR = AR, 
                               nmissing = nmissing, 
                               interaction = interaction, 
-                             # prior.beta0=prior.beta0,  
                               prior.mean.delta =prior.mean.delta, 
-                            #  prior.M=prior.M, 
                               prior.sigma2=prior.sigma2,
                               prior.tau2 = prior.tau2,  
                               prior.nu2 =prior.nu2,
@@ -621,14 +621,14 @@ if (indep ==T) {
  } else if (residtype=="pearson"){ 
    newresults$residuals <- results$residuals$pearson
  } else { 
-   cat(paste("Your requested residual type ", residtype, " has not been implemented."), "\n")
-   cat("Returning  the response residuals.\n") 
+   message(paste("Your requested residual type ", residtype, " has not been implemented."), "\n")
+   message("Returning  the response residuals.\n") 
    newresults$residuals <- results$residuals$response
    
  }
   if (nvalid>0) { 
    yits <- t(results$samples$Y[, validsamongallmissings]) ## pickout the validation rows 
-  #cat("dim yits=", dim(yits), "length yholdout=", length(yholdout))
+  #message("dim yits=", dim(yits), "length yholdout=", length(yholdout))
    sds <- apply(yits, 1, sd) 
    means <- apply(yits, 1, mean) 
    ipreds <- apply(yits, 1, quantile, probs=c(0.5, 0.025, 0.975))
@@ -654,7 +654,7 @@ if (indep ==T) {
  } # INLA loop done 
  ## Now doing it for all packages 
  if (nvalid>0) { 
-   cat("Calculating validation statistics\n This may take a while. \n")
+   message("Calculating validation statistics\n This may take a while. \n")
    if (family=="gaussian") {
      bstat <- calculate_validation_statistics(yholdout, yits, summarystat="mean")
    } else { 
@@ -683,13 +683,12 @@ if (indep ==T) {
  comp.time<-end.time-start.time
  comp.time<-fancy.time(comp.time)
  newresults$computation.time <- comp.time
- print(comp.time)
+ message(comp.time)
  
  newresults 
 }
 
  
-# @export
 BcarBayes <- function(formula,  data,
                       family, 
                       model="glm",  nmissing =0, 
@@ -713,10 +712,10 @@ BcarBayes <- function(formula,  data,
                       ind.re=NULL,
                       MALA=FALSE,
                       N=2000, burn.in=1000, thin=10, rseed =44, 
-                      verbose=T, plotit=T) {
+                      verbose=TRUE, plotit=TRUE) {
   ###
   ###
-  # cat("in BcarBayes N=", N, " burn in=", burn.in, " thin =", thin, "\n")
+  # message("in BcarBayes N=", N, " burn in=", burn.in, " thin =", thin, "\n")
   if (model=="glm") {
     results <-  CARBayes::S.glm(formula=formula, formula.omega=formula.omega, 
                       family=family, data=data, 
@@ -779,7 +778,7 @@ BcarBayes <- function(formula,  data,
                     MALA=MALA,
                     verbose=verbose)
     }  else { 
-      cat("Your model has not been implemented in the CARBayes package. \n")
+      message("Your model has not been implemented in the CARBayes package. \n")
       stop("Try some other model?")
     } 
   results
@@ -909,18 +908,17 @@ BcarBayesST <- function(formula, data, family,
                                            MALA=MALA,  Nchains = Nchains, 
                                            verbose=verbose)
   }  else { 
-    cat("Your model has not been implemented in the CARBayes package. \n")
+    message("Your model has not been implemented in the CARBayes package. \n")
     stop("Try some other model?")
   } 
   results
 }
 
 
-#   https://ggrepel.slowkow.com/articles/examples.html
 
 Bcarinla <- function(
   formula, data, W=NULL, adj.graph=NULL,  scol ="spaceid", tcol=NULL, 
-  model=c("bym", "iid"),  sptemporal = F, 
+  model=c("bym", "iid"),  sptemporal = FALSE, 
   offsetcol=NULL, Ntrials=NULL, 
   link="log",  family="poisson", prior.nu2 =c(2, 1), prior.tau2 =c(2, 1),
   N=1000,   plotit=TRUE, verbose = TRUE) {
@@ -949,15 +947,15 @@ Bcarinla <- function(
   if (sptemporal) {  
     timeids <- data[, tcol]
     if (!is.numeric(timeids)) {  
-      cat("I am not fitting any temporal model using INLA\n")
-      cat("since the tcol column is not numeric. \n") 
-      cat("To fit temporal random effects please supply  \n
+      message("I am not fitting any temporal model using INLA\n")
+      message("since the tcol column is not numeric. \n") 
+      message("To fit temporal random effects please supply  \n
           numerical codes for the temporal identifier column tcol\n")
     }  
     k <- length(model)
     if (k < 2) {
-      cat("I am not fitting any temporal model using INLA\n")
-      cat("since the model argument does not contain a temporal model. \n")
+      message("I am not fitting any temporal model using INLA\n")
+      message("since the model argument does not contain a temporal model. \n")
    } else { 
     if (model[2] !="none") 
        newformula <- update(newformula, . ~ . + f(timeids, model=model[2],constr=TRUE)) 
@@ -986,7 +984,7 @@ Bcarinla <- function(
   
   # control.compute=list(config=TRUE).
   
-  cat("Finished INLA fitting \n")
+  message("Finished INLA fitting \n")
  #  ifit <- c1$fit [1] 
   # "Precision for spaceid (iid component)"     "Precision for spaceid (spatial component)"
   # ifit <- c21$fit 

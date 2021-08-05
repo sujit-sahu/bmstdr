@@ -8,6 +8,9 @@ and is 1 if the corresponding row and column LADCUAs share a common boundary.}
 \format{
 An object of class \code{matrix} (inherits from \code{array}) with 313 rows and 313 columns.
 }
+\source{
+\insertCite{SahuBohning2021;textual}{bmstdr}.
+}
 \usage{
 Weng
 }
@@ -16,9 +19,10 @@ A 313 by 313 proximity matrix for the 313 LADCUAS in England. Each entry is eith
 and is 1 if the corresponding row and column LADCUAs share a common boundary.
 }
 \examples{
-\dontrun{
  dim(Weng)
  summary(apply(Weng, 1, sum))
 }
+\references{
+\insertAllCited{}
 }
 \keyword{datasets}

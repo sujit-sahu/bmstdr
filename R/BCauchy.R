@@ -18,7 +18,7 @@
 #' The routine simulates n observations from N(theta, 1). 
 #' Mean of the simulated data values are returned as ybar.
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' BCauchy(true.theta = 1, n=25) 
 #' BCauchy(true.theta = 5, n=100) 
 #' BCauchy(method="importance", true.theta = 1, n=25) 
@@ -37,20 +37,20 @@ BCauchy <- function(method="exact", true.theta=1, n=25, N=10000, rseed=44, tunin
   set.seed(rseed)
   if (method=="exact") { 
     results <- Cauchy_prior_exact_estimate(true.theta=true.theta, n=n, rseed=rseed)
-    cat("Results from exact integration.\n")
+    message("Results from exact integration.\n")
   } else if (method=="importance") { 
     results <- Cauchy_prior_IS_estimate(true.theta=true.theta, n=n,  N=N)
-    cat("Results from using importance sampling.\n")
+    message("Results from using importance sampling.\n")
   } else if (method=="rejection") { 
     results <- Cauchy_prior_rejection_estimate(true.theta=true.theta, n=n,  N=N)
-    cat("Results from using rejection sampling.\n")
+    message("Results from using rejection sampling.\n")
   } else if (method=="independence") {   
     results <- Cauchy_prior_independence_sampler(true.theta=true.theta, n=n,  N=N) 
-    cat("Results from independence sampler\n")
+    message("Results from independence sampler.\n")
   }  else if (method=="randomwalk") {   
     results <- Cauchy_prior_random_walk_sampler(true.theta=true.theta, n=n,  N=N, tuning.sd=tuning.sd) 
-    cat("Results from the random walk sampler\n")
-  } else { stop("method not implemented")}
+    message("Results from the random walk sampler.\n")
+  } else { stop("The supplied method has not been implemented.")}
   results
 }
 ## Estimate the exact value of theta by numerical integration for the
@@ -62,11 +62,9 @@ BCauchy <- function(method="exact", true.theta=1, n=25, N=10000, rseed=44, tunin
 ## seed is 44. Simulated values are not returned.
 ## @family Cauchy_prior_IS_estimate Cauchy_prior_rejection_estimate
 ## @examples
-## \dontrun{
 ## Cauchy_prior_exact_estimate(true.theta = 1, n=25) 
 ## Cauchy_prior_exact_estimate(true.theta = 5, n=100) 
 ## Cauchy_prior_exact_estimate(true.theta = -1, n=100)
-##}
 ## @export
 Cauchy_prior_exact_estimate <- function(true.theta=5, n=100, rseed=44) {
 set.seed(rseed)

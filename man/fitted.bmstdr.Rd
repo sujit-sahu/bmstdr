@@ -11,6 +11,9 @@
 
 \item{...}{Any other additional arguments.}
 }
+\value{
+Returns a vector of fitted values.
+}
 \description{
 Extract fitted values from bmstdr objects.
 }

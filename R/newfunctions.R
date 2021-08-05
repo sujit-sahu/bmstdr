@@ -1,8 +1,8 @@
-#' Banerjee, Carlin and Gelfand (2015) Matern covariance function
+#' Banerjee, Carlin and Gelfand (2015) Mat'ern covariance function
 #' @param d is the distance
 #' @param phi is the rate of decay
 #' @param nu is the smoothness parameter
-#' @return Returns the Matern covariance for distance object d
+#' @return Returns the Mat'ern covariance for distance object d
 #' @export
 materncov <- function(d, phi, nu) {
   u <- sqrt(2*nu) * d * phi
@@ -10,11 +10,11 @@ materncov <- function(d, phi, nu) {
   diag(covmat) <- 0
   exp(covmat)
 }
-#' Banerjee et al Matern covariance function
+#' Banerjee et al Mat'ern covariance function
 #' @param d is the distance
 #' @param phi is the rate of decay
 #' @param nu is the smoothness parameter
-#' @return Returns the Matern correlation function for distance object d
+#' @return Returns the Mat'ern correlation function for distance object d
 #' @export
 maternfun <- function(d, phi, nu) {
   u <- sqrt(2*nu) * d * phi
@@ -63,7 +63,7 @@ fnc.delete.map.XYZ <- function(xyz){
 #' values
 #' @return A ribbon plot,  ggplot2 object,  which shows observed values
 #' in red color and open circle, predicted values in blue color and
-#' filled circle.
+#' filled circle. 
 #' @export
 #'
 fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
@@ -97,19 +97,17 @@ fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
 #' @return Integer vector providing the row numbers of the data frame for validation.
 #' Output of this function is suitable as the argument \code{validrows} for the
 #' \code{bmstdr} model fitting functions \code{Bsptime, Bcartime}.
-#' @examples
-#' \dontrun{
+#' @examples{
 #' # To validate at site numbers 1, 5, and 10 at 31 randomly selected
 #' # time points for the nysptime data set we issue the following commands
 #' set.seed(44)
 #' vt <- sample(62, 31)
 #' vrows <- getvalidrows(sn=28, tn=62, valids=c(1, 5, 10), validt=vt)
 #' # To validate at sites 1 and 2 at all time points
-#' vrows <- getvalidrows(sn=28, tn=62, valids=c(1, 2), allt=T)
-#' # This is a line from RStudio
+#' vrows <- getvalidrows(sn=28, tn=62, valids=c(1, 2), allt=TRUE)
 #' }
 #' @export
-getvalidrows <- function(sn, tn, valids, validt=NULL, allt=F) {
+getvalidrows <- function(sn, tn, valids, validt=NULL, allt=FALSE) {
   # Assumes data are sorted first by site and then by time
   if (allt) {
     validt <- 1:tn
@@ -117,7 +115,7 @@ getvalidrows <- function(sn, tn, valids, validt=NULL, allt=F) {
     k <- length(validt)
     if (k==0) stop("Need to provide validation times \n or set allt=T")
   }
-  allrows <- matrix(1:(sn*tn), nrow=sn, byrow=T)
+  allrows <- matrix(1:(sn*tn), nrow=sn, byrow=TRUE)
   vrows <- sort(c(allrows[valids, validt]))
   # checking
   # dats <- data.frame(sites=rep(1:sn, each=tn), times=rep(1:tn, each=sn), valflag=0)
@@ -130,7 +128,7 @@ getvalidrows <- function(sn, tn, valids, validt=NULL, allt=F) {
 #' @param thresh Threshold value
 #' @param yobs A vector of observations, may include missing values
 #' @param ypred Predictions
-#' @return  A list containing hit and false alarm rates
+#' @return  A list containing the calculated hit and false alarm rates
 #' @export
 hitandfalsealarm <- function(thresh, yobs, ypred) {
   # thresh is threshold value

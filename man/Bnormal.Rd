@@ -12,7 +12,8 @@ Bnormal(
   prior.M = 1e-04,
   prior.sigma2 = c(0, 0),
   N = 2000,
-  burn.in = 1000
+  burn.in = 1000,
+  rseed = 44
 )
 }
 \arguments{
@@ -39,6 +40,8 @@ mean is from the data mean. Default value is 0.}
 
 \item{burn.in}{is the number of initial iterations to discard before 
 making inference.}
+
+\item{rseed}{is the random number seed defaults to 44.}
 }
 \value{
 A list containing the exact posterior means and variances of theta and sigma2
@@ -47,7 +50,7 @@ A list containing the exact posterior means and variances of theta and sigma2
 N(theta, sigma2):  Using different methods.
 }
 \examples{
-\dontrun{
+\donttest{
 Bnormal(kprior=1, prior.M=1, prior.sigma2=c(2,1))
 Bnormal(mu0=0) ## non-informative prior
 # Start creating table 

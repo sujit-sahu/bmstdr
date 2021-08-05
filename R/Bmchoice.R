@@ -17,9 +17,13 @@
 #' @param prior.M Prior sample size, defaults to 10^(-4).
 #' @param prior.sigma2 Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision.
 #' @param N The number of samples to generate. 
+#' @param rseed The random number seed. Defaults to 44 to reproduce the results
+#'  in the book  \insertCite{Sahubook;textual}{bmstdr}.  
 #' @return A list containing the exact values of pdic, dic, pdicalt, dicalt,
 #'  pwaic1, waic1, pwaic2, waic2, gof, penalty and pmcc.
 #'  Also prints out the posterior mean and variance.
+#'  @references
+#' \insertAllCited{}
 #' @examples
 #' Bmchoice()
 #' b1 <- Bmchoice(case="Exact.sigma2.known")
@@ -29,11 +33,11 @@
 #' 
 #' @export
 Bmchoice <- function(case="Exact.sigma2.known", y=ydata, mu0=mean(y), sigma2=22, 
-                    kprior=1, prior.M=1, prior.sigma2=c(2, 1),  N=10000){
+                    kprior=1, prior.M=1, prior.sigma2=c(2, 1),  N=10000, rseed=44){
   if (!is.vector(y)) {
     stop("The argument must be a vector\n")
   }
-  
+  set.seed(rseed)
   implemented <- c("Exact.sigma2.known",  "MC.sigma2.known", "MC.sigma2.unknown")
   a <- grepl(case,  x=implemented, ignore.case = TRUE)
   if (any(a)) { 
@@ -42,14 +46,14 @@ Bmchoice <- function(case="Exact.sigma2.known", y=ydata, mu0=mean(y), sigma2=22,
   
   if (case=="Exact.sigma2.known") { 
     results <- exact_normal_theta_model_choice_values(sigma2=sigma2,  kprior=kprior, prior.M=prior.M)
-    cat("Results by using  exact theoretical calculations assuming known sigma2\n")
+    message("Results by using  exact theoretical calculations assuming known sigma2.\n")
   } else if (case=="MC.sigma2.known") { 
     results <- normal_theta_unknown_mc_values(sigma2=sigma2,  kprior=kprior, prior.M=prior.M, N=N)
-    cat("Results by  using Monte Carlo Samples from the posterior distribution of theta for known sigma2.\n")
+    message("Results by  using Monte Carlo Samples from the posterior distribution of theta for known sigma2.\n")
   } else if (case=="MC.sigma2.unknown") { 
     results <- normal_both_unknown_mc_values(kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2, N=N)
-    cat("Results by  using Monte Carlo Samples from the joint posterior distribution of theta and sigma2.\n")
-  } else { stop("Case not implemented")}
+    message("Results by  using Monte Carlo Samples from the joint posterior distribution of theta and sigma2.\n")
+  } else { stop("The supplied case has not been implemented.")}
   results
 }
 
@@ -165,7 +169,6 @@ normal_theta_unknown_mc_values <- function(y=ydata, mu0=mean(y), kprior=1, prior
              sigma2byn=sigma2/n))
 
   ### Generate theta from the posterior distribution
-  set.seed(44)
   theta <- rnorm(n=N, mean=mup, sd=sqrt(sigma2p))  ## This is the exact sampling case
 
   ## dic calculation for normal with known variance but using sampling
@@ -234,7 +237,6 @@ normal_theta_sigma2_model_choice_values <- function(samps, y=ydata) {
   pred_samples_N_theta <- function(pars, n) { ## Draw n samples from the posterior predictive distribution
     rnorm(n, mean=pars[1], sd=sqrt(pars[2]))
   }
-  set.seed(44)
   v <- apply(samps, 1, pred_samples_N_theta, n=n) ## n by N
 
   expected_ys <- apply(v, 1, mean)
