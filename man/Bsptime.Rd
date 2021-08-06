@@ -315,7 +315,7 @@ estimated values of several Bayesian model choice criteria.
 library(bmstdr)
 library(ggplot2)
 library(ggsn)
-N <- 25
+N <- 45
 burn.in <- 5
 n.report <- 2
 f2 <- y8hrmax~xmaxtemp+xwdsp+xrh
@@ -336,32 +336,32 @@ print(M2)
 summary(M2)
 b <- residuals(M2)
 # Spatio-temporal model fitting and validation 
-valids <-  c(8,11,12,14,18,21,24,28)
+valids <-  c(8,11)
 vrows <-  which(nysptime$s.index\%in\% valids)
 M2.1 <- Bsptime(model="separable",  formula=f2, data=nysptime, 
 validrows=vrows, coordtype="utm", coords=4:5,
-phi.s=0.005, phi.t=0.05, scale.transform = "SQRT")
+phi.s=0.005, phi.t=0.05, scale.transform = "SQRT", N=N)
 summary(M2.1)
 plot(M2.1)
 # Use spTimer 
 M3 <- Bsptime(package="spTimer", formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE,  
-N=N, burn.in = burn.in, n.report=n.report)
+N=N, burn.in = burn.in, n.report=2)
 summary(M3)
-plot(M3)
 valids <- c(1, 5, 10)
 validt <- sort(sample(1:62, size=31))
 vrows <- getvalidrows(sn=28, tn=62, valids=valids, validt=validt)
-ymat <- matrix(nysptime$y8hrmax, byrow=TRUE, ncol=tn)
+ymat <- matrix(nysptime$y8hrmax, byrow=TRUE, ncol=62)
 yholdout <- ymat[valids, validt]
 M31 <- Bsptime(package="spTimer",formula=f2, data=nysptime, 
 coordtype="utm", coords=4:5, validrows=vrows, model="GP",  
-scale.transform = "NONE",  N=N, burn.in=burn.in, n.report = n.report)
+scale.transform = "NONE",  N=N, burn.in=burn.in, n.report = 2)
 summary(M31)
 modfit <- M31$fit
 ## Extract the fits for the validation sites
 fitall <- data.frame(modfit$fitted)
 head(fitall)
+tn <- 62
 fitall$s.index <- rep(1:28, each=tn)
 library(spTimer)
 vdat <- spT.subset(data=nysptime, var.name=c("s.index"), s=valids)
@@ -386,7 +386,7 @@ library(ggpubr)
 ggarrange(p1, p2, p3, common.legend = TRUE, legend = "top", nrow = 3, ncol = 1)
 ## Using rstan 
 M4 <- Bsptime(package="stan",formula=f2, data=nysptime, 
-coordtype="utm", coords=4:5, N=N, burn.in=burn.in, verbose = F)
+coordtype="utm", coords=4:5, N=N, burn.in=burn.in, verbose = FALSE)
 summary(M4)
  M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime,
  coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE,  

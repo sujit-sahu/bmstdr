@@ -311,7 +311,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
     message("This model fitting method cannot handle missing data\n")
     omean <- mean(y, na.rm=TRUE)
     y[miss] <- omean 
-    message("Replaced ", nmiss,  " missing observations by the grand mean of the data.\n 
+    message("Replaced ", nmiss,  " missing observations by the grand mean of the data.
         Because this function cannot handle missing values.\n")
   }
   if (scale.transform == "SQRT") { 

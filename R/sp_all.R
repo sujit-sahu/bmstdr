@@ -1,22 +1,3 @@
-## Bayesian linear regression model fitting.
-## \code{\link{Blm_sp}} Calculates the validation statistics, exact parameter estimates and
-## the estimated values of the Bayesian model choice criteria
-## @inheritParams Bspatial
-## @return Parameter estimates, model choice statistics, validation statistics, validation observations and their
-## predictions and fitted values. 
-## @seealso \code{\link{Bsp_sp}} for Bayesian linear regression model fitting,
-## \code{\link{Bsp_sp}} for exact spatial model fitting,
-## \code{\link{Bstan_sp}} for GP model fitting using Stan,
-## \code{\link{BspBayes_sp}} for spatial modelling using spBayes,
-## \code{\link{Binla_sp}} for spatial modelling using R-INLA.
-## @examples
-## a <- Blm_sp()
-## names(a)
-## a <- Blm_sp(mchoice=FALSE, validrows=c(8,11,12,14,18,21,24,28))
-## a <- Blm_sp(formula=mpg~wt, data=mtcars)
-## a <- Blm_sp(formula=mpg~disp+wt+qsec+drat, data=mtcars, validrows=c(8,11,12,14,18,21,24,28))
-## names(a)
-# # ## @export
 Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                    validrows=NULL, scale.transform="NONE",
                    prior.beta0=0, prior.M=0.0001, prior.sigma2=c(2, 1),
@@ -34,13 +15,7 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   } else fdat <- data
 
   
-  
   fdat <- na.omit(fdat)  ## Removes the NA's
-
-  # yX <- Formula.matrix(formula=formula, data=fdat)
-  # y <- as.vector(yX[[1]])
-  # X <- as.matrix(yX[[2]])
-  
   u <- getXy(formula=formula, data=fdat)
   X <- u$X
   y <- u$y
@@ -461,20 +436,7 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
 
   allres
 }
-## Perform spatial modelling and validation  using spBayes
-## @inheritParams Bspatial
-## @return A of two lists. The first list contains the parameter estimates. The second list contains the
-## eastimated  values of  p_dic,  p_dic alt, dic, dic alt,
-##  p_waic1, waic1, p_waic2, waic2, gof, penalty and pmcc.
-## @examples
-## b <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28))
-## b <- BspBayes_sp(mchoice=TRUE)
-## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=FALSE, validrows= c(8,11,12,14,18,21,24,28))
-## b <- BspBayes_sp(formula=yo3~xwdsp, mchoice=FALSE, validrows= c(8,11,12,14,18,21,24,28))
-## b <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28))
-## a <- BspBayes_sp(validrows= c(8,11,12,14,18,21,24,28), mchoice=FALSE)
-## a <- BspBayes_sp(formula=yo3~xmaxtemp+xwdsp+xrh, mchoice=TRUE,phi=0.05)
-# ## @export
+
 BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                                   validrows=NULL,
                                    scale.transform ="NONE",
@@ -880,11 +842,12 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                             prior.sigma = c(1, 0.005),
                             offset = c(10, 140), 
                             max.edge=c(50, 1000),  
-                            N=1000, rseed=44,  plotit=TRUE){
+                            N=2000, burn.in =1000,  rseed=44,  plotit=TRUE){
 
 
   set.seed(rseed)
   r <- length(validrows)
+  Ns <- N-burn.in 
   
   if (length(coords)==2) coords <-  as.matrix(unique(data[, coords]))
   if (coordtype=="lonlat")  stop("Please either supply the coordinates in UTM meters \n 
@@ -950,22 +913,22 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                 verbose = F)
   #summary(ifit)
 
-  prec.marg.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[1]])
+  prec.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[1]])
   marg.tausq.samp 		<- 1/prec.marg.samp
   # summary(marg.tausq.samp)
 
-  range.marg.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[2]])
+  range.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[2]])
   marg.phi.samp 		<- 3/range.marg.samp
   # summary(marg.phi.samp)
 
-  sd.marg.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[3]])
+  sd.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[3]])
   marg.sigmasq.samp 		<- sd.marg.samp^2
   # summary(marg.sigmasq.samp)
 
-  beta.samp <- matrix(NA, nrow=N, ncol=p)
+  beta.samp <- matrix(NA, nrow=Ns, ncol=p)
 
   for (i in 1:p) {
-    beta.samp[, i] <-  inla.rmarginal(N, ifit$marginals.fixed[[i]])
+    beta.samp[, i] <-  inla.rmarginal(Ns, ifit$marginals.fixed[[i]])
   }
 
   dimnames(beta.samp)[[2]] <- xnames
@@ -996,7 +959,7 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 
   if (r>0) {
 
-    ps 		<- inla.posterior.sample(N, ifit) 	## posterior sampling
+    ps 		<- inla.posterior.sample(Ns, ifit) 	## posterior sampling
     contents 	<- ifit$misc$configs$contents
 
     idX 		<- contents$start[which(contents$tag == "Xcov1")]-1 + (1:p)
@@ -1004,10 +967,10 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
       (1:contents$length[which(contents$tag == "se")])
 
 
-    xLatent 	<- matrix(0, nrow = length(ps[[1]]$latent), ncol = N)
-    xHyper  	<- matrix(0, nrow = length(ps[[1]]$hyperpar), ncol = N)
+    xLatent 	<- matrix(0, nrow = length(ps[[1]]$latent), ncol = Ns)
+    xHyper  	<- matrix(0, nrow = length(ps[[1]]$hyperpar), ncol = Ns)
 
-    for(j in 1:N){
+    for(j in 1:Ns){
       xLatent[,j] <- ps[[j]]$latent
       xHyper[,j]  <- ps[[j]]$hyperpar
     }
@@ -1015,12 +978,12 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     xSpace 	<- xLatent[idSpace,]
     xX 	 	<- xLatent[idX,]
 
-    sample.IIDval <- matrix(0, r, N)
+    sample.IIDval <- matrix(0, r, Ns)
 
     ID.precision 	   	<- xHyper[1, ] ## precision samples or 3? Nope 1
     tau_sample <- 1/sqrt(ID.precision)
-    errs <- matrix(rnorm(r*N), nrow=r, ncol=N)
-    tau_mat  <- matrix(rep(tau_sample, each=r), ncol=N)
+    errs <- matrix(rnorm(r*Ns), nrow=r, ncol=Ns)
+    tau_mat  <- matrix(rep(tau_sample, each=r), ncol=Ns)
     err_samp <- errs  * tau_mat
 
     ypreds	<- as.matrix(A.val %*% xSpace) + as.matrix(Xcov.val) %*% xX + err_samp

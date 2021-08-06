@@ -182,7 +182,7 @@
 #'   # BYM model using INLA
 #'   M1.inla.bym <- Bcartime(data=engtotals, formula=f1, W=Weng, 
 #'   scol ="spaceid",  model=c("bym"),   package="inla", family="binomial", 
-#'   trials=engtotals$nweek) 
+#'   trials=engtotals$nweek, N=N, burn.in=burn.in, thin=thin) 
 #'   summary(M1.inla.bym)
 #'   # Leroux model  
 #'   M1.leroux.v <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
@@ -217,7 +217,8 @@
 #'   f2inla <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
 #'   M2.inla.bym <- Bcartime(formula=f2inla, data=engtotals, scol ="spaceid",  
 #'   model=c("bym"), family="poisson", 
-#'   W=Weng, offsetcol="logEdeaths", link="log", package="inla") 
+#'   W=Weng, offsetcol="logEdeaths", link="log", package="inla", 
+#'   N=N, burn.in=burn.in, thin=thin) 
 #'   summary(M2.inla.bym)
 #'   # Validation
 #'   M2.leroux.v <- Bcartime(formula=f2, data=engtotals,
@@ -238,7 +239,8 @@
 #'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
 #'   summary(M3.leroux)
 #'   M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
-#'   model=c("bym"), family="gaussian", W=Weng,  package="inla") 
+#'   model=c("bym"), family="gaussian", W=Weng,  package="inla",
+#'    N=N, burn.in=burn.in, thin=thin) 
 #'   summary(M3.inla.bym)
 #'   ## Validation
 #'   M3.leroux.v <- Bcartime(formula=f3, data=engtotals,
@@ -248,7 +250,7 @@
 #'   ##Validation
 #'   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
 #'   scol ="spaceid",  model=c("bym"),   package="inla",   
-#'   family="gaussian", validrows = vs) 
+#'   family="gaussian", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
 #'   summary(M3.inla.bym.v)
 #'   ## Fit BYM with iid random effect
 #'   M3.inla.bym <- Bcartime(data=engtotals, formula=f3, W=Weng, 
@@ -257,7 +259,7 @@
 #'   summary(M3.inla.bym)
 #'   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
 #'   scol ="spaceid",  model=c("bym"),   package="inla",   family="gaussian", 
-#'   validrows = vs) 
+#'   validrows = vs, N=N, burn.in=burn.in, thin=thin) 
 #'   summary(M3.inla.bym.v)
 #'   ##
 #'   ##
@@ -301,11 +303,12 @@
 #'    model <- c("bym", "ar1")
 #'    M1st_inla.bym <- Bcartime(data=engdeaths, formula=f1, 
 #'    W=Weng, scol =scol, tcol=tcol,  model=model,   trials=nweek, 
-#'    family="binomial", package="inla") 
+#'    family="binomial", package="inla", 
+#'    N=N, burn.in=burn.in, thin=thin) 
 #'    summary(M1st_inla.bym)
 #'    M1_inla_v <- Bcartime(data=engdeaths, formula=f1, W=Weng, scol =scol, 
 #'    tcol=tcol,  model=model,  trials=nweek,  family="binomial", 
-#'    package="inla", validrow=vs) 
+#'    package="inla", validrow=vs, N=N, burn.in=burn.in, thin=thin) 
 #'    summary(M1_inla_v)
 #'    
 #'    ##
@@ -353,7 +356,8 @@
 #'    summary(M2stinla )
 #'    M2stinla.v  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, 
 #'    scol =scol, tcol=tcol,  offsetcol="logEdeaths",  model=model,  
-#'    link="log", family="poisson", package="inla", validrow=vs) 
+#'    link="log", family="poisson", package="inla", validrow=vs, 
+#'    N=N, burn.in=burn.in, thin=thin) 
 #'    summary(M2stinla.v )
 #'    
 #'    ##
@@ -382,12 +386,13 @@
 #'    ## Gaussian distribution based modeling with INLA
 #'    model <- c("bym", "iid")
 #'    M3inla.bym.iid <- Bcartime(data=engdeaths, formula=f3, W=Weng, 
-#'    scol =scol, tcol=tcol,  model=model,  family="gaussian", package="inla") 
+#'    scol =scol, tcol=tcol,  model=model,  family="gaussian", package="inla", 
+#'    N=N, burn.in=burn.in, thin=thin) 
 #'    summary(M3inla.bym.iid)
 #'    model <- c("bym", "ar1")
 #'    M3inla.bym.ar1 <- Bcartime(data=engdeaths, formula=f3, 
 #'    W=Weng, scol =scol, tcol=tcol,  model=model,  family="gaussian", 
-#'    package="inla", validrows = vs) 
+#'    package="inla", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
 #'    summary(M3inla.bym.ar1)
 #'    }
 #' @export
@@ -595,12 +600,13 @@ if (indep ==T) {
                               N=N, burn.in=burn.in, thin=thin, 
                               verbose=verbose, plotit=plotit)
      } else if (package=="inla") { 
+       inlaN <- (N-burn.in)/thin
        newresults <- Bcarinla(data=data, formula=formula, sptemporal=TRUE, 
                            scol = scol, tcol=tcol, W=W,   offsetcol=offsetcol, 
                            Ntrials=trials, adj.graph = adj.graph, 
                            model=model, family=family, link = link, 
                            prior.nu2 =prior.nu2,  prior.tau2 =prior.tau2, 
-                           N=N,  verbose = verbose) 
+                           N=inlaN,  verbose = verbose) 
   } else stop("No other package implemented yet\n")
  } # Done sptemporal 
 } # independent model or not 
@@ -634,9 +640,9 @@ if (indep ==T) {
      ipreds <- modfit$summary.fitted.values[validrows, ]
      # print(head(ipreds))
      psums <- data.frame(obs=yholdout, meanpred=ipreds$mean,  sdpred=ipreds$sd, medianpred=ipreds$`0.5quant`, low=ipreds$`0.025quant`, up=ipreds$`0.975quant`)
-     yits <- matrix(NA, ncol=N-burn.in, nrow=nvalid)
+     yits <- matrix(NA, ncol=N, nrow=nvalid)
      for (i in 1:nvalid) {
-       yits[i, ]  <- inla.rmarginal(N-burn.in, modfit$marginals.fitted.values[[validrows[i]]]) 
+       yits[i, ]  <- inla.rmarginal(N, modfit$marginals.fitted.values[[validrows[i]]]) 
      }
     if (family=="binomial")  {
       ntrialsholdout <- trials[validrows]

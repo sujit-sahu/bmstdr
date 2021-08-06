@@ -87,7 +87,7 @@
 #'    is set as \code{plain}.     
 #'    \item  fitteds -  A vector of fitted values.   
 #'     \item  mchoice -  Calculated model choice statistics if those have been 
-#'     requested by the input argument \code{mchoice=T}. Not all model fits will contain 
+#'     requested by the input argument \code{mchoice=TRUE}. Not all model fits will contain 
 #'     all the model choice statistics. 
 #'     \item  stats -  The four validation statistics: rmse, mae, crps and coverage. 
 #'      This is present only if model validation has been performed. 
@@ -120,28 +120,28 @@
 #' }
 #' @seealso \code{\link{Bsptime}} for Bayesian spatio-temporal model fitting.
 #' @examples
-#' a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm")
+#' N <- 10
+#' burn.in <- 5
+#' n.report <- 2 
+#' a <- Bspatial(formula=mpg~wt, data=mtcars, package="none", model="lm", N=N)
 #' summary(a)
 #' plot(a)
 #' print(a)
 #' b <- Bspatial(formula=mpg~disp+wt+qsec+drat, data=mtcars, 
-#' validrows=c(8,11,12,14,18,21,24,28))
+#' validrows=c(8,11,12,14,18,21,24,28), N=N)
 #' #' print(b)
 #' summary(b)
 #' ## Illustration with the nyspatial data set 
-#' N <- 25
-#' burn.in <- 5
-#' n.report <- 2 
 #' head(nyspatial)
 #' ## Linear regression model fitting 
-#' M1 <- Bspatial(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, mchoice=T)
+#' M1 <- Bspatial(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, mchoice=TRUE, N=N)
 #' print(M1)
 #' plot(M1)
 #' a <- residuals(M1)
 #' summary(M1)
 #' ## Spatial model fitting
 #' M2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-#' coordtype="utm", coords=4:5, phi=0.4, mchoice=T)
+#' coordtype="utm", coords=4:5, phi=0.4, mchoice=TRUE, N=N)
 #' names(M2)
 #' print(M2)
 #' plot(M2)
@@ -149,11 +149,6 @@
 #' summary(M2)
 #' ##
 #' ##
-#' \donttest{
-#'  # Use grid search to find optimal phi for spatial model fitting (M2)
-#'  asave <- phichoice_sp()
-#'  # optimal phi = 0.4
-#'  }
 #'  # Fit model 2 on the square root scale 
 #'  M2root <-  Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
 #'  data=nyspatial,  coordtype="utm", coords=4:5, scale.transform = "SQRT")
@@ -161,16 +156,16 @@
 #'  ## Spatial model fitting using spBayes 
 #'  M3 <- Bspatial(package="spBayes", formula=yo3~xmaxtemp+xwdsp+xrh, 
 #'  data=nyspatial, coordtype="utm", coords=4:5, prior.phi=c(0.005, 2), 
-#'  mchoice=T, N=N, burn.in=burn.in, n.report=n.report)
+#'  mchoice=TRUE, N=N, burn.in=burn.in, n.report=n.report)
 #'  summary(M3)
 #'  # Spatial model fitting using stan (with a small number of iterations)
 #'  M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, 
 #'  data=nyspatial, coordtype="utm", coords=4:5,phi=0.4, N=N, burn.in = burn.in, 
-#'  mchoice=T)
+#'  mchoice=TRUE)
 #'  summary(M4)
 #'  # Spatial model fitting using INLA
 #'  M5  <- Bspatial(package="inla",formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5, mchoice=T)
+#'  data=nyspatial, coordtype="utm", coords=4:5, mchoice=TRUE, N=N, burn.in = burn.in)
 #'  summary(M5)
 #'  
 #'  ## K fold cross-validation for M2 only
@@ -184,13 +179,13 @@
 #'  s4 <- u[22:28]
 #'  summary((1:28) - sort(c(s1, s2, s3, s4))) ## check
 #'  v1 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s1, phi=0.4)
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s1, phi=0.4, N=N )
 #'  v2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s2,  phi=0.4)
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s2,  phi=0.4, N=N)
 #'  v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5, validrows= s3, phi=0.4)
+#'  data=nyspatial, coordtype="utm", coords=4:5, validrows= s3, phi=0.4, N=N)
 #'  v4 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s4,  phi=0.4)
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows= s4,  phi=0.4, N=N)
 #'  M2.val.table <- cbind(unlist(v1$stats), unlist(v2$stats), unlist(v3$stats), 
 #'  unlist(v4$stats))
 #'  dimnames(M2.val.table)[[2]] <- paste("Fold", 1:4, sep="")
@@ -199,20 +194,17 @@
 #'  ## Model validation
 #'  s <- c(8,11,12,14,18,21,24,28)
 #'  M1.v <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s)
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s,  N=N, burn.in = burn.in)
 #'  M2.v <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s,  phi=0.4)
+#'  data=nyspatial, coordtype="utm", coords=4:5,validrows=s,  phi=0.4,  N=N, burn.in = burn.in)
 #'  M3.v <- Bspatial(package="spBayes",formula=yo3~xmaxtemp+xwdsp+xrh, 
 #'  data=nyspatial, coordtype="utm", coords=4:5, validrows=s, 
-#'  prior.phi=c(0.005, 2))
-#'  M5.v <- Bspatial(package="inla", formula=yo3~xmaxtemp+xwdsp+xrh, 
-#'  data=nyspatial, coordtype="utm", coords=4:5, validrows=s)
+#'  prior.phi=c(0.005, 2), n.report=2,  N=N, burn.in = burn.in)
 #'  # Collect all the results 
 #'  Mall.table <- cbind(unlist(M1.v$stats), unlist(M2.v$stats), 
-#'  unlist(M3.v$stats), unlist(M5.v$stats))
-#'  colnames(Mall.table) <- paste("M", c(1:3, 5), sep="")
+#'  unlist(M3.v$stats))
+#'  colnames(Mall.table) <- paste("M", c(1:3), sep="")
 #'  round(Mall.table, 3)
-
 #' @export
 Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh, 
                    data, # =nyspatial,
@@ -307,7 +299,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                            prior.range= prior.range,
                            prior.sigma = prior.sigma,
                            offset = offset, max.edge=max.edge,  
-                           N=N, rseed=rseed,  plotit=plotit)
+                           N=N, burn.in=burn.in, rseed=rseed,  plotit=plotit)
     } else { 
       cat("Implemented packages are none,", implemented, "\n")
       cat("\n If package is none then the implemented models are lm and spat\n")

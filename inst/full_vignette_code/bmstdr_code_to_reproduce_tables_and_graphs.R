@@ -25,9 +25,9 @@ tablepath <- "../txttables/"
 ## The figure number and file name refers to the figures in the 
 ## paper submitted to the JSS only.
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
-figurepath <- "figures/"
+figurepath <- "~/Dropbox/sks/bookproject/rbook/jss-bmstdr/figures"
 # Set a file name to save the screen output if required 
-# sink("sahu_jss-bmstdr.txt")
+
 ## Please load all the libraries. You may have to install these as required. 
 library("bmstdr")
 library("ggplot2")
@@ -124,7 +124,7 @@ summary(M4)
 ## Model fitting using the INLA package 
 M5  <- Bspatial(package="inla",formula=f1, data=nyspatial, 
             coordtype="utm", coords=4:5, mchoice=T, 
-            N=N-burn.in)
+            N=N, burn.in=burn.in)
 summary(M5)
 
 ## The following command gets the model choice the results for fitting a baseline model with 
@@ -614,7 +614,7 @@ M5.v <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime,
 
 M6.v <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                validrows=vrows,  mchoice=T, N=N-burn.in)
+                validrows=vrows,  mchoice=T, N=N, burn.in=burn.in)
 #6 mins 41s
 
 
@@ -844,7 +844,7 @@ ggsave(filename = paste0(figurepath, "figure9.png"))
 Ncar <- 50000
 burn.in.car <- 10000
 thin <- 10
-inlaN <- (Ncar - burn.in.car)/thin
+
 
 nweek <- rep(1, nrow(engdeaths))
 scol <- "spaceid"
@@ -883,7 +883,7 @@ summary(M1st_ar2)
 model <- c("bym", "ar1")
 M1st_inla.bym <- Bcartime(data=engdeaths, formula=f10, W=Weng, 
         scol =scol, tcol=tcol,  model=model,   trials=nweek, 
-        family="binomial", package="inla", N=inlaN) 
+        family="binomial", package="inla", N=N, burn.in=burn.in, thin=thin) 
 summary(M1st_inla.bym)
 names(M1st_inla.bym)
 
@@ -945,7 +945,7 @@ f2inla <-  covid ~  jsa + log10(houseprice) + log(popdensity) + n0
 
 M2stinla <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
                      offsetcol="logEdeaths",  model=model,  link="log", family="poisson", 
-                     package="inla", N=inlaN) 
+                     package="inla", N=N, burn.in=burn.in, thin=thin) 
 
 
 a <- rbind(M2st_linear$mchoice, M2st_anova_nointer$mchoice,  M2st_anova$mchoice,
@@ -1072,7 +1072,7 @@ M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,
 
 M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
                         offsetcol="logEdeaths",  model=model,  link="log", family="poisson", 
-                        package="inla", validrow=vs, N=inlaN) 
+                        package="inla", validrow=vs, N=N, burn.in=burn.in, thin=thin) 
 
 table10 <- rbind(unlist(M2st_anova.0$stats), unlist(M2st_ar.0$stats), unlist(M2st_ar2.0$stats), 
                  unlist(M2stinla.0$stats)) 
@@ -1145,7 +1145,7 @@ summary(M3st_ar2)
 model <- c("bym", "ar1")
 M3inla.bym.ar1 <- Bcartime(data=engdeaths, formula=f3, W=Weng, scol =scol, tcol=tcol,  
                            model=model,  family="gaussian", package="inla", 
-                            N=inlaN) 
+                            N=N, burn.in=burn.in, thin=thin) 
 summary(M3inla.bym.ar1)
 
 

@@ -4,7 +4,7 @@
 \alias{plot.bmstdr}
 \title{Plot method for  bmstdr objects.}
 \usage{
-\method{plot}{bmstdr}(x, segments = T, ...)
+\method{plot}{bmstdr}(x, segments = TRUE, ...)
 }
 \arguments{
 \item{x}{A bmstdr model fit object.}

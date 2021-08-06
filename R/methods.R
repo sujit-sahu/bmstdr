@@ -84,7 +84,7 @@ fitted.bmstdr <- function(object, ...)
 {
 if (object$scale.transform !="NONE") {  
   message("\n Note that the residuals are provided on the transformed scale. 
-    See the scale.transform argument.\n")
+    Please see the scale.transform argument.\n")
 } 
 if (exists("stats", object)) { 
   message("Validation has been performed\n")
@@ -116,11 +116,8 @@ plot.bmstdr <- function(x, segments=TRUE, ...) {
   } else { 
     message("\n No other plots implemented for this model fitting method.\n")
   }  
-  #par(ask=F)
   v <- residuals(x)
   u <- fitted(x)
-  #par(ask=T)
-  # plot(u, v, xlab="Fitted values", ylab="Residuals", pch="*")
   adf <- data.frame(residvals=v, fitvals=u)
   ndf <- na.omit(adf)
   p <- ggplot() + 
@@ -139,7 +136,6 @@ plot.bmstdr <- function(x, segments=TRUE, ...) {
     yobs <- df[, b]
     obs_v_pred_plot(yobs, predsums, segments = segments) 
   }   
-  par(old.par)
 }
 #' Extract residuals from a bmstdr  fitted object. 
 #' @param object A bmstdr model fit object. 
@@ -160,12 +156,10 @@ plot.bmstdr <- function(x, segments=TRUE, ...) {
 residuals.bmstdr <- function(object, numbers=NULL, ...)
 {
 if (object$scale.transform !="NONE") {  
-message("\n Note that the residuals are provided on the transformed scale. 
-See the scale.transform argument.\n")
+message("\n Note that the residuals are provided on the transformed scale. Please see the scale.transform argument.\n")
 } 
   if (exists("stats", object)) { 
-    message("Validation has been performed\n")
-    message("The residuals include the validation observations as well. 
+    message("Validation has been performed. The residuals include the validation observations as well. 
     Expect the return value to be of the same length as the supplied data frame. \n")
   }
   
@@ -181,8 +175,9 @@ See the scale.transform argument.\n")
   sn <- numbers$sn
   tn <- numbers$tn
   if (length(tn)==0) { 
-    message("tn has not been supplied in residuals and it is not possible to figure this out.
-        Hence I am not drawing a time series plot of the residuals.\n")
+    message("tn has not been supplied in residuals and it is 
+    not possible to figure this out. Hence a time series plot of the residuals
+    has not been provided here.\n")
     tn <- 0
     }
  }

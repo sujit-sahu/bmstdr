@@ -2,7 +2,9 @@ Package: bmstdr
 Type: Package
 Title: Bayesian Modeling of Spatio-Temporal Data with R
 Version: 0.1.1
-Author: Sujit K. Sahu [aut, cre]
+Authors@R: c(person("Sujit", "Sahu", "S.K.Sahu@soton.ac.uk", role = c("aut", "cre"), 
+    comment = c(ORCID = "0000-0003-2315-3598")))
+Author: Sujit K. Sahu
 Maintainer: Sujit K. Sahu <S.K.Sahu@soton.ac.uk>
 URL: https://www.soton.ac.uk/~sks/bmbook/
 Description: Fits, validates and compares a number of Bayesian models for 
@@ -11,7 +13,7 @@ Description: Fits, validates and compares a number of Bayesian models for
     'spTDyn', 'CARBayes' and 'CARBayesST'. Model comparison is performed using 
     the DIC and WAIC,  and K-fold cross-validation where the user is free 
     to select their own subset of data rows for validation. Sahu (2021) 
-    <https://www.soton.ac.uk/~sks/bmbook/> describes the methods in detail.  
+    <https://www.soton.ac.uk/~sks/bmbook/bmstdr.pdf> describes the methods in detail.  
 License: GPL-2
 Encoding: UTF-8
 LazyData: true

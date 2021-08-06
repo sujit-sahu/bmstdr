@@ -367,7 +367,7 @@ summary(M1)
   # BYM model using INLA
   M1.inla.bym <- Bcartime(data=engtotals, formula=f1, W=Weng, 
   scol ="spaceid",  model=c("bym"),   package="inla", family="binomial", 
-  trials=engtotals$nweek) 
+  trials=engtotals$nweek, N=N, burn.in=burn.in, thin=thin) 
   summary(M1.inla.bym)
   # Leroux model  
   M1.leroux.v <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
@@ -402,7 +402,8 @@ summary(M1)
   f2inla <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
   M2.inla.bym <- Bcartime(formula=f2inla, data=engtotals, scol ="spaceid",  
   model=c("bym"), family="poisson", 
-  W=Weng, offsetcol="logEdeaths", link="log", package="inla") 
+  W=Weng, offsetcol="logEdeaths", link="log", package="inla", 
+  N=N, burn.in=burn.in, thin=thin) 
   summary(M2.inla.bym)
   # Validation
   M2.leroux.v <- Bcartime(formula=f2, data=engtotals,
@@ -423,7 +424,8 @@ summary(M1)
   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
   summary(M3.leroux)
   M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
-  model=c("bym"), family="gaussian", W=Weng,  package="inla") 
+  model=c("bym"), family="gaussian", W=Weng,  package="inla",
+   N=N, burn.in=burn.in, thin=thin) 
   summary(M3.inla.bym)
   ## Validation
   M3.leroux.v <- Bcartime(formula=f3, data=engtotals,
@@ -433,7 +435,7 @@ summary(M1)
   ##Validation
   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
   scol ="spaceid",  model=c("bym"),   package="inla",   
-  family="gaussian", validrows = vs) 
+  family="gaussian", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
   summary(M3.inla.bym.v)
   ## Fit BYM with iid random effect
   M3.inla.bym <- Bcartime(data=engtotals, formula=f3, W=Weng, 
@@ -442,7 +444,7 @@ summary(M1)
   summary(M3.inla.bym)
   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
   scol ="spaceid",  model=c("bym"),   package="inla",   family="gaussian", 
-  validrows = vs) 
+  validrows = vs, N=N, burn.in=burn.in, thin=thin) 
   summary(M3.inla.bym.v)
   ##
   ##
@@ -486,11 +488,12 @@ summary(M1)
    model <- c("bym", "ar1")
    M1st_inla.bym <- Bcartime(data=engdeaths, formula=f1, 
    W=Weng, scol =scol, tcol=tcol,  model=model,   trials=nweek, 
-   family="binomial", package="inla") 
+   family="binomial", package="inla", 
+   N=N, burn.in=burn.in, thin=thin) 
    summary(M1st_inla.bym)
    M1_inla_v <- Bcartime(data=engdeaths, formula=f1, W=Weng, scol =scol, 
    tcol=tcol,  model=model,  trials=nweek,  family="binomial", 
-   package="inla", validrow=vs) 
+   package="inla", validrow=vs, N=N, burn.in=burn.in, thin=thin) 
    summary(M1_inla_v)
    
    ##
@@ -509,7 +512,7 @@ summary(M1)
    N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_anova)
    M2st_anova_nointer <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
-   tcol=tcol,  W=Weng, model="anova",interaction=F,  family="poisson", 
+   tcol=tcol,  W=Weng, model="anova",interaction=FALSE,  family="poisson", 
    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M2st_anova_nointer)
    M2st_sepspat <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
@@ -538,7 +541,8 @@ summary(M1)
    summary(M2stinla )
    M2stinla.v  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, 
    scol =scol, tcol=tcol,  offsetcol="logEdeaths",  model=model,  
-   link="log", family="poisson", package="inla", validrow=vs) 
+   link="log", family="poisson", package="inla", validrow=vs, 
+   N=N, burn.in=burn.in, thin=thin) 
    summary(M2stinla.v )
    
    ##
@@ -556,7 +560,7 @@ summary(M1)
    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
    summary(M3st_anova)
    M3st_anova_nointer <- Bcartime(formula=f3, data=engdeaths, 
-   scol=scol, tcol=tcol, W=Weng, model="anova", interaction=F, 
+   scol=scol, tcol=tcol, W=Weng, model="anova", interaction=FALSE, 
    family="gaussian", package="CARBayesST", N=N, burn.in=burn.in, 
    thin=thin, verbose=FALSE)
    summary(M3st_anova_nointer)
@@ -567,12 +571,13 @@ summary(M1)
    ## Gaussian distribution based modeling with INLA
    model <- c("bym", "iid")
    M3inla.bym.iid <- Bcartime(data=engdeaths, formula=f3, W=Weng, 
-   scol =scol, tcol=tcol,  model=model,  family="gaussian", package="inla") 
+   scol =scol, tcol=tcol,  model=model,  family="gaussian", package="inla", 
+   N=N, burn.in=burn.in, thin=thin) 
    summary(M3inla.bym.iid)
    model <- c("bym", "ar1")
    M3inla.bym.ar1 <- Bcartime(data=engdeaths, formula=f3, 
    W=Weng, scol =scol, tcol=tcol,  model=model,  family="gaussian", 
-   package="inla", validrows = vs) 
+   package="inla", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
    summary(M3inla.bym.ar1)
    }
 }

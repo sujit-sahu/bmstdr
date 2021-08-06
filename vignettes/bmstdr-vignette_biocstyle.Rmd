@@ -99,7 +99,7 @@ models for point reference spatio-temporal data. Area data are modeled in Sectio
 ## Illustration data set nyspatial
 
 To illustrate point reference spatio-temporal data modeling we use the `nyspatial` data set included in the package. This data set has 28 rows and 9 columns containing average ground level ozone air pollution data from 28 sites in the state of New York. The averages are taken over the 62 days in July and August 2006. The full spatio-temporal data set from 28 sites for 62 days is used to illustrate  spatio-temporal modeling, see Section \@ref(illustration-data-set-nysptime). Figure \@ref(fig:vsites3) represents a map of the state of New York  together with the 28 monitoring locations.  
-```{r vsites3, echo=FALSE, eval=TRUE, fig.cap="25 fitted sites and 3 validation sites (numbered) in  New York", fig.width=7, fig.height=4.5}
+```{r vsites3, echo=FALSE, eval=TRUE, fig.cap="25 fitted sites and 3 validation sites (numbered) in  New York", fig.width=6, fig.height=4.5}
 nymap <- map_data(database="state",regions="new york")
 s <- c(1, 5, 10)
 fcoords <- nyspatial[-s, c("Longitude", "Latitude")]
@@ -517,7 +517,7 @@ y.valids.up <- matrix(fitvalid$up, byrow=TRUE, ncol=tn)
 ```
 
 Now we call the `fig11.13.plot` function to render the plot for each site.
-```{r valid3sites, echo=TRUE, eval=TRUE, fig.height=8, fig.cap="Time series of observed and predicted values at three sites."}
+```{r valid3sites, echo=TRUE, eval=TRUE, fig.height=9, fig.cap="Time series of observed and predicted values at site number 10."}
 p1 <- fig11.13.plot(yobs[1, ], y.valids.low[1, ], y.valids.med[1, ], 
                     y.valids.up[1, ], misst=validt)
 p1 <- p1 + ggtitle("Validation for Site 1")
@@ -527,6 +527,7 @@ p2 <- p2 + ggtitle("Validation for Site 5")
 p3 <- fig11.13.plot(yobs[3, ], y.valids.low[3, ], y.valids.med[3, ], 
                     y.valids.up[3, ], misst=validt)
 p3 <- p3 + ggtitle("Validation for Site 10")
+p3 
 library(ggpubr)
 ggarrange(p1, p2, p3, common.legend = TRUE, legend = "top", nrow = 3, ncol = 1)
 ```
@@ -708,7 +709,7 @@ The `r CRANpkg("spTDyn")` package can be used to fit dynamic models in both time
 formula argument with the optional enclosures `sp` for spatially dynamic and `tp` for temporally dynamic. Here is an example where the model is specified to have spatially varying effects of maximum temperature and dynamic regression coefficients for 
 wind speed. 
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
-library(spTDyn)
+library(spTDyn, warn.conflicts = F)
 f3 <- y8hrmax~ xmaxtemp + sp(xmaxtemp)+ tp(xwdsp) + xrh
 M7 <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
       coordtype="utm", coords=4:5, scale.transform = "SQRT", 
@@ -924,7 +925,7 @@ M2atl <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat",
 ```
 to fit model \@ref(eq:marginalytocean) implemented by code written in   `r CRANpkg("rstan")`. Like the `Bsptime` function this model fitting function also renders a  `bmstdr` object which can be further investigated. 
 
-The model output is not shown here. But we obtain an  annual prediction map by averaging over the model equation  \@ref(eq:marginalytocean) at each data location. The posterior samples contained in `M2` are used to sample the annual predictions and then those samples are linearly interpolated using the `r CRANpkg("akima")` library to obtain the  prediction map in Figure \@ref(fig:oceanplot) and the uncertainty map in \@ref(fig:oceanplotsd). 
+The model output is not shown here. But we obtain an  annual prediction map by averaging over the model equation  \@ref(eq:marginalytocean) at each data location. The posterior samples contained in `M2` are used to sample the annual predictions and then those samples are linearly interpolated using the `r CRANpkg("akima")` library to obtain the  prediction map in Figure \@ref(fig:oceanplot).
 ```{r processdeep, echo=FALSE, eval=TRUE, message=FALSE}
 library(rstan)
 listofdraws <- rstan::extract(M2atl$fit)
@@ -1072,7 +1073,6 @@ There are numerous other arguments specifying more details of the models and the
 Ncar <- 2000
 burn.in.car <- 1000
 thin <- 10
-inlaN <- (Ncar - burn.in.car)/thin
 ```
  
 ## Modeling static areal unit data 
@@ -1106,7 +1106,7 @@ The above model fitting commands use the default `CARBayes` package. We can chan
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
 M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
 model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
-package="inla", N=inlaN) 
+package="inla", N=N, burn.in=burn.in, thin=thin) 
 ```
 
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
@@ -1157,7 +1157,7 @@ M2.bym <- Bcartime(formula=f2, data=engtotals,
 M2.inla.bym <- Bcartime(formula=f2, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="poisson", 
                         W=Weng, offsetcol="logEdeaths", link="log", 
-                          package="inla", N=inlaN) 
+                          package="inla", N=N, burn.in=burn.in, thin=thin) 
 
 ```
 These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
@@ -1204,7 +1204,7 @@ M3.leroux <- Bcartime(formula=f3, data=engtotals,
 
 M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="gaussian", 
-                        W=Weng,  package="inla", N=inlaN) 
+                        W=Weng,  package="inla", N=N, burn.in=burn.in, thin=thin) 
 
 ```
 These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
@@ -1359,6 +1359,9 @@ This gives us 626 data points for validation purposes. We then refit the Anova m
 ```
 
 ```{r obsvpredplot-m2st, echo=TRUE, eval=TRUE, message=FALSE, results='hide',  fig.show='hide'}
+Ncar <- 5000
+burn.in.car <- 1000
+thin <- 10
 scol <- "spaceid"
 tcol <-  "Weeknumber"
 f20 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
@@ -1371,7 +1374,7 @@ M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,
                        N=Ncar, burn.in=burn.in.car, thin=thin, 
                        validrows=vs, verbose=FALSE)
 M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
-                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=inlaN, burn.in=0) 
+                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=N, burn.in=burn.in, thin=thin) 
 yobspred <- M2st_ar2.0$yobs_preds
 names(yobspred)
 yobs <- yobspred$covid
@@ -1385,11 +1388,10 @@ a <- obs_v_pred_plot(yobs, inlapredsums, segments=TRUE)
 inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 ```
-```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.width=8, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel."}
+```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.height=7, fig.width=6, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the top panel and INLA on the bottom panel."}
 library(ggpubr)
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
 ```
-
 
 
 ### Spatio-temporal GLM  fitting with normal distribution
