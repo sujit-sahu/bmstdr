@@ -77,7 +77,9 @@ print(u)
 u <- Bnormal(package="stan", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000, burn.in=1000)
 print(u)
 # INLA example 
+\donttest{
 u <- Bnormal(package="inla", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000)
 print(u)
+}
 } 
 }

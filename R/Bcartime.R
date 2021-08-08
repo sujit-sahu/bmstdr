@@ -150,251 +150,7 @@
 #' }
 #' @references
 #' \insertAllCited{}
-#' @examples
-#' \donttest{
-#' # Only spatial modeling for the engtotals data set 
-#' # Please scroll below for spatio-temporal modeling 
-#' names(engtotals)
-#' # Binomial distribution
-#' # Model formula
-#' f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
-#' set.seed(5)
-#' vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
-#' N <- 60
-#' burn.in <- 10
-#' thin <- 1
-#' 
-#' ## Independent error logistic regression 
-#' M1 <- Bcartime(formula=f1,   data=engtotals, family="binomial",
-#' trials=engtotals$nweek,  N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#' summary(M1)
-#'   # Leroux model  
-#'   M1.leroux <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
-#'   model="leroux", W=Weng, family="binomial", 
-#'   trials=engtotals$nweek, N=N, burn.in = burn.in, thin=thin)
-#'   summary(M1.leroux)
-#'   # BYM model 
-#'   M1.bym <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
-#'   model="bym", W=Weng, 
-#'   family="binomial", trials=engtotals$nweek, 
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M1.bym)
-#'   # BYM model using INLA
-#'   M1.inla.bym <- Bcartime(data=engtotals, formula=f1, W=Weng, 
-#'   scol ="spaceid",  model=c("bym"),   package="inla", family="binomial", 
-#'   trials=engtotals$nweek, N=N, burn.in=burn.in, thin=thin) 
-#'   summary(M1.inla.bym)
-#'   # Leroux model  
-#'   M1.leroux.v <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
-#'   model="leroux", W=Weng, family="binomial", 
-#'   trials=engtotals$nweek, validrows=vs, 
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M1.leroux.v)
-#'   
-#'   ##
-#'   ##
-#'   ## Poisson Distribution 
-#'   N <- 60
-#'   burn.in <- 10
-#'   thin <- 1
-#'   f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
-#'   set.seed(5)
-#'   vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
-#'   # Independent error Poisson regression 
-#'   M2 <- Bcartime(formula=f2, data=engtotals, family="poisson",
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M2)
-#'   ## Poisson regression  with Leroux Model
-#'   M2.leroux <- Bcartime(formula=f2, data=engtotals, scol="spaceid",  
-#'   model="leroux",  family="poisson", W=Weng,
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M2.leroux)
-#'   # Poisson regression  with BYM Model
-#'   M2.bym <- Bcartime(formula=f2, data=engtotals,
-#'   scol="spaceid",  model="bym",  family="poisson", W=Weng,
-#'   N=N, burn.in = burn.in, thin=thin)
-#'   summary(M2.bym)
-#'   f2inla <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
-#'   M2.inla.bym <- Bcartime(formula=f2inla, data=engtotals, scol ="spaceid",  
-#'   model=c("bym"), family="poisson", 
-#'   W=Weng, offsetcol="logEdeaths", link="log", package="inla", 
-#'   N=N, burn.in=burn.in, thin=thin) 
-#'   summary(M2.inla.bym)
-#'   # Validation
-#'   M2.leroux.v <- Bcartime(formula=f2, data=engtotals,
-#'   scol="spaceid",  model="leroux",  family="poisson", W=Weng,
-#'   N=N, burn.in = burn.in, thin=thin, validrows=vs, verbose=FALSE)
-#'   summary(M2.leroux.v)
-#'   ##
-#'   ##
-#'   ## Gaussian distribution based spatial only model 
-#'   f3 <-  sqrt(no2) ~  jsa + log10(houseprice) + log(popdensity) 
-#'   set.seed(5)
-#'   vs <- sample(nrow(engtotals), 0.1*nrow(engtotals))
-#'   M3 <- Bcartime(formula=f3, data=engtotals, family="gaussian",
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M3)
-#'   M3.leroux <- Bcartime(formula=f3, data=engtotals,
-#'   scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
-#'   N=N, burn.in = burn.in, thin=thin, verbose=FALSE)
-#'   summary(M3.leroux)
-#'   M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
-#'   model=c("bym"), family="gaussian", W=Weng,  package="inla",
-#'    N=N, burn.in=burn.in, thin=thin) 
-#'   summary(M3.inla.bym)
-#'   ## Validation
-#'   M3.leroux.v <- Bcartime(formula=f3, data=engtotals,
-#'   scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
-#'   N=N, burn.in = burn.in, thin=thin, validrows = vs, verbose=FALSE)
-#'   summary(M3.leroux.v)
-#'   ##Validation
-#'   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
-#'   scol ="spaceid",  model=c("bym"),   package="inla",   
-#'   family="gaussian", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
-#'   summary(M3.inla.bym.v)
-#'   ## Fit BYM with iid random effect
-#'   M3.inla.bym <- Bcartime(data=engtotals, formula=f3, W=Weng, 
-#'   scol ="spaceid", model=c("bym"),   package="inla",   
-#'   family="gaussian") 
-#'   summary(M3.inla.bym)
-#'   M3.inla.bym.v <- Bcartime(data=engtotals, formula=f3, W=Weng, 
-#'   scol ="spaceid",  model=c("bym"),   package="inla",   family="gaussian", 
-#'   validrows = vs, N=N, burn.in=burn.in, thin=thin) 
-#'   summary(M3.inla.bym.v)
-#'   ##
-#'   ##
-#'   ###################################################
-#'   ## Spatio-temporal modeling
-#'   head(engdeaths)
-#'   dim(engdeaths)
-#'   set.seed(5)
-#'   vs <- sample(nrow(engdeaths), 5)
-#'   N <- 25
-#'   burn.in <- 5
-#'   thin <- 1
-#'   colnames(engdeaths)
-#'   scol <- "spaceid"
-#'   tcol <-  "Weeknumber"
-#'   nweek <- rep(1, nrow(engdeaths))
-#'   
-#'   ## Binomial distribution 
-#'   f1 <- highdeathsmr ~  jsa + log10(houseprice) + log(popdensity) 
-#'   
-#'   M1st_linear <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol,
-#'    trials=nweek, W=Weng, model="linear", family="binomial", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M1st_linear)
-#'    M1st_sepspat <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
-#'    tcol=tcol, trials=nweek, W=Weng, model="sepspatial", 
-#'    family="binomial", package="CARBayesST", N=N, burn.in=burn.in, 
-#'    thin=thin, verbose=FALSE)
-#'    summary(M1st_sepspat)
-#'    M1st_ar <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol, 
-#'    trials=nweek, W=Weng, model="ar", AR=1, family="binomial", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M1st_ar)
-#'    # Model validation 
-#'    M1st_ar.v <- Bcartime(formula=f1, data=engdeaths, scol=scol, 
-#'    tcol=tcol, trials=nweek, W=Weng, model="ar", AR=1, 
-#'    family="binomial", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
-#'    summary(M1st_ar.v)
-#'    ## Binomial distribution using INLA
-#'    model <- c("bym", "ar1")
-#'    M1st_inla.bym <- Bcartime(data=engdeaths, formula=f1, 
-#'    W=Weng, scol =scol, tcol=tcol,  model=model,   trials=nweek, 
-#'    family="binomial", package="inla", 
-#'    N=N, burn.in=burn.in, thin=thin) 
-#'    summary(M1st_inla.bym)
-#'    M1_inla_v <- Bcartime(data=engdeaths, formula=f1, W=Weng, scol =scol, 
-#'    tcol=tcol,  model=model,  trials=nweek,  family="binomial", 
-#'    package="inla", validrow=vs, N=N, burn.in=burn.in, thin=thin) 
-#'    summary(M1_inla_v)
-#'    
-#'    ##
-#'    ##
-#'    ## Spatio temporal Poisson models 
-#'    colnames(engdeaths)
-#'    f2 <- covid ~  offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
-#'    scol <- "spaceid"
-#'    tcol <-  "Weeknumber"
-#'    M2st_linear <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
-#'    W=Weng, model="linear", family="poisson", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M2st_linear)
-#'    M2st_anova <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
-#'    W=Weng, model="anova", family="poisson", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M2st_anova)
-#'    M2st_anova_nointer <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
-#'    tcol=tcol,  W=Weng, model="anova",interaction=FALSE,  family="poisson", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M2st_anova_nointer)
-#'    M2st_sepspat <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
-#'    tcol=tcol, W=Weng, model="sepspatial",family="poisson", 
-#'    package="CARBayesST",N=N, burn.in=burn.in, thin=thin)
-#'    summary(M2st_sepspat)
-#'    M2st_ar <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
-#'    W=Weng, model="ar", AR=1, family="poisson", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M2st_ar)
-#'    M2st_ar.v <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  
-#'    W=Weng, model="ar", family="poisson", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
-#'    M2st_anova.v <- Bcartime(formula=f2, data=engdeaths, scol=scol, 
-#'    tcol=tcol,  W=Weng, model="anova", family="poisson", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, validrows=vs, verbose=FALSE)
-#'    summary(M2st_ar.v)
-#'    summary(M2st_anova.v)
-#'    
-#'    ## Poisson model using INLA 
-#'    model <- c("bym", "ar1")
-#'    f2inla <- covid ~  jsa + log10(houseprice) + log(popdensity) + n0
-#'    M2stinla <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
-#'    offsetcol="logEdeaths",  model=model,  link="log", family="poisson", 
-#'    package="inla") 
-#'    summary(M2stinla )
-#'    M2stinla.v  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, 
-#'    scol =scol, tcol=tcol,  offsetcol="logEdeaths",  model=model,  
-#'    link="log", family="poisson", package="inla", validrow=vs, 
-#'    N=N, burn.in=burn.in, thin=thin) 
-#'    summary(M2stinla.v )
-#'    
-#'    ##
-#'    ## Spatio-temporal Normal models 
-#'    colnames(engdeaths)
-#'    f3 <-  sqrt(no2) ~  jsa + log10(houseprice) + log(popdensity) 
-#'    scol <- "spaceid"
-#'    tcol <-  "Weeknumber"
-#'    M3st_linear <- Bcartime(formula=f3, data=engdeaths, scol=scol, 
-#'    tcol=tcol, W=Weng, model="linear", family="gaussian", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M3st_linear)
-#'    M3st_anova <- Bcartime(formula=f3, data=engdeaths, scol=scol, 
-#'    tcol=tcol, W=Weng, model="anova", family="gaussian", 
-#'    package="CARBayesST", N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M3st_anova)
-#'    M3st_anova_nointer <- Bcartime(formula=f3, data=engdeaths, 
-#'    scol=scol, tcol=tcol, W=Weng, model="anova", interaction=FALSE, 
-#'    family="gaussian", package="CARBayesST", N=N, burn.in=burn.in, 
-#'    thin=thin, verbose=FALSE)
-#'    summary(M3st_anova_nointer)
-#'    M3st_ar <- Bcartime(formula=f3, data=engdeaths, scol=scol, tcol=tcol,
-#'    W=Weng, model="ar", family="gaussian", package="CARBayesST", 
-#'    N=N, burn.in=burn.in, thin=thin, verbose=FALSE)
-#'    summary(M3st_ar)
-#'    ## Gaussian distribution based modeling with INLA
-#'    model <- c("bym", "iid")
-#'    M3inla.bym.iid <- Bcartime(data=engdeaths, formula=f3, W=Weng, 
-#'    scol =scol, tcol=tcol,  model=model,  family="gaussian", package="inla", 
-#'    N=N, burn.in=burn.in, thin=thin) 
-#'    summary(M3inla.bym.iid)
-#'    model <- c("bym", "ar1")
-#'    M3inla.bym.ar1 <- Bcartime(data=engdeaths, formula=f3, 
-#'    W=Weng, scol =scol, tcol=tcol,  model=model,  family="gaussian", 
-#'    package="inla", validrows = vs, N=N, burn.in=burn.in, thin=thin) 
-#'    summary(M3inla.bym.ar1)
-#'    }
+#' @example inst/examples/bcar_examples.R
 #' @export
 Bcartime <- function(formula, 
                    data,   
@@ -489,8 +245,13 @@ Bcartime <- function(formula,
    if (any(a)) { 
      package <- implemented[which(a)]
    } else stop("Wrong package. Please see the helpfile.")
-}
-
+ }
+ 
+ if (package=="inla") {
+   if (inlabru::bru_safe_inla()) {
+     message("INLA will be used.")
+   } else stop("Sorry, INLA is chosen but not available.")
+ }
  ## Prepare for validation 
  u <- getXy(formula=formula, data=data)
  ynavec <- u$y
@@ -537,8 +298,12 @@ if (indep ==T) {
   if (is.null(W)) {
     if (is.null(adj.graph) ) stop("You must specify either the W matrix or 
                                   the adjacency graph")
-    a <- inla.read.graph(adj.graph)
-    W <- inla.graph2matrix(a)
+    if (inlabru::bru_safe_inla()) {
+      a <- INLA::inla.read.graph(adj.graph)
+      W <- INLA::inla.graph2matrix(a)
+    } else stop("Either the adjacency matrix or the INLA package is required to convert adjacency 
+                to a an adjacency matrix")
+    
   } 
   
   n1 <- nrow(W)
@@ -565,13 +330,14 @@ if (indep ==T) {
    MALA=MALA, N=N, burn.in=burn.in, thin=thin,  
    verbose=verbose)
  } else if (package=="inla")  { 
+   inlaN <- (N-burn.in)/thin
    newresults <- Bcarinla(data=data, formula=formula,  
                       scol = scol, W=W, adj.graph = adj.graph,
                       sptemporal=FALSE, offsetcol=offsetcol, 
                       Ntrials=trials, 
                       family=family, link = link, 
                       prior.nu2 =prior.nu2, prior.tau2 =prior.tau2,
-                       verbose=verbose, N=N) 
+                       verbose=verbose, N=inlaN) 
  } else stop("No other package implemented yet \n")
  }  # Done spatial only 
  if (sptemporal) { 
@@ -642,7 +408,7 @@ if (indep ==T) {
      psums <- data.frame(obs=yholdout, meanpred=ipreds$mean,  sdpred=ipreds$sd, medianpred=ipreds$`0.5quant`, low=ipreds$`0.025quant`, up=ipreds$`0.975quant`)
      yits <- matrix(NA, ncol=N, nrow=nvalid)
      for (i in 1:nvalid) {
-       yits[i, ]  <- inla.rmarginal(N, modfit$marginals.fitted.values[[validrows[i]]]) 
+       yits[i, ]  <- INLA::inla.rmarginal(N, modfit$marginals.fitted.values[[validrows[i]]]) 
      }
     if (family=="binomial")  {
       ntrialsholdout <- trials[validrows]
@@ -927,10 +693,10 @@ Bcarinla <- function(
      if (is.null(adj.graph) ) stop("You must specify either the W matrix or the adjacency graph")
      inla.adj <- adj.graph 
   } else {  
-    a <- inla.read.graph(W)
-    # inla.write.graph(a, filename ="inla.graph")
+    a <- INLA::inla.read.graph(W)
+    # INLA::inla.write.graph(a, filename ="inla.graph")
     # inla.adj <- "inla.graph"
-    inla.write.graph(a, filename =file.path(tempdir(), 'inla.graph'))
+    INLA::inla.write.graph(a, filename =file.path(tempdir(), 'inla.graph'))
     inla.adj <- file.path(tempdir(), 'inla.graph')
   }
   
@@ -969,13 +735,13 @@ Bcarinla <- function(
   # length(ofsetvalues)
   # is.null(offsetcol)
   if (!is.null(offsetcol)) {   
-   ifit <- inla(newformula,family=family,data=data, 
+   ifit <- INLA::inla(newformula,family=family,data=data, 
                offset = data[, offsetcol] , Ntrials = Ntrials, 
                  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
   } else { 
-    ifit <- inla(newformula,family=family,data=data, 
+    ifit <- INLA::inla(newformula,family=family,data=data, 
                 Ntrials = Ntrials,  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
@@ -995,7 +761,7 @@ Bcarinla <- function(
   p <- nrow(fixed.out)
   beta.samp <- matrix(NA, nrow=N, ncol=p)
   for (i in 1:p) {
-    beta.samp[, i] <-  as.vector(inla.rmarginal(N, ifit$marginals.fixed[[i]]))
+    beta.samp[, i] <-  as.vector(INLA::inla.rmarginal(N, ifit$marginals.fixed[[i]]))
   } 
   # colnames(beta.samp) <- rownames(fixed.out)
   samps <- data.frame(beta.samp)
@@ -1012,7 +778,7 @@ Bcarinla <- function(
     a <- grepl("Precision for spaceid", x=rnames, ignore.case = TRUE)
     k <- which(a)
     if (any(a)) { 
-      prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+      prec.samp 		<- INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
       sigmasqS.samp <-  1/prec.samp
       summary(sigmasqS.samp)
       samps$tau2 <- sigmasqS.samp 
@@ -1022,7 +788,7 @@ Bcarinla <- function(
   a <- grepl("spatial", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    sd.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    sd.samp 		<- INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     sigmasq.samp 		<- sd.samp^2
     summary(sigmasq.samp)
     samps$tau2 <- sigmasq.samp
@@ -1032,7 +798,7 @@ Bcarinla <- function(
   a <- grepl("iid", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    prec.samp 		<- INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     tausq.samp 		<- 1/prec.samp
     summary(tausq.samp)
     samps$sigma2 <- tausq.samp
@@ -1043,7 +809,7 @@ Bcarinla <- function(
   a <- grepl("Rho", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    rho.samp <-  inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    rho.samp <-  INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     summary(rho.samp)
     samps$rho <- rho.samp
   }
@@ -1051,7 +817,7 @@ Bcarinla <- function(
   a <- grepl("Precision for timeids", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    prec.samp 		<- INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     sigmasqT.samp <-  1/prec.samp
     summary(sigmasqT.samp)
     samps$tau2T <- sigmasqT.samp
@@ -1060,7 +826,7 @@ Bcarinla <- function(
   a <- grepl("Precision for the Gaussian observation", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    prec.samp 		<- INLA::inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
     sigmasqGauss.samp <-  1/prec.samp
     summary(sigmasqGauss.samp)
     samps$nu2 <- sigmasqGauss.samp

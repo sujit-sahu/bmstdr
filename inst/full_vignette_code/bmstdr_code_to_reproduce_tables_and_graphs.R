@@ -19,14 +19,18 @@ setwd(yourpath)
 ## The table numbers and file names refer to the tables in the 
 ## paper submitted to the JSS and also the vignette distributed 
 ## with the package 
-tablepath <- "../txttables/"
 
-## Please set a folder path for saving the figures. 
-## The figure number and file name refers to the figures in the 
-## paper submitted to the JSS only.
+figpath <- system.file("figs", package = "bmstdr") 
+tablepath <- system.file('txttables', package = 'bmstdr')
+workpath <-   system.file("full_vignette_code", package = "bmstdr") 
+setwd(workpath)
+
+# Is INLA available? 
+inlaok <- inlabru::bru_safe_inla()
+
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
-figurepath <- "~/Dropbox/sks/bookproject/rbook/jss-bmstdr/figures"
-# Set a file name to save the screen output if required 
+## Except for the INLA v AR2 model graph which is drawn from  here. 
+
 
 ## Please load all the libraries. You may have to install these as required. 
 library("bmstdr")
@@ -1103,6 +1107,7 @@ ar2valid <- b$pwithseg
 
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
 ggsave(filename = paste0(figurepath, "figure11.png"))
+ggsave(filename="../figs/inlavAR2.png")
 
 f2s <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity)
 M2s <- Bcartime(formula=f2s, data=engtotals, scol=scol, W=Weng, model="bym",

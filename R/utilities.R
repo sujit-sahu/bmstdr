@@ -1,5 +1,4 @@
 #' @import spTimer
-#' @import INLA
 #' @import spBayes
 #' @import rstan
 #' @import CARBayes
@@ -13,16 +12,6 @@
 #' @importFrom utils head
 #' @importFrom rstan sampling 
 #' @importFrom Rdpack reprompt
-#' @importFrom INLA inla
-#' @importFrom INLA inla.rmarginal
-#' @importFrom INLA inla.spde.make.A
-#' @importFrom INLA inla.stack
-#' @importFrom INLA inla.mesh.2d 
-#' @importFrom INLA inla.spde2.pcmatern
-#' @importFrom INLA inla.posterior.sample
-#' @importFrom INLA inla.write.graph
-#' @importFrom INLA inla.read.graph
-#' @importFrom INLA inla.graph2matrix
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)

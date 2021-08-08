@@ -1,12 +1,10 @@
 Package: bmstdr
 Type: Package
 Title: Bayesian Modeling of Spatio-Temporal Data with R
-Version: 0.1.1
-Authors@R: c(person("Sujit", "Sahu", "S.K.Sahu@soton.ac.uk", role = c("aut", "cre"), 
+Version: 0.1.2
+Authors@R: c(person(given="Sujit K.", family="Sahu", email="S.K.Sahu@soton.ac.uk", role = c("aut", "cre"), 
     comment = c(ORCID = "0000-0003-2315-3598")))
-Author: Sujit K. Sahu
-Maintainer: Sujit K. Sahu <S.K.Sahu@soton.ac.uk>
-URL: https://www.soton.ac.uk/~sks/bmbook/
+URL: https://www.soton.ac.uk/~sks/
 Description: Fits, validates and compares a number of Bayesian models for 
     spatial and space time point referenced and areal unit data. Model fitting
     is done using several packages: 'rstan', 'INLA', 'spBayes', 'spTimer', 
@@ -19,26 +17,25 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 Imports: 
-    INLA (>= 20.03.17), 
     methods,
     spTimer, 
     ggplot2,
     rstan, 
     spBayes, 
     CARBayes, 
-    CARBayesST,  
-    Rdpack, 
-    BiocStyle
+    CARBayesST, 
+    spTDyn, 
+    Rdpack
 RdMacros: Rdpack
 Depends:
-    R (>= 3.4.0),
+    R (>= 3.4.0), 
     Rcpp (>= 0.12.0)
 Suggests: 
+    INLA (>= 20.03.17), 
     coda,
     extraDistr, 
     RcppParallel, 
     maps, 
-    spTDyn, 
     rstantools (>= 2.0.0),
     xtable,
     MASS,
@@ -59,7 +56,9 @@ Suggests:
     RColorBrewer, 
     magick, 
     markdown, 
-    bookdown
+    bookdown, 
+    inlabru, 
+    BiocStyle
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
@@ -68,4 +67,4 @@ LinkingTo:
     StanHeaders (>= 2.18.0)
 VignetteBuilder: knitr
 SystemRequirements: GNU make
-Additional_repositories: https://inla.r-inla-download.org/R/stable
+Additional_repositories: https://inla.r-inla-download.org/R/testing

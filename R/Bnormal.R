@@ -45,8 +45,10 @@
 #' u <- Bnormal(package="stan", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000, burn.in=1000)
 #' print(u)
 #' # INLA example 
+#' \donttest{
 #' u <- Bnormal(package="inla", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000)
 #' print(u)
+#' }
 #' } 
 #' @export
 Bnormal <- function(package="exact", y=ydata, mu0=mean(y), kprior=0, prior.M=0.0001, 
@@ -71,9 +73,13 @@ Bnormal <- function(package="exact", y=ydata, mu0=mean(y), kprior=0, prior.M=0.0
     results <- normal_theta_sigma2_by_stan(y, mu0=mean(y), kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2, N=N, burn.in=burn.in) 
     message("Results from Hamiltonian Monte Carlo in Stan.\n")
   } else if (package=="inla") {   
+    if (inlabru::bru_safe_inla()) {
     results <- normal_theta_sigma2_by_inla(y, mu0=mean(y), kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2, N=N)  
     message("Results from INLA.\n")
-  } else { stop("Either the method or package has not been implemented")}
+    } else {
+      stop("The chosen package INLA is not available.")
+    }
+  } else { stop("Either the method or package has not been implemented.")}
   results
 }
 ## N(theta, sigma^2) example computed using several methods
@@ -217,13 +223,13 @@ normal_theta_sigma2_by_inla <- function(y=ydata, mu0=mean(y), kprior=1, prior.M=
   ydf <- data.frame(y=y)
   formula <- y~1
   hyper <- list(prec=list(prior="loggamma",param=prior.sigma2))
-  mod1 <- inla(formula, data=ydf,  family="gaussian", control.family = list(hyper=hyper),
+  mod1 <- INLA::inla(formula, data=ydf,  family="gaussian", control.family = list(hyper=hyper),
              control.fixed = list(mean.intercept=mu, prec.intercept=s2y/prior.M))
   names(mod1)
   summary(mod1)
-  prec.marg.samp <- inla.rmarginal(N, mod1$marginals.hyperpar[[1]])
+  prec.marg.samp <- INLA::inla.rmarginal(N, mod1$marginals.hyperpar[[1]])
   sigma2 <- 1/prec.marg.samp #variance
-  theta <- inla.rmarginal(N, mod1$marginals.fixed[[1]])
+  theta <- INLA::inla.rmarginal(N, mod1$marginals.fixed[[1]])
   #cv
   cv <- sqrt(sigma2)/theta
   samps <- cbind(theta, sigma2)

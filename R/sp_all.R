@@ -887,48 +887,48 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   if (scale.transform == "SQRT") newy <- sqrt(y)
   if (scale.transform == "LOG")  newy <- log(y)
 
-  mesh <- inla.mesh.2d(loc=fcoords, offset=offset, max.edge=max.edge)
+  mesh <- INLA::inla.mesh.2d(loc=fcoords, offset=offset, max.edge=max.edge)
 
-  spde		<- inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
+  spde		<- INLA::inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
                                prior.range = prior.range, prior.sigma = prior.sigma)
 
-  A 		<- inla.spde.make.A(mesh = mesh, loc = as.matrix(fcoords))
+  A 		<- INLA::inla.spde.make.A(mesh = mesh, loc = as.matrix(fcoords))
   Xcov		<- as.matrix(data.frame(intercept = 1, X[,-1]))
 
   if (r>0) {
-    A.val		<- inla.spde.make.A(mesh = mesh, loc = as.matrix(vcoords))
+    A.val		<- INLA::inla.spde.make.A(mesh = mesh, loc = as.matrix(vcoords))
     Xcov.val	<- as.matrix(data.frame(intercept = 1, X0[,-1]))
   }
 
-  stack		<- inla.stack(tag = 'est', data = list(y = newy), A = list(A, 1),
+  stack		<- INLA::inla.stack(tag = 'est', data = list(y = newy), A = list(A, 1),
                        effects = list(se = 1:spde$n.spde, Xcov = Xcov))
 
   hyper 	<- list(prec = list(prior = "loggamma", param = c(prior.tau2[1], prior.tau2[2])))
   newformula	<- y ~ -1 + Xcov + f(se, model = spde)
 
-  ifit		<- inla(formula=newformula, data = inla.stack.data(stack),
+  ifit		<- INLA::inla(formula=newformula, data = INLA::inla.stack.data(stack),
                 family = "gaussian", control.family = list(hyper = hyper),
-                control.predictor = list(A = inla.stack.A(stack), compute = T),
+                control.predictor = list(A = INLA::inla.stack.A(stack), compute = T),
                 control.compute = list(config = TRUE, dic = mchoice, waic = mchoice),
                 verbose = F)
   #summary(ifit)
 
-  prec.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[1]])
+  prec.marg.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[1]])
   marg.tausq.samp 		<- 1/prec.marg.samp
   # summary(marg.tausq.samp)
 
-  range.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[2]])
+  range.marg.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[2]])
   marg.phi.samp 		<- 3/range.marg.samp
   # summary(marg.phi.samp)
 
-  sd.marg.samp 		<- inla.rmarginal(Ns, ifit$marginals.hyperpar[[3]])
+  sd.marg.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[3]])
   marg.sigmasq.samp 		<- sd.marg.samp^2
   # summary(marg.sigmasq.samp)
 
   beta.samp <- matrix(NA, nrow=Ns, ncol=p)
 
   for (i in 1:p) {
-    beta.samp[, i] <-  inla.rmarginal(Ns, ifit$marginals.fixed[[i]])
+    beta.samp[, i] <-  INLA::inla.rmarginal(Ns, ifit$marginals.fixed[[i]])
   }
 
   dimnames(beta.samp)[[2]] <- xnames
@@ -959,7 +959,7 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 
   if (r>0) {
 
-    ps 		<- inla.posterior.sample(Ns, ifit) 	## posterior sampling
+    ps 		<- INLA::inla.posterior.sample(Ns, ifit) 	## posterior sampling
     contents 	<- ifit$misc$configs$contents
 
     idX 		<- contents$start[which(contents$tag == "Xcov1")]-1 + (1:p)

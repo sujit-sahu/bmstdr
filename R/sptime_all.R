@@ -979,6 +979,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
 
  
  nvalid <- length(validrows)
+ Ns <- N -burn.in
  
  if (length(coords)==2) coords <-  as.matrix(unique(data[, coords])) 
  if (coordtype=="lonlat")  stop("Please either supply the coordinates in UTM meters \n 
@@ -1034,9 +1035,9 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   # max.edge   <- diff(range(coords[,1]))/15
   # bound.outer 	<- diff(range(coords[,2]))/3
 
- #  mesh <- inla.mesh.2d(  loc = coords, max.edge = c(1,5)*max.edge, offset = c(max.edge, bound.outer), cutoff = max.edge/5)
+ #  mesh <- INLA::inla.mesh.2d(  loc = coords, max.edge = c(1,5)*max.edge, offset = c(max.edge, bound.outer), cutoff = max.edge/5)
   
- mesh <- inla.mesh.2d(loc=coords, offset=offset, max.edge=max.edge)
+ mesh <- INLA::inla.mesh.2d(loc=coords, offset=offset, max.edge=max.edge)
  
  if (plotit)  { 
    par(mfrow=c(1, 1))
@@ -1044,15 +1045,15 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
    points(coords[,1], coords[,2], pch=20, cex=2)
  }
 
-  spde		<- inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
+  spde		<- INLA::inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
                                prior.range = prior.range, prior.sigma = prior.sigma)
 
   hyper 	<- list(prec = list(prior = "loggamma", param = c(prior.tau2[1], prior.tau2[2])))
 
-  A_est <- inla.spde.make.A(mesh=mesh, loc=all.locs, group=times, n.group=tn)
+  A_est <- INLA::inla.spde.make.A(mesh=mesh, loc=all.locs, group=times, n.group=tn)
   dim(A_est)
 
-  s_index <- inla.spde.make.index(name="spatial.field", n.spde=spde$n.spde, n.group=tn)
+  s_index <- INLA::inla.spde.make.index(name="spatial.field", n.spde=spde$n.spde, n.group=tn)
   names(s_index)
 
 
@@ -1062,11 +1063,11 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   } else Xframe <- data.frame(X)  
   
   
-  stack_est <- inla.stack(data=list(y=y), A=list(A_est, 1),
+  stack_est <- INLA::inla.stack(data=list(y=y), A=list(A_est, 1),
                          effects=list(c(s_index,list(Intercept=1)), list(Xframe)), tag="est")
             
 
-  stack <- inla.stack(stack_est)
+  stack <- INLA::inla.stack(stack_est)
 
   xnames <- colnames(Xframe)
 
@@ -1083,9 +1084,9 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
 
   message("ATTENTION: this INLA run is likely to be computationally intensive!\n")
  
-  ifit <- inla(newformula, data=inla.stack.data(stack, spde=spde), family="gaussian",
+  ifit <- INLA::inla(newformula, data=INLA::inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
-               control.predictor=list(A=inla.stack.A(stack), compute=TRUE),
+               control.predictor=list(A=INLA::inla.stack.A(stack), compute=TRUE),
                control.compute = list(config = TRUE, dic = mchoice, waic = mchoice))
   message("Finished INLA fitting \n")
 
@@ -1096,7 +1097,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   p <- nrow(fixed.out)
   beta.samp <- matrix(NA, nrow=N, ncol=p)
   for (i in 1:p) {
-    beta.samp[, i] <-  as.vector(inla.rmarginal(N, ifit$marginals.fixed[[i]]))
+    beta.samp[, i] <-  as.vector(INLA::inla.rmarginal(Ns, ifit$marginals.fixed[[i]]))
   } 
   colnames(beta.samp) <- rownames(fixed.out)
   samps <- data.frame(beta.samp)
@@ -1109,12 +1110,12 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   a <- grepl("Rho", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    rho.samp <-  inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    rho.samp <-  INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[k]])
     summary(rho.samp)
     samps$rho <- rho.samp
   }
   ###
-  prec.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[1]])
+  prec.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[1]])
   tausq.samp 		<- 1/prec.samp
   summary(tausq.samp)
   samps$sigma2eps <- tausq.samp
@@ -1122,7 +1123,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   a <- grepl("Stdev", x=rnames, ignore.case = TRUE)
   k <- which(a)
   if (any(a)) { 
-    sd.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    sd.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[k]])
     sigmasq.samp 		<- sd.samp^2
     summary(sigmasq.samp)
     samps$sig2eta <- sigmasq.samp
@@ -1134,7 +1135,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   k <- which(a)
   if ( any(a) ) { 
     #message("I am here")
-    range.samp 		<- inla.rmarginal(N, ifit$marginals.hyperpar[[k]])
+    range.samp 		<- INLA::inla.rmarginal(Ns, ifit$marginals.hyperpar[[k]])
     phi.samp 		<- 3/range.samp
     summary(phi.samp)
     samps$phi <- phi.samp
@@ -1190,9 +1191,9 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     #mae <- mean(abs(vdaty - predsums$meanpred), na.rm=TRUE)
     #cvg <- cal_cvg(vdaty=vdaty, ylow=predsums$low, yup=predsums$up)
   
-    ypreds <- matrix(NA,  nrow=nvalid, ncol=N-burn.in)
+    ypreds <- matrix(NA,  nrow=nvalid, ncol=Ns)
     for (i in 1:nvalid) {
-      isamples <- inla.rmarginal(N-burn.in, ifit$marginals.fitted.values[[validrows[i]]]) 
+      isamples <- INLA::inla.rmarginal(Ns, ifit$marginals.fitted.values[[validrows[i]]]) 
       ypreds[i, ] <- isamples
     }
     # tmp <- cbind(vdaty,yits)
