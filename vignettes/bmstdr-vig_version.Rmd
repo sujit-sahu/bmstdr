@@ -1447,7 +1447,7 @@ ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 ```
 
 
-```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", out.width=100%}
+```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", fig.width=6}
 knitr::include_graphics(paste0(figpath, "/inlavAR2.png"))
 ```
 
