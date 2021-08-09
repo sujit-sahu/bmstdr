@@ -39,14 +39,25 @@ library(huxtable)
 library(RColorBrewer)
 library(akima)
 knitr::opts_chunk$set(eval = F)
-colpalette <- c("dodgerblue4",  "dodgerblue2",  "firebrick2",   "firebrick4",   "purple")     
-figpath <- system.file("figs", package = "bmstdr") 
-tablepath <- system.file('last3tables', package = 'bmstdr')
+
 
 tabs <- lapply(list.files(system.file('txttables', package = 'bmstdr'), full.names = TRUE), dget)
 # print(tabs)
-# fns <- list.files(system.file('txttables', package = 'bmstdr')) 
-# how the table data and file names match 
+
+tablepath <- system.file('last3tables', package = 'bmstdr')
+print(tablepath)
+
+table4.1 <- dget(file=paste0(tablepath, "/table4.1.txt"))
+table4.2 <- dget(file=paste0(tablepath, "/table4.2.txt"))
+table4.3 <- dget(file=paste0(tablepath, "/table4.3.txt"))
+print(table4.1)
+print(table4.2)
+print(table4.3)
+
+
+figpath <- system.file("figs", package = "bmstdr") 
+print(figpath)
+
 table1 <-  tabs[[1]]
 table10 <- tabs[[2]]
 table11 <- tabs[[3]]
@@ -58,6 +69,7 @@ table6 <- tabs[[8]]
 table7 <- tabs[[9]]
 table8 <- tabs[[10]]
 table9 <- tabs[[11]]
+colpalette <- c("dodgerblue4",  "dodgerblue2",  "firebrick2",   "firebrick4",   "purple")     
 ```
 
 
@@ -729,7 +741,7 @@ p <- ggplot(data=d, aes(x=site, y=sp)) +
 p 
 ```
 Similarly, we provide a plot of the temporal effects parameter. 
-```{r temporaleffects, echo=TRUE, eval=TRUE, message=FALSE, fig.cap="Temporal effects  of wind spped from model M7"}
+```{r temporaleffects, echo=TRUE, eval=TRUE, message=FALSE, fig.cap="Temporal effects  of wind speed from model M7"}
 b <- out$betatp
 tn <- nrow(b)
 itmax <- ncol(b)
@@ -1076,7 +1088,7 @@ To fit the Bayesian GLMs without any random effects
  - `package` can take one of three possible values:  `"CARBayes"`, `"CARBayesST"` or 
  `"inla"`. The default is  `"CARBayes"`. 
  - `model` defines the specific spatio temporal model to be fitted. If the package is `"inla"` then the model argument should be a vector with two elements giving the spatial model, e.g. `"bym"` as the first component and the temporal model which could be one of `"iid", "ar1"` or `"none"` as the second component. In case the second component is "none" then no temporal random effects will be fitted. No temporal random effects will be fitted in case model is supplied as a singleton.
- - `formula` specifying the response and the covariates for forming the linear predictor $\eta$ in a GLKM. 
+ - `formula` specifying the response and the covariates for forming the linear predictor $\eta$ in a GLM. 
 - `data` containing the data set to be used;
 `family` being one of either `"binomial", "poisson"` `"gaussian"`,  `"multinomial"`,  or `"zip"`. In this illustration we only consider the first three choices. 
 If the binomial family is chosen, the  `trials` argument must be provided. This should be a numeric vector containing the number of for each row of data.
@@ -1096,7 +1108,6 @@ There are numerous other arguments specifying more details of the models and the
 Ncar <- 50000
 burn.in.car <- 10000
 thin <- 10
-inlaN <- (Ncar - burn.in.car)/thin
 ```
  
 ## Modeling static areal unit data 
@@ -1147,13 +1158,13 @@ dput(table4.1, file=paste0(tablepath, "/table4.1.txt"))
 
 ```{r m1mchoice, echo=FALSE, eval=TRUE}
 
-table4.1 <- structure(c(4.97364951758527, 85.0582651584891, 87.0579313931239, 
-76.379205946683, 1503.99901271082, 1352.37719804419, 1353.60166910473, 
-1348.37610850059, 6.24416032366254, 52.3598308212364, 53.3895453655056, 
-49.2665262573736, 1505.39538129241, 1330.11305694479, 1330.71580863181, 
-1330.37517336979), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
-"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
-)))
+#table4.1 <- structure(c(4.97364951758527, 85.0582651584891, 87.0579313931239, 
+#76.379205946683, 1503.99901271082, 1352.37719804419, 1353.60166910473, 
+#1348.37610850059, 6.24416032366254, 52.3598308212364, 53.3895453655056, 
+#49.2665262573736, 1505.39538129241, 1330.11305694479, 1330.71580863181, 
+#1330.37517336979), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
+#"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
+#)))
 
  table4.1 %>%
    as_hux(add_colnames = FALSE) %>%
@@ -1208,13 +1219,13 @@ dput(table4.2, file=paste0(tablepath, "/table4.2.txt"))
 ```
 
 ```{r m2mchoice, echo=FALSE, eval=TRUE}
-table4.2 <- structure(c(4.98035204433472, 244.848615156094, 247.231802193936, 
-296.124999507212, 5430.35688813066, 2640.25302709882, 2640.50324699546, 
-2689.65621293194, 58.4373988798407, 147.943905555614, 147.432090792694, 
-157.102888805005, 5486.09824247122, 2596.92132116692, 2594.28248812217, 
-2610.72046743946), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
-"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
-)))
+#table4.2 <- structure(c(4.98035204433472, 244.848615156094, 247.231802193936, 
+#296.124999507212, 5430.35688813066, 2640.25302709882, 2640.50324699546, 
+#2689.65621293194, 58.4373988798407, 147.943905555614, 147.432090792694, 
+#157.102888805005, 5486.09824247122, 2596.92132116692, 2594.28248812217, 
+#2610.72046743946), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
+#"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
+#)))
 table4.2 %>%
    as_hux(add_colnames = FALSE) %>%
    set_number_format(2)     %>%
@@ -1263,11 +1274,11 @@ dput(table4.3, file=paste0(tablepath, "/table4.3.txt"))
 ```
 
 ```{r, echo=FALSE, eval=TRUE}
-table4.3 <- structure(c(5.01545172916434, 141.392412442474, 119.355981097098, 
-473.514497590557, 325.070205308015, 343.268611084862, 6.05910211982487, 
-106.79520878445, 94.4196627626064, 474.726483321535, 320.089832117357, 
-341.890578348917), .Dim = 3:4, .Dimnames = list(c("Independent", 
-"Leroux", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC")))
+# table4.3 <- structure(c(5.01545172916434, 141.392412442474, 119.355981097098, 
+# 473.514497590557, 325.070205308015, 343.268611084862, 6.05910211982487, 
+# 106.79520878445, 94.4196627626064, 474.726483321535, 320.089832117357, 
+# 341.890578348917), .Dim = 3:4, .Dimnames = list(c("Independent", 
+# "Leroux", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC")))
    table4.3 %>%
    as_hux(add_colnames = FALSE) %>%
    set_number_format(2)     %>%
@@ -1436,7 +1447,7 @@ ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 ```
 
 
-```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", fig.width = 400/72, fig.height = 400/80}
+```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", out.width=100%}
 knitr::include_graphics(paste0(figpath, "/inlavAR2.png"))
 ```
 

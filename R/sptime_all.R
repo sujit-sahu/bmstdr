@@ -1095,7 +1095,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   if (verbose) print(fixed.out)
   
   p <- nrow(fixed.out)
-  beta.samp <- matrix(NA, nrow=N, ncol=p)
+  beta.samp <- matrix(NA, nrow=Ns, ncol=p)
   for (i in 1:p) {
     beta.samp[, i] <-  as.vector(INLA::inla.rmarginal(Ns, ifit$marginals.fixed[[i]]))
   } 

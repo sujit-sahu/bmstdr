@@ -11,24 +11,15 @@
 ## The total time to run all the code in this vignette is about 2 hours on a fast PC. 
 ## Please start with a clear work space and restart R
 rm(list=ls())
-## Set a suitable working directory
-yourpath <- "~/Dropbox/sks/bookproject/rbook/bmstdr/inst/full_vignette_code" 
-setwd(yourpath)
-figurepath <- "~/Dropbox/sks/bookproject/rbook/jss-bmstdr/figs/"
 
-## Please set a folder path for saving the tables. 
-## The table numbers and file names refer to the tables in the 
-## paper submitted to the JSS and also the vignette distributed 
-## with the package 
+# Set working directory to the package directory first  
+## Please set  folder paths for saving the tables and graphs. 
 
-# To save only two figures for the vignette 
-figpath <- system.file("figs", package = "bmstdr") 
-tablepath <- system.file('txttables', package = 'bmstdr')
-tablepathsecond <- system.file('last3tables', package = 'bmstdr')
-
-workpath <-   system.file("full_vignette_code", package = "bmstdr") 
-setwd(workpath)
-
+yourpath <- getwd()
+allfigurepath <- "../jss-bmstdr/figures/"
+figpath <- paste0(yourpath, "/inst/figs")
+tablepath <- paste0(yourpath, "/inst/txttables")
+tablepathsecond <- paste0(yourpath, "/inst/last3tables")
 
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
 ## Except for the temperature map of the deep ocean and 
@@ -98,7 +89,7 @@ vsites3 <- ggplot() +
 # 
 vsites3 
 ## We save the figure. 
-ggsave(filename = paste0(figurepath, "figure1.png"))
+ggsave(filename = paste0(allfigurepath, "figure1.png"))
 
 ## Fitting independent error regression model 
 f1 <- yo3 ~ xmaxtemp + xwdsp + xrh
@@ -152,7 +143,7 @@ table1 <- cbind.data.frame(unlist(a3), M1$mchoice, M2$mchoice, M3$mchoice, M4$mc
 colnames(table1) <- paste("M", 0:5, sep="")
 round(table1,  2)
 
-dput(table1, file=paste0(tablepath, "table1.txt"))
+dput(table1, file=paste0(tablepath, "/table1.txt"))
 ## End reproducing Table 1. 
 
 ## Commands to reproduce model validation statistics in Table 2. 
@@ -176,7 +167,7 @@ table2 <- cbind(unlist(M1.v$stats), unlist(M2.v$stats), unlist(M3.v$stats),
           unlist(M4.v$stats), unlist(M5.v$stats))
 colnames(table2) <- paste("M", 1:5, sep="")
 round(table2, 3)
-dput(table2, file=paste0(tablepath, "table2.txt"))
+dput(table2, file=paste0(tablepath, "/table2.txt"))
 
 # Remove the last row as values are 100
 
@@ -212,14 +203,14 @@ M2.v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
                   coordtype="utm", coords=4:5, validrows= s3, phi=0.4, mchoice=F, 
                   N=N, burn.in = burn.in )
 ## Save this as Figure 2.  
-ggsave(filename = paste0(figurepath, "figure2.png"))
+ggsave(filename = paste0(allfigurepath, "figure2.png"))
 
 ## Now gather results to form Table 3. 
 
 table3 <- cbind(unlist(M2.v1$stats), unlist(M2.v2$stats), unlist(M2.v3$stats), unlist(M2.v4$stats))
 dimnames(table3)[[2]] <- paste("Fold", 1:4, sep="")
 round(table3, 3)
-dput(table3, file=paste0(tablepath, "table3.txt"))
+dput(table3, file=paste0(tablepath, "/table3.txt"))
 
 ## Finish reproducing Table 3. 
 
@@ -242,7 +233,7 @@ M2$phi.t
 ## Code for producing Figure 3. 
 a <- residuals(M2)
 
-ggsave(filename = paste0(figurepath, "figure3.png"))
+ggsave(filename = paste0(allfigurepath, "figure3.png"))
 
 valids <-  c(8,11,12,14,18,21,24,28)
 vrows <-  which(nysptime$s.index%in% valids)
@@ -302,7 +293,7 @@ p1 <- fig11.13.plot(yobs[1, ], y.valids.low[1, ], y.valids.med[1, ],
 p1 <- p1 + ggtitle("Validation for Site 1")
 
 p1 
-ggsave(filename = paste0(figurepath, "figure4.png"))
+ggsave(filename = paste0(allfigurepath, "figure4.png"))
 
 p2 <- fig11.13.plot(yobs[2, ], y.valids.low[2, ], y.valids.med[2, ],
                      y.valids.up[2, ], misst=validt)
@@ -396,7 +387,7 @@ Psd <- ggplot() +
 
 # Psd
 ggpubr::ggarrange(P, Psd, common.legend = FALSE, nrow = 1, ncol = 2)
-ggsave(filename = paste0(figurepath, "figure5.png"))
+ggsave(filename = paste0(allfigurepath, "figure5.png"))
 
 # Takes 2 minutes to run 
 M4 <- Bsptime(package="stan",formula=f2, data=nysptime,   coordtype="utm", coords=4:5, 
@@ -414,7 +405,7 @@ M3 <- Bsptime(package="spTimer", formula=f2, data=nysptime,
 
 table4 <- cbind(M1$mchoice, M2$mchoice, M3$mchoice, M4$mchoice)
 round(table4, 2)
-dput(table4, file=paste0(tablepath, "table4.txt"))
+dput(table4, file=paste0(tablepath, "/table4.txt"))
 
 
 M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
@@ -422,10 +413,10 @@ M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime,
                 mchoice=T,  N=N, burn.in = burn.in, n.report=5)
 
 a <- residuals(M5)
-# Takes 2 mins 23 sec 
+# Takes 4 mins 45 sec 
 M6 <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime,
          coordtype="utm", coords=4:5, scale.transform = "SQRT",
-         mchoice=T,  N=N-burn.in)
+         mchoice=T,  N=N, burn.in=burn.in)
 
 summary(M5)
 summary(M6)
@@ -433,7 +424,7 @@ summary(M6)
 table5 <- rbind(unlist(M5$mchoice), unlist(M6$mchoice[5:7]))
 rownames(table5) <- c("spTimer", "INLA")
 table5
-dput(table5, file=paste0(tablepath, "table5.txt"))
+dput(table5, file=paste0(tablepath, "/table5.txt"))
 
 M5$params
 M6$params
@@ -442,7 +433,7 @@ b1 <- rbind(rep(NA, 4), M6$params)
 table6 <- cbind.data.frame(M5$params, b1)
 
 round(table6, 3)
-dput(table6, file=paste0(tablepath, "table6.txt"))
+dput(table6, file=paste0(tablepath, "/table6.txt"))
 
 
 ## Model fitting using the sptDyn package
@@ -489,7 +480,7 @@ pwdsp <- ggplot(data=tstat, aes(x=Days, y=median)) +
 
 
 ggarrange(ptmp, pwdsp, common.legend = FALSE, nrow = 2, ncol = 1)
-ggsave(filename = paste0(figurepath, "figure6.png"))
+ggsave(filename = paste0(allfigurepath, "figure6.png"))
 
 ## Model fitting using spBayes 
 M8 <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
@@ -540,7 +531,7 @@ prange
 
 
 ggarrange(psigma, prange, common.legend = TRUE, legend = "none", nrow = 2, ncol = 1)
-ggsave(filename = paste0(figurepath, "figure7.png"))
+ggsave(filename = paste0(allfigurepath, "figure7.png"))
 
 vnames <- all.vars(f2)
 xnames <- vnames[-1]
@@ -671,7 +662,7 @@ round(table7, 2)
 table7 <- table7[, -8]
 table7
 
-dput(table7, file=paste0(tablepath, "table7.txt"))
+dput(table7, file=paste0(tablepath, "/table7.txt"))
 
 ## Ocean temperature 
 
@@ -789,7 +780,7 @@ P <- ggplot() +
 
 P 
 
-ggsave(filename = paste0(figurepath, "temp_deep.png"),  width=8.27, height=5, dpi=300)
+ggsave(filename = paste0(allfigurepath, "temp_deep.png"),  width=8.27, height=5, dpi=300)
 ggsave(filename = paste0(figpath, "/temp_deep.png"),  width=8.27, height=5, dpi=300)
 
 ## sd of temperature 
@@ -818,7 +809,7 @@ psd <- ggplot() +
   ggsn::north(data=atlmap, location="topright", symbol=12) 
 
 psd 
-ggsave(filename = paste0(figurepath, "sd_temp_deep.png"),  width=8.27, height=5, dpi=300)
+ggsave(filename = paste0(allfigurepath, "sd_temp_deep.png"),  width=8.27, height=5, dpi=300)
 
 
 ## Ocean temperature example complete. 
@@ -838,7 +829,7 @@ ptime <- ggplot(data=engdeaths,  aes(x=factor(Weeknumber), y=covidrate)) +
 ptime
 
 
-ggsave(filename = paste0(figurepath, "figure8.png"))
+ggsave(filename = paste0(allfigurepath, "figure8.png"))
 
 bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=T, all.x=F)
 bdf$covidrate <- bdf$covid/bdf$popn*100000
@@ -855,12 +846,12 @@ prate <-  ggplot(data=bdf, aes(x=long, y=lat, group = group, fill=covidrate)) +
 
 prate 
 
-ggsave(filename = paste0(figurepath, "figure9.png"))
+ggsave(filename = paste0(allfigurepath, "figure9.png"))
 
 Ncar <- 50000
 burn.in.car <- 10000
 thin <- 10
-inlaN <- (Ncar - burn.in.car)/thin
+
 
 ##
 
@@ -882,7 +873,7 @@ M1.bym <- Bcartime(formula=f1, data=engtotals,
 
 M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
                         model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
-                        package="inla", N=inlaN) 
+                        package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
 
 a <- rbind(M1$mchoice, M1.leroux$mchoice, M1.bym$mchoice)
 a <- a[, -(5:6)]
@@ -925,7 +916,7 @@ M2.bym <- Bcartime(formula=f2, data=engtotals,
 M2.inla.bym <- Bcartime(formula=f2, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="poisson", 
                         W=Weng, offsetcol="logEdeaths", link="log", 
-                        package="inla", N=inlaN) 
+                        package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
 
 
 
@@ -963,7 +954,7 @@ M3.leroux <- Bcartime(formula=f3, data=engtotals,
 
 M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="gaussian", 
-                        W=Weng,  package="inla", N=inlaN) 
+                        W=Weng,  package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
 
 
 a <- rbind(M3$mchoice, M3.leroux$mchoice)
@@ -1040,7 +1031,7 @@ table8 <- rbind(a, b)
 rownames(table8) <- c("Linear", "Anova", "Separable", "AR (1)", "AR (2)", "INLA-BYM")
 colnames(table8) <- c("pDIC", "DIC", "pWAIC", "WAIC")
 round(table8, 2)
-dput(table8, file=paste0(tablepath, "table8.txt"))
+dput(table8, file=paste0(tablepath, "/table8.txt"))
 
 f20 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
 
@@ -1100,7 +1091,7 @@ table9 <- rbind(a, b)
 rownames(table9) <- c("Linear", "Anova (without interaction)", "Anova (with interaction)", "Separable", "AR (1)", "AR (2)", "INLA-BYM")
 colnames(table9) <- c("pDIC", "DIC", "pWAIC", "WAIC")
 table9
-dput(table9, file=paste0(tablepath, "table9.txt"))
+dput(table9, file=paste0(tablepath, "/table9.txt"))
 
 ## Code for Figure 10
 
@@ -1185,7 +1176,7 @@ pwkfit <- ggplot() +
 pwkfit
 
 
-ggsave(filename = paste0(figurepath, "figure10.png"))
+ggsave(filename = paste0(allfigurepath, "figure10.png"))
 
 ###
 
@@ -1218,7 +1209,7 @@ table10 <- rbind(unlist(M2st_anova.0$stats), unlist(M2st_ar.0$stats), unlist(M2s
 table10
 table10 <- as.data.frame(table10)
 rownames(table10) <- c("Anova", "AR (1)", "AR (2)", "INLA-BYM")
-dput(table10, file=paste0(tablepath, "table10.txt"))
+dput(table10, file=paste0(tablepath, "/table10.txt"))
 
 summary(M2st_ar2.0)
 yobspred <- M2st_ar2.0$yobs_preds
@@ -1240,8 +1231,8 @@ inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
-ggsave(filename = paste0(figurepath, "figure11.png"))
-ggsave(filename=paste0(figpath, "/inlavAR2.png"))
+ggsave(filename = paste0(allfigurepath, "figure11.png"))
+ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 
 
 f2s <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity)
@@ -1298,7 +1289,7 @@ rownames(a) <- c("Linear",  "Anova",  "AR (1)", "AR (2)")
 colnames(a) <- c("pDIC", "DIC", "pWAIC", "WAIC")
 table11 <- a
 table11
-dput(table11, file=paste0(tablepath, "table11.txt"))
+dput(table11, file=paste0(tablepath, "/table11.txt"))
 
 ##
 M3s <- Bcartime(formula=f3, data=engtotals, scol=scol, W=Weng, model="leroux", family="gaussian", N=Ncar, burn.in=burn.in.car, thin=thin)
