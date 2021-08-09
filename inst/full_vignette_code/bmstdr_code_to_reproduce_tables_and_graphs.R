@@ -14,22 +14,25 @@ rm(list=ls())
 ## Set a suitable working directory
 yourpath <- "~/Dropbox/sks/bookproject/rbook/bmstdr/inst/full_vignette_code" 
 setwd(yourpath)
+figurepath <- "~/Dropbox/sks/bookproject/rbook/jss-bmstdr/figs/"
 
 ## Please set a folder path for saving the tables. 
 ## The table numbers and file names refer to the tables in the 
 ## paper submitted to the JSS and also the vignette distributed 
 ## with the package 
 
+# To save only two figures for the vignette 
 figpath <- system.file("figs", package = "bmstdr") 
 tablepath <- system.file('txttables', package = 'bmstdr')
+tablepathsecond <- system.file('last3tables', package = 'bmstdr')
+
 workpath <-   system.file("full_vignette_code", package = "bmstdr") 
 setwd(workpath)
 
-# Is INLA available? 
-inlaok <- inlabru::bru_safe_inla()
 
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
-## Except for the INLA v AR2 model graph which is drawn from  here. 
+## Except for the temperature map of the deep ocean and 
+## the INLA v AR2 model graphs which are drawn and then saved from  here. 
 
 
 ## Please load all the libraries. You may have to install these as required. 
@@ -45,6 +48,14 @@ library("ggpubr")
 library("akima")
 library("tidyr")
 library("doBy")
+
+# Is INLA available? 
+if (require(INLA)) {
+  message("INLA  is available and will be used.")
+} else {
+  message("You may install inla from: https://inla.r-inla-download.org/R/testing")
+  stop("Please install INLA and re-run")
+}
 
 
 ## Note the start time
@@ -476,7 +487,7 @@ pwdsp <- ggplot(data=tstat, aes(x=Days, y=median)) +
    labs(title="Temporal effects of wind speed", x="Days", y="Temporal effects") 
 
 
-library(ggpubr)
+
 ggarrange(ptmp, pwdsp, common.legend = FALSE, nrow = 2, ncol = 1)
 ggsave(filename = paste0(figurepath, "figure6.png"))
 
@@ -779,6 +790,7 @@ P <- ggplot() +
 P 
 
 ggsave(filename = paste0(figurepath, "temp_deep.png"),  width=8.27, height=5, dpi=300)
+ggsave(filename = paste0(figpath, "/temp_deep.png"),  width=8.27, height=5, dpi=300)
 
 ## sd of temperature 
 
@@ -848,8 +860,132 @@ ggsave(filename = paste0(figurepath, "figure9.png"))
 Ncar <- 50000
 burn.in.car <- 10000
 thin <- 10
+inlaN <- (Ncar - burn.in.car)/thin
+
+##
+
+## Modeling static areal unit data 
+
+### Logistic regression model for areal unit data 
+f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
+
+M1 <- Bcartime(formula=f1,   data=engtotals, family="binomial",
+               trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin) 
+
+M1.leroux <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
+                      model="leroux", W=Weng, family="binomial", trials=engtotals$nweek, 
+                      N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M1.bym <- Bcartime(formula=f1, data=engtotals, 
+                   scol="spaceid", model="bym", W=Weng, family="binomial", 
+                   trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
+                        model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
+                        package="inla", N=inlaN) 
+
+a <- rbind(M1$mchoice, M1.leroux$mchoice, M1.bym$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M1.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux", "BYM", "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.1 <- a
+dput(table4.1, file=paste0(tablepathsecond, "/table4.1.txt"))
+
+# Comparison of logistic regression models for static areal data')
+
+# check 
+oldtable4.1 <- structure(c(4.97364951758527, 85.0582651584891, 87.0579313931239, 
+                        76.379205946683, 1503.99901271082, 1352.37719804419, 1353.60166910473, 
+                        1348.37610850059, 6.24416032366254, 52.3598308212364, 53.3895453655056, 
+                        49.2665262573736, 1505.39538129241, 1330.11305694479, 1330.71580863181, 
+                        1330.37517336979), .Dim = c(4L, 4L), 
+                        .Dimnames = list(c("Independent", "Leroux", "BYM", "INLA-BYM"), 
+                                         c("pDIC", "DIC", "pWAIC", "WAIC")))
 
 
+### Poisson regression model (disease mapping) for areal unit data 
+
+f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
+
+
+M2 <- Bcartime(formula=f2, data=engtotals, family="poisson",
+               N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.leroux <- Bcartime(formula=f2, data=engtotals,
+                      scol="spaceid",  model="leroux",  family="poisson", W=Weng,
+                      N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.bym <- Bcartime(formula=f2, data=engtotals,
+                   scol="spaceid",  model="bym",  family="poisson", W=Weng,
+                   N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.inla.bym <- Bcartime(formula=f2, data=engtotals, scol ="spaceid",  
+                        model=c("bym"), family="poisson", 
+                        W=Weng, offsetcol="logEdeaths", link="log", 
+                        package="inla", N=inlaN) 
+
+
+
+a <- rbind(M2$mchoice, M2.leroux$mchoice, M2.bym$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M2.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux", "BYM",   "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.2 <- a
+dput(table4.2, file=paste0(tablepathsecond, "/table4.2.txt"))
+
+
+
+oldtable4.2 <- structure(c(4.98035204433472, 244.848615156094, 247.231802193936, 
+                        296.124999507212, 5430.35688813066, 2640.25302709882, 2640.50324699546, 
+                        2689.65621293194, 58.4373988798407, 147.943905555614, 147.432090792694, 
+                        157.102888805005, 5486.09824247122, 2596.92132116692, 2594.28248812217, 
+                        2610.72046743946), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
+                                                                                "Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
+                                                                                )))
+# Comparison of disease mapping models for Covid-19 mortality'
+
+
+f3 <-  sqrt(no2) ~  jsa + log10(houseprice) + log(popdensity) 
+
+M3 <- Bcartime(formula=f3, data=engtotals, family="gaussian",
+               N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M3.leroux <- Bcartime(formula=f3, data=engtotals,
+                      scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
+                      N=Ncar, burn.in=burn.in.car, thin=thin)
+
+
+M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
+                        model=c("bym"), family="gaussian", 
+                        W=Weng,  package="inla", N=inlaN) 
+
+
+a <- rbind(M3$mchoice, M3.leroux$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M3.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux",  "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.3 <- a
+dput(table4.3, file=paste0(tablepathsecond, "/table4.3.txt"))
+
+# check 
+oldtable4.3 <- structure(c(5.01545172916434, 141.392412442474, 119.355981097098, 
+                        473.514497590557, 325.070205308015, 343.268611084862, 6.05910211982487, 
+                        106.79520878445, 94.4196627626064, 474.726483321535, 320.089832117357, 
+                        341.890578348917), .Dim = 3:4, .Dimnames = list(c("Independent", 
+                                                                          "Leroux", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC")))
+# Comparison of Gaussian models for NO2 data                              
+
+## Spatio-temporal areal models 
+##
 nweek <- rep(1, nrow(engdeaths))
 scol <- "spaceid"
 tcol <-  "Weeknumber"
@@ -906,7 +1042,6 @@ colnames(table8) <- c("pDIC", "DIC", "pWAIC", "WAIC")
 round(table8, 2)
 dput(table8, file=paste0(tablepath, "table8.txt"))
 
-## ---- echo=TRUE--------------------------------------------------------------------------------------------------
 f20 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
 
 # 2 mins 51 sec
@@ -1002,7 +1137,6 @@ lims
 head(lims)
 dim(lims)
 
-library(doBy)
 
 head(engdeaths)
 engdeaths$rcovid <- 100000*engdeaths$covid/engdeaths$popn 
@@ -1107,7 +1241,8 @@ ar2valid <- b$pwithseg
 
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
 ggsave(filename = paste0(figurepath, "figure11.png"))
-ggsave(filename="../figs/inlavAR2.png")
+ggsave(filename=paste0(figpath, "/inlavAR2.png"))
+
 
 f2s <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity)
 M2s <- Bcartime(formula=f2s, data=engtotals, scol=scol, W=Weng, model="bym",
@@ -1170,6 +1305,9 @@ M3s <- Bcartime(formula=f3, data=engtotals, scol=scol, W=Weng, model="leroux", f
 
 summary(M3s)
 
+
+
+# All done 
 end.time <- proc.time()[3]
 comp.time<-end.time-start.time
 # comp.time<-fancy.time(comp.time)
