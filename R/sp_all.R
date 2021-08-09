@@ -695,7 +695,7 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 
  # message("You must keep the supplied file spatial_model.stan in the sub-folder stanfiles \n")
  #  message("below the current working directory, getwd(). It will give an error if the file is not found.\n")
-  message("ATTENTION: this run is likely to be computationally intensive!\n")
+  if (verbose) message("ATTENTION: this run is likely to be computationally intensive!\n")
   #message("The run with supplied default arguments takes about 15 minutes to run in a fast PC\n")
     
 #  stanfit <- stan(data=datatostan, file = "stanfiles/spatial_model.stan", seed = rseed,

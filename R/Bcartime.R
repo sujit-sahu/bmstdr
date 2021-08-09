@@ -207,23 +207,28 @@ Bcartime <- function(formula,
  sptemporal <- F 
  
  if ( (s1==0) & (t1==0) ) { 
+   if (verbose) {
    message("No column has been identified as either spatial or temporal identifier columns\n")
    message("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
    message("If this is a mistake, please specify at least the 
        scol argument for spatial data and the tcol argument if data are temporal too.\n") 
+   }
    indep <- T
    sn <- nrow(data)
    tn <- 0
  } else if ( (s1==0) & (t1>0) ) { 
+   if (verbose) {
    message("It is not possible to fit models for temporal data only.\n")
    message("Only independent error Bayesian glm will be fitted using the CARBayes package\n")
+   }
    indep <- T
    sn <- nrow(data)
    tn <- 0
  } else if ( (s1>0) & (t1==0) ) { 
    spatialonly <- T
-   message("No temporal column has been supplied, 
-           hence only spatial models will be fitted. \n")
+   if (verbose) {
+   message("No temporal column has been supplied, hence only spatial models will be fitted. \n")
+   }
    sids <- data[, scol]
    scode <- unique(sids)
    tn <- 1
@@ -234,7 +239,9 @@ Bcartime <- function(formula,
    } else stop("Wrong package. Please see helpfile")
  } else { 
    sptemporal <- T
+   if (verbose) {
    message("Spatio-temporal models will be fitted.\n")
+   }
    sids <- data[, scol]
    tids <- data[, tcol]
    scode <- unique(sids)
@@ -249,7 +256,9 @@ Bcartime <- function(formula,
  
  if (package=="inla") {
    if (inlabru::bru_safe_inla()) {
+     if (verbose) {
      message("INLA will be used.")
+     }
    } else stop("Sorry, INLA is chosen but not available.")
  }
  ## Prepare for validation 
@@ -386,8 +395,10 @@ if (indep ==T) {
  } else if (residtype=="pearson"){ 
    newresults$residuals <- results$residuals$pearson
  } else { 
+   if (verbose) {
    message(paste("Your requested residual type ", residtype, " has not been implemented."), "\n")
-   message("Returning  the response residuals.\n") 
+   message("Returning  the response residuals.\n")
+   }
    newresults$residuals <- results$residuals$response
    
  }
@@ -419,7 +430,9 @@ if (indep ==T) {
  } # INLA loop done 
  ## Now doing it for all packages 
  if (nvalid>0) { 
+   if (verbose) {
    message("Calculating validation statistics\n This may take a while. \n")
+   }
    if (family=="gaussian") {
      bstat <- calculate_validation_statistics(yholdout, yits, summarystat="mean")
    } else { 

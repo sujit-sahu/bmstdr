@@ -17,39 +17,7 @@
 #' making inference. 
 #' @param rseed is the random number seed defaults to 44. 
 #' @return A list containing the exact posterior means and variances of theta and sigma2
-#' @examples
-#' \donttest{
-#' Bnormal(kprior=1, prior.M=1, prior.sigma2=c(2,1))
-#' Bnormal(mu0=0) ## non-informative prior
-#' # Start creating table 
-#' y=ydata;  mu0=mean(y);  kprior=1;  prior.M=1;  prior.sigma2=c(2, 1); N=10000
-#' eresults <- Bnormal(package="exact", y=y, mu0=mu0, 
-#' kprior=kprior, prior.M=prior.M, prior.sigma2=prior.sigma2) 
-#' #Run Gibbs sampling
-#' samps <- Bnormal(package="RGibbs", y=y, mu0=mu0, kprior=kprior, 
-#' prior.M=prior.M, prior.sigma2=prior.sigma2,  N=N)
-#' gres <- list(mean_theta = mean(samps[,1]), var_theta = var(samps[,1]), 
-#' mean_sigma2=mean(samps[,2]), var_sigma2=var(samps[,2]))
-#' glow <- list(theta_low=quantile(samps[,1], probs=0.025), var_theta=NA, 
-#' sigma2_low =quantile(samps[,2], probs=0.025), var_sigma2=NA)
-#' gupp <- list(theta_low=quantile(samps[,1], probs=0.975), var_theta=NA, 
-#' sigma2_low =quantile(samps[,2], probs=0.975), var_sigma2=NA)
-#' a <- rbind(unlist(eresults), unlist(gres), unlist(glow), unlist(gupp))
-#' cvsamp <- sqrt(samps[,2])/samps[,1]
-#' cv <- c(NA, mean(cvsamp), quantile(cvsamp, probs=c(0.025, 0.975)))
-#' u <- data.frame(a, cv)
-#' rownames(u) <- c("Exact", "Estimate", "2.5%", "97.5%")
-#' print(u)
-#' #End create table
-#' #Stan example 
-#' u <- Bnormal(package="stan", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000, burn.in=1000)
-#' print(u)
-#' # INLA example 
-#' \donttest{
-#' u <- Bnormal(package="inla", kprior=1, prior.M =1, prior.sigma=c(2, 1), N=2000)
-#' print(u)
-#' }
-#' } 
+#' @example inst/examples/bnormal_examples.R
 #' @export
 Bnormal <- function(package="exact", y=ydata, mu0=mean(y), kprior=0, prior.M=0.0001, 
                      prior.sigma2=c(0, 0),  N=2000, burn.in=1000, rseed=44){

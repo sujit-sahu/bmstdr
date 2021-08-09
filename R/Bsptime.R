@@ -271,7 +271,7 @@ Bsptime <- function(formula,
  
  if (package=="inla") {
    if (inlabru::bru_safe_inla()) {
-     message("INLA will be used.")
+     if (verbose) message("INLA will be used.")
    } else stop("The chosen package INLA is not available.")
  }
  

@@ -32,7 +32,7 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   if (length(miss)>0) { # Impute the missing observations
     omean <- mean(y, na.rm=TRUE)
     y[miss] <- omean
-    message("Replaced ", nmiss,  " missing observations by the grand mean of the data\n")
+    if (verbose) message("Replaced ", nmiss,  " missing observations by the grand mean of the data\n")
   }
   if (scale.transform == "SQRT") { 
     if (min(y, na.rm=TRUE) < 0) stop("Can't use the square root transformation. \n 
@@ -174,7 +174,7 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
   
   ## validation statistics
   if (nvalid>0) { # Perform validation if there are sites set up for validation
-    message("validating ", length(vdaty), " space time observations", "\n")
+    if (verbose) message("validating ", length(vdaty), " space time observations", "\n")
     k <- nrow(vdat)
     deltasquare <- diag(1, k, k)
     meanpred <- xpreds %*% betastar
@@ -308,10 +308,10 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   miss <- which(is.na(y))
   nmiss <- length(miss)
   if (length(miss)>0) { # Impute the missing observations
-    message("This model fitting method cannot handle missing data\n")
+    if (verbose) message("This model fitting method cannot handle missing data\n")
     omean <- mean(y, na.rm=TRUE)
     y[miss] <- omean 
-    message("Replaced ", nmiss,  " missing observations by the grand mean of the data.
+    if (verbose) message("Replaced ", nmiss,  " missing observations by the grand mean of the data.
         Because this function cannot handle missing values.\n")
   }
   if (scale.transform == "SQRT") { 
@@ -488,7 +488,7 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   
   
   if (r>0) { ## We are performing validation
-    message("validating ", length(vdaty), " space time observations", "\n")
+    if (verbose) message("validating ", length(vdaty), " space time observations", "\n")
 
     S <- exp(-phi.s * alldistmat)
     S12 <-  as.matrix(S[1:r, (r+1):(r+sn)]) # is r by n
@@ -754,7 +754,7 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
 
 
-    message("validating ", length(vdaty), " space time observations", "\n")
+    if (verbose) message("validating ", length(vdaty), " space time observations", "\n")
     a <- calculate_validation_statistics(yval=vdaty, yits=ypreds)
     predsums <- get_validation_summaries(t(ypreds))
 
@@ -881,8 +881,8 @@ initfun <- function() {
 }
 # message("You must keep the supplied file gp_marginal.stan in the sub-folder stanfiles\n")
 # message("below the current working directory, getwd(). It will give an error if the file is not found.\n")
-message("ATTENTION: the run is likely to be computationally intensive!\n")
-message("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
+if (verbose) message("ATTENTION: the run is likely to be computationally intensive!\n")
+# message("The run with supplied default arguments takes about an hour and 10 minutes to run in a fast PC\n")
 # gp_fit_stan <- rstan::stan(data=datatostan, file = "gp_marginal.stan", seed =rseed, init=initfun,
 #                      chains = no_chains, iter = N, warmup = burn.in,
 # 		     control = list(adapt_delta = ad.delta, stepsize=s.size, max_treedepth=t.depth))
@@ -919,7 +919,7 @@ if (verbose)  print(allres$params)
   if (mchoice) {
       ## logliks <- loo::extract_log_lik(gp_fit_stan)
       ## allres$mchoice <- loo::waic(logliks)
-      message("Calculating model choice statistics\n")
+      if (verbose) message("Calculating model choice statistics\n")
       v <- logliks_from_gp_marginal_stanfit(y=ynavec, X=X, sn=sn, tn=tn,  distmat=alldistmat, stanfit=gp_fit_stan)
       waic_results <- calculate_waic(v$loglik)
       dic_results <- calculate_dic(v$log_full_like_at_thetahat, v$log_full_like_vec)
@@ -932,7 +932,7 @@ if (verbose)  print(allres$params)
   }
     
 if (nvalid>0) {
-  message("validating ", length(vdaty), " space time observations", "\n")
+  if (verbose) message("validating ", length(vdaty), " space time observations", "\n")
   listofdraws <- rstan::extract(gp_fit_stan)
 
   a <- cbind(missing_flag, val_flag)
@@ -1082,13 +1082,13 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   # newformula	<- y ~ -1 + Xcov + f(spatial.field, model = spde, group=spatial.field.group, control.group=list(model="ar1"))
 
 
-  message("ATTENTION: this INLA run is likely to be computationally intensive!\n")
+  if (verbose) message("ATTENTION: this INLA run is likely to be computationally intensive!\n")
  
   ifit <- INLA::inla(newformula, data=INLA::inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
                control.predictor=list(A=INLA::inla.stack.A(stack), compute=TRUE),
                control.compute = list(config = TRUE, dic = mchoice, waic = mchoice))
-  message("Finished INLA fitting \n")
+  if (verbose) message("Finished INLA fitting. \n")
 
   # Fixed effects betas
   fixed.out <- round(ifit$summary.fixed,3)
@@ -1176,32 +1176,14 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   
   ###
   if (nvalid>0) {  
-   message("validating ", length(vdaty), " space time observations", "\n")
-   #u <- ifit$summary.fitted.values
-  # fits <- u[1:(tn*sn), ]
-   # v <- data.frame(y, fits)
-   # write.table(round(v,2),  "junk.txt", sep="\t")
-
-    #dimnames(fits)[[2]] <- c("mean",  "sd", "low", "median", "up", "mode")
-    #predsums <- fits[val_flag>0, ]
-    #dimnames(predsums)[[2]] <- c("meanpred",  "sdpred", "low", "medianpred", "up", "mode")
-    #predsums <- predsums[, c("meanpred", "sdpred", "medianpred", "low", "up")]
-    ## New code 
-    #rmse  <- sqrt(mean((vdaty - predsums$meanpred)^2, na.rm=TRUE))
-    #mae <- mean(abs(vdaty - predsums$meanpred), na.rm=TRUE)
-    #cvg <- cal_cvg(vdaty=vdaty, ylow=predsums$low, yup=predsums$up)
+   if (verbose) message("validating ", length(vdaty), " space time observations", "\n")
   
     ypreds <- matrix(NA,  nrow=nvalid, ncol=Ns)
     for (i in 1:nvalid) {
       isamples <- INLA::inla.rmarginal(Ns, ifit$marginals.fitted.values[[validrows[i]]]) 
       ypreds[i, ] <- isamples
     }
-    # tmp <- cbind(vdaty,yits)
-    # tmp <- na.omit(tmp)
-    # crpsres <- crpscpp(tmp) # Use C++ to calculate CRPS
-    #crpsres <- crps(vdaty, yits) ## crps can accept NA's
-    # a <- list(rmse=rmse, mae=mae, crps =crpsres, cvg=cvg)
-    # b <- list(stats=a)
+  
     if (scale.transform == "SQRT") {
       ypreds <-  (ypreds)^2
     }
@@ -1210,7 +1192,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     }
     predsums <- get_validation_summaries(t(ypreds))
     b <- calculate_validation_statistics(vdaty, ypreds)
-   #message("dim predsums", dim(valframe), "dim predsums ", dim(predsums), "\n")
+   
     yvalidrows <- data.frame(valframe,  predsums)
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
@@ -1334,7 +1316,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
   if (verbose) print(round(allres$params, 3))
 
   if (mchoice) {
-    message("Calculating model choice statistics\n")
+    if (verbose) message("Calculating model choice statistics\n")
     pmcc_results <- list(gof=fit$PMCC[1], penalty=fit$PMCC[2], pmcc=fit$PMCC[3])
     
     sptimermod <- c(unlist(pmcc_results))
@@ -1345,7 +1327,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
   if (nvalid>0) {
     
     itmax <- fit$iterations - fit$nBurn
-    message("validating ", nvalid, " space time observations", "\n")
+    if (verbose) message("validating ", nvalid, " space time observations", "\n")
     
     a <- matrix(rnorm(nvalid*itmax), nrow=nvalid, ncol=itmax)
     if  (model=="truncated") { 
@@ -1558,7 +1540,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   allres$fitteds <- fits[,1] 
   
   if (mchoice) {
-    message("Calculating model choice statistics\n")
+    if (verbose) message("Calculating model choice statistics\n")
     pmcc_results <- list(gof=gp_fit$PMCC[1], penalty=gp_fit$PMCC[2], pmcc=gp_fit$PMCC[3])
     
     if (model=="GP")  {
@@ -1576,7 +1558,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   if (nvalid>0) {
  
     itmax <- gp_fit$iterations-gp_fit$nBurn
-    message("validating ", nvalid, " space time observations", "\n")
+    if (verbose) message("validating ", nvalid, " space time observations", "\n")
     
     
     a <- matrix(rnorm(nvalid*itmax), nrow=nvalid, ncol=itmax)

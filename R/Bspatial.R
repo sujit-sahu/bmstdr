@@ -160,9 +160,9 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
  # message("package=", package, "model=", model)
  if (package=="inla") {
    if (inlabru::bru_safe_inla()) {
-     message("INLA will be used.")
+     if (verbose) message("INLA will be used.")
    } else stop("The chosen package INLA is not available.")
- }
+}
 
   if (package=="none") { 
      if (model=="lm") {
