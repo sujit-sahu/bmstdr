@@ -1141,7 +1141,7 @@ The above model fitting commands use the default `CARBayes` package. We can chan
 ```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
 M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
 model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
-package="inla", N=inlaN) 
+package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
 ```
 
 ```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
@@ -1202,7 +1202,7 @@ M2.bym <- Bcartime(formula=f2, data=engtotals,
 M2.inla.bym <- Bcartime(formula=f2, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="poisson", 
                         W=Weng, offsetcol="logEdeaths", link="log", 
-                          package="inla", N=inlaN) 
+                          package="inla", N=Ncar, burn.in = burn.in.car, thin=thin) 
 
 ```
 These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
@@ -1219,13 +1219,7 @@ dput(table4.2, file=paste0(tablepath, "/table4.2.txt"))
 ```
 
 ```{r m2mchoice, echo=FALSE, eval=TRUE}
-#table4.2 <- structure(c(4.98035204433472, 244.848615156094, 247.231802193936, 
-#296.124999507212, 5430.35688813066, 2640.25302709882, 2640.50324699546, 
-#2689.65621293194, 58.4373988798407, 147.943905555614, 147.432090792694, 
-#157.102888805005, 5486.09824247122, 2596.92132116692, 2594.28248812217, 
-#2610.72046743946), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
-#"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
-#)))
+
 table4.2 %>%
    as_hux(add_colnames = FALSE) %>%
    set_number_format(2)     %>%
@@ -1257,7 +1251,7 @@ M3.leroux <- Bcartime(formula=f3, data=engtotals,
 
 M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
                         model=c("bym"), family="gaussian", 
-                        W=Weng,  package="inla", N=inlaN) 
+                        W=Weng,  package="inla", N=Ncar, burn.in =burn.in.car, thin=thin) 
 
 ```
 These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
@@ -1428,7 +1422,7 @@ M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol="spaceid", tcol= "Weekn
                        N=Ncar, burn.in=burn.in.car, thin=thin, 
                        validrows=vs, verbose=F)
 M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol ="spaceid", tcol="Weeknumber",  
-                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=inlaN, burn.in=0) 
+                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=N, burn.in=0) 
 yobspred <- M2st_ar2.0$yobs_preds
 names(yobspred)
 yobs <- yobspred$covid
@@ -1442,7 +1436,7 @@ a <- obs_v_pred_plot(yobs, inlapredsums, segments=T)
 inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 library(ggpubr)
-ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
+ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
 ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 ```
 

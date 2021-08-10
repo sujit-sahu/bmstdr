@@ -1230,7 +1230,7 @@ a
 inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 
-ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 1, ncol = 2)
+ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
 ggsave(filename = paste0(allfigurepath, "figure11.png"))
 ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 
