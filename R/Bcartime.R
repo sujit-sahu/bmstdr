@@ -2,7 +2,7 @@
 #' Calculates parameter estimates, validation statistics, and 
 #' estimated values of several Bayesian model choice criteria. 
 #' @param formula An object of class "formula" (or one that can be coerced to that class):
-#' a symbolic description of the model to be fitted.
+#' a symbolic description of the regression model to be fitted.
 #' formula.omega	A one-sided formula object with no response variable 
 #' (left side of the "~") needed, specifying the covariates in the logistic regression 
 #' model for modelling the probability of an observation being a structural zero. 
