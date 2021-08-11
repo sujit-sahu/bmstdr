@@ -39,6 +39,7 @@ M3 <- Bsptime(package = "spTimer", formula = f2, data = nysptime,
     coordtype = "utm", coords = 4:5, scale.transform = "SQRT", mchoice = TRUE,
     N = N, burn.in = burn.in, n.report = 2)
 summary(M3)
+\donttest{
 valids <- c(1, 5, 10)
 validt <- sort(sample(1:62, size = 31))
 vrows <- getvalidrows(sn = 28, tn = 62, valids = valids, validt = validt)
@@ -117,7 +118,6 @@ M9 <- Bsptime(package = "spTimer", model = "GPP", g_size = 5, formula = f2,
     N = N, burn.in = burn.in, n.report = n.report)
 summary(M9)
 
-\dontrun{
 # Takes a long time to fit spatio-temporal models using INLA
 if (require(INLA)) {
     f2 <- y8hrmax ~ xmaxtemp + xwdsp + xrh

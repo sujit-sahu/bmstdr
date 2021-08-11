@@ -337,6 +337,7 @@ estimated values of several Bayesian model choice criteria.
 }
 \examples{
 
+
 # Set the validation row numbers 
 vs <- sample(nrow(engtotals), 5)
 # Total number of iterations 
@@ -411,6 +412,7 @@ M3.leroux.v <- Bcartime(formula = f3, data = engtotals, scol = "spaceid",
     thin = thin, validrows = vs, verbose = FALSE)
 summary(M3.leroux.v)
 
+\donttest{
 
 ## Spatio-temporal modeling ##################################################
 head(engdeaths)
@@ -645,6 +647,7 @@ if (require(INLA)) {
         validrows = vs, N = N, burn.in = burn.in, thin = thin)
     summary(M3inla.bym.ar1)
 
+}
 }
 
 }

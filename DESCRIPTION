@@ -25,6 +25,7 @@ Imports:
     CARBayes, 
     CARBayesST, 
     spTDyn, 
+    MCMCpack, 
     Rdpack
 RdMacros: Rdpack
 Depends:

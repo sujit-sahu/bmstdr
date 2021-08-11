@@ -38,6 +38,7 @@ M3 <- Bspatial(package = "spBayes", formula = yo3 ~ xmaxtemp + xwdsp + xrh,
     data = nyspatial, coordtype = "utm", coords = 4:5, prior.phi = c(0.005,
         2), mchoice = TRUE, N = N, burn.in = burn.in, n.report = n.report)
 summary(M3)
+\donttest{
 # Spatial model fitting using stan (with a small number of iterations)
 M4 <- Bspatial(package = "stan", formula = yo3 ~ xmaxtemp + xwdsp + xrh,
     data = nyspatial, coordtype = "utm", coords = 4:5, phi = 0.4, N = N,
@@ -89,7 +90,6 @@ colnames(Mall.table) <- paste("M", c(1:3), sep = "")
 round(Mall.table, 3)
 
 
-
 if (require(INLA)) {
     N <- 10
     burn.in <- 5
@@ -99,4 +99,4 @@ if (require(INLA)) {
         N = N, burn.in = burn.in)
     summary(M5)
 }
-
+}
