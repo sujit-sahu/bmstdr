@@ -22,8 +22,8 @@ indicating which one to use for the plot.}
 }
 \value{
 Draws a plot only after removing the missing observations.  It also returns a list of two ggplot2 
-objects: (i) the plot with intervals drawn \code{pwithseg} and (ii) the plot without the segments drawn: 
-\code{pwithoutseg}.
+objects: (i) a plot with intervals drawn \code{pwithseg} and (ii) a plot without the segments drawn: 
+\code{pwithoutseg} and (iii) a simple plot not showing the range of the prediction intervals.
 }
 \description{
 Observed against predicted plot

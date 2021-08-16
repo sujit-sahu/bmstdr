@@ -61,12 +61,7 @@ Bcartime(
 }
 \arguments{
 \item{formula}{An object of class "formula" (or one that can be coerced to that class):
-a symbolic description of the model to be fitted.
-formula.omega    A one-sided formula object with no response variable 
-(left side of the "~") needed, specifying the covariates in the logistic regression 
-model for modelling the probability of an observation being a structural zero. 
-Each covariate (or an offset) needs to be a vector of length K*1. 
-Only required for zero-inflated Poisson models.}
+a symbolic description of the regression model to be fitted.}
 
 \item{data}{The data frame for which the model formula is to be fitted.
 The data frame should be in long format having one row for each lomessageion and  time

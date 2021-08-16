@@ -30,8 +30,8 @@ NULL
 #' @param summarystat Can take one of two values "median" (default) or "mean" 
 #' indicating which one to use for the plot.   
 #' @return Draws a plot only after removing the missing observations.  It also returns a list of two ggplot2 
-#' objects: (i) the plot with intervals drawn \code{pwithseg} and (ii) the plot without the segments drawn: 
-#' \code{pwithoutseg}. 
+#' objects: (i) a plot with intervals drawn \code{pwithseg} and (ii) a plot without the segments drawn: 
+#' \code{pwithoutseg} and (iii) a simple plot not showing the range of the prediction intervals.    
 #' @examples 
 #' set.seed(4)
 #' vrows <- sample(nrow(nysptime), 100)
@@ -65,7 +65,6 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
   adat$cols[adat$inornot>1] <-"grey1"
   adat$inornot <- factor(adat$inornot, levels=c("1", "8"), labels=c("out", "in"))
   
-  
   # First draw a simple plot 
   yr <- range(c(adat$yobs, adat$preds))
   x1 <- seq(from=yr[1], to=yr[2], length=100)
@@ -73,10 +72,11 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
   p1 <- ggplot() + 
     xlim(yr) + 
     ylim(yr) + 
-    geom_point(data=adat, aes(x=yobs, y=preds), col=adat$cols,  size=1) + 
+    geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot), col=adat$cols,  size=1) + 
     #geom_abline(intercept=0, slope=1, col="blue") +
     geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
-    labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) 
+    labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
+    theme(legend.position=c(0.05, 0.9)) 
   # plot(p1)
   
  yfullr <- range(c(adat$yobs, adat$preds, adat$low, adat$up))
@@ -84,7 +84,7 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
  x1 <- seq(from=yfullr[1], to=yfullr[2], length=100)
  ddat <- data.frame(x=x1, y=x1)
  
- p <- ggplot() + 
+ p2 <- ggplot() + 
   xlim(yfullr) + 
   ylim(yfullr) + 
   geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot),  col=adat$cols, size=3) + 
@@ -95,12 +95,12 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
   labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
   theme(legend.position=c(0.05, 0.9)) 
  
-  if (segments) {
-  p <- p + geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=up), col=adat$cols,  linetype=1, arrow=arrow) +
+  p3 <- p2 + geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=up), col=adat$cols,  linetype=1, arrow=arrow) +
     geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=low), col=adat$cols, linetype=1, arrow=arrow) 
-  plot(p)              
-  } else plot(p1)
- return(list(pwithseg=p, pwithoutseg=p1))
+  if (segments) { 
+    plot(p3)    
+  } else plot(p2)
+ return(list(pwithseg=p3, pwithoutseg=p2, pordinary=p1))
 }
 #'  Obtains parameter estimates from MCMC samples 
 #' @param samps A matrix of N by p samples for the p parameters 
