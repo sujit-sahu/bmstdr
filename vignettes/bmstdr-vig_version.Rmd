@@ -6,7 +6,7 @@ bibliography: REFERENCES.bib
 number_sections: true
 date: "`r Sys.Date()`"
 author: 
-- name: Sujit K. Sahu
+- name: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
   affiliation:  University of Southampton
   email: S.K.Sahu@soton.ac.uk 
 package: bmstdr
@@ -227,9 +227,9 @@ M2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 ```
 We discuss the choice of the fixed value of the spatial decay parameter $\phi=0.4$ in `M2`.  We use cross-validation methods to find an optimal value for $\phi$. We take a grid of values for $\phi$ and calculate a cross-validation error statistics, e.g. root mean square-error (rmse),  for each value of $\phi$ in the grid. The optimal $\phi$ is the one that minimizes the statistics.
 
-To perform the grid search a simple `R` function,  `phichoice_sp` is provided especially for the `nyspatial` data set. The documentation of this function explains how to set the other arguments. For example, the following commands work:
+To perform the grid search a simple `R` function,  `phichoice_sp` is provided.   The documentation of this function explains how to set the arguments. For example, the following commands work:
 ```{r, echo=TRUE, eval=FALSE}
-asave <- phichoice_sp()
+asave <- phichoice_sp(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, coordtype="utm", coords=4:5, phis=seq(from=0.1, to=1, by=0.1), scale.transform="NONE", s=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
 asave
 ```
 For the `nyspatial` data example 0.4 turns out to be the optimal value for $\phi$. 
@@ -461,8 +461,13 @@ M2$phi.s; M2$phi.t
 These values are approximately 0.005 and 0.048 which  correspond to the spatial range (the value of distance by which spatial correlation dies down) of 591 kilometers and the temporal range of 62 days which are the maximum possible values for the spatial and temporal domains of the data. 
 
 Optimal values of  $\phi_s$ and $\phi_t$ can be determined by performing a grid search as in the case spatial only model fitting with `Bspatial`. The `r CRANpkg("bmstdr")` package contains a function called `phichoice` which does this grid search specifically for the `nysptime` data set using the eight validation sites noted 
-earlier. The command is `asave <- phichoicep()`.  The optimal values in this case turns out to be $\phi_s=0.005$ and $\phi_t=0.05$ approximately. 
-
+earlier. The command is: 
+```{r, echo=TRUE, eval=FALSE}
+asave <- phichoicep(formula=y8hrmax ~ xmaxtemp+xwdsp+xrh, data=nysptime,
+                coordtype="utm", coords=4:5, scale.transform = "SQRT",  phis=c(0.001,  0.005, 0.025, 0.125, 0.625), phit=c(0.05, 0.25, 1.25, 6.25), 
+valids=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
+```
+The optimal values in this case turns out to be $\phi_s=0.005$ and $\phi_t=0.05$ approximately. 
 
 We now explore model validation for the separable model using the three sites chosen previously.
 ```{r valplot21, echo=TRUE, eval=TRUE, message=FALSE, results='hide', fig.show='hide'}

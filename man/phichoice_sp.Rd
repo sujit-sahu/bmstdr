@@ -50,6 +50,11 @@ It can take three values: SQRT, LOG or NONE.}
 
 \item{s}{A vector giving the validation sites}
 
+\item{N}{MCMC sample size. Default value 5000.}
+
+\item{burn.in}{How many initial iterations to discard. Default value 1000. 
+Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.}
+
 \item{verbose}{Logical. Should it print progress?}
 
 \item{...}{Any additional parameter that may be passed to \code{Bspatial}}

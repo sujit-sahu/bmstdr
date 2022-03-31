@@ -277,6 +277,7 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
 #' Grid search method for choosing phi
 #' Calculates the validation statistics using the spatial model with a given range of values of
 #' the decay parameter phi.
+#' @inheritParams Bspatial
 #' @param formula An object of class "formula" (or one that can be coerced to that class): 
 #' a symbolic description of the model to be fitted.
 #' @param data The data frame for which the model formula is to be fitted. 
@@ -345,6 +346,7 @@ phichoice_sp <- function(formula, data, coordtype, coords, phis, scale.transform
 # Grid search method for choosing phi(s) and phi(t)
 #' Calculates the validation statistics using the spatial model with a given range of values of
 #' the decay parameter phi.
+#' @inheritParams Bsptime
 #' @param formula An object of class "formula" (or one that can be coerced to that class): 
 #' a symbolic description of the model to be fitted.
 #' @param data The data frame for which the model formula is to be fitted. 

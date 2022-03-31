@@ -51,6 +51,11 @@ It can take three values: SQRT, LOG or NONE.}
 
 \item{valids}{A vector giving the validation sites}
 
+\item{N}{MCMC sample size.}
+
+\item{burn.in}{How many initial iterations to discard. 
+Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.}
+
 \item{verbose}{Logical. Should progress be printed?}
 }
 \value{
