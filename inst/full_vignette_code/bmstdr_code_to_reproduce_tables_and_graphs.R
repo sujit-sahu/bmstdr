@@ -4,7 +4,7 @@
 ## by Sujit Sahu, University of Southampton, 
 ## Email: S.K.Sahu@soton.ac.uk
 ## Binary versions of the package are available from: 
-## https://www.southampton.ac.uk/~sks/bmbook/
+## https://www.sujitsahu.com/#bmstdr
 ## A second package databmstdr is also required to reproduce 
 ## some of the results. Please download and install it from the above webpage.
 
@@ -21,15 +21,17 @@ figpath <- paste0(yourpath, "/inst/figs")
 tablepath <- paste0(yourpath, "/inst/txttables")
 tablepathsecond <- paste0(yourpath, "/inst/last3tables")
 
+## These objects are required for mapping 
+colpalette <- c("dodgerblue4", "dodgerblue2", "firebrick2",  "firebrick4",  "purple")     
+englamap <- read.csv("https://www.sujitsahu.com/bmbook/englamap.csv", head=T)
+
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
 ## Except for the temperature map of the deep ocean and 
 ## the INLA v AR2 model graphs which are drawn and then saved from  here. 
 
-
 ## Please load all the libraries. You may have to install these as required. 
 library("bmstdr")
 library("ggplot2")
-require("databmstdr")
 require("ggsn")
 library("spTimer")
 library("spTDyn")
@@ -109,7 +111,9 @@ plot(M2)
 
 ## Illustrating a grid search method for choosing the decay parameter. 
 # ?phichoice_sp
-a <- phichoice_sp()
+a <- phichoice_sp(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, coordtype="utm", 
+                  coords=4:5, phis=seq(from=0.1, to=1, by=0.1), scale.transform="NONE", 
+                  s=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
 a
 
 ## Model fitting using spBayes 
@@ -245,7 +249,10 @@ a1 <- residuals(M1, numbers=list(sn=28, tn=62))
 ## temporal decay parameters. 
 # ?phichoicep
 # Takes few minutes to run for 20 values 
-a <- phichoicep()
+a <- phichoicep(formula=y8hrmax ~ xmaxtemp+xwdsp+xrh, data=nysptime,
+                coordtype="utm", coords=4:5, scale.transform = "SQRT",  phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
+                phit=c(0.05, 0.25, 1.25, 6.25), 
+                valids=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
 
 valids <-  c(8,11,12,14,18,21,24,28)
 vrows <-  which(nysptime$s.index%in% valids)
@@ -827,9 +834,8 @@ ptime <- ggplot(data=engdeaths,  aes(x=factor(Weeknumber), y=covidrate)) +
   stat_summary(fun=median, geom="line", aes(group=1, col="red")) +
   theme(legend.position = "none")
 ptime
-
-
 ggsave(filename = paste0(allfigurepath, "figure8.png"))
+
 
 bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=T, all.x=F)
 bdf$covidrate <- bdf$covid/bdf$popn*100000
@@ -837,7 +843,7 @@ plimits <- range(bdf$covidrate)
 prate <-  ggplot(data=bdf, aes(x=long, y=lat, group = group, fill=covidrate)) +
    scale_fill_gradientn(colours=colpalette, na.value="black",limits=plimits)  +
    geom_polygon(colour='black',size=0.25) +
-   geom_polygon(data=engregmap, aes(x=long, y=lat, group = group), fill=NA, colour='black',size=0.6)  +
+#   geom_polygon(data=engregmap, aes(x=long, y=lat, group = group), fill=NA, colour='black',size=0.6)  +
    coord_equal() + guides(fill=guide_colorbar(title="Death rate")) +
    theme_bw()+theme(text=element_text(family="Times")) +
    labs(x="", y = "") +
@@ -1300,7 +1306,7 @@ summary(M3s)
 
 # All done 
 end.time <- proc.time()[3]
-comp.time<-end.time-start.time
+comp.time<- (end.time-start.time)/60
 # comp.time<-fancy.time(comp.time)
 print(comp.time)
 

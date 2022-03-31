@@ -51,7 +51,10 @@ if this is given as the third type plain.  If  distance in meter is to be calcul
 then coordtype should be passed on as plain although the coords are supplied in UTM.}
 
 \item{coords}{A vector of size 2 giving the column numbers of the data 
-frame which contain the coordinates of the lomessageions.}
+frame which contain the coordinates of the data locations.  
+Here the supplied data frame must contain a column named `time` which 
+should indicate the time index of the data row. The values in the column `time` 
+should be positive integers starting from 1.}
 
 \item{prior.sigma2}{Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision.}
 
@@ -94,7 +97,7 @@ Only relevant for MCMC based model fitting, i.e., when package is spBayes or Sta
 \item{validrows}{Either a number of randomly selected data rows to validate
 or a vector giving the row numbers of the data set for validation.}
 
-\item{predspace}{A 0-1 flag indimessageing whether spatial predictions are to be made.}
+\item{predspace}{A 0-1 flag indicating whether spatial predictions are to be made.}
 
 \item{newdata}{A new data frame with the same column structure as the model fitting data set.}
 

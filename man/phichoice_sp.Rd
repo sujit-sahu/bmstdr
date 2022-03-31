@@ -7,26 +7,67 @@ Calculates the validation statistics using the spatial model with a given range 
 the decay parameter phi.}
 \usage{
 phichoice_sp(
-  phis = seq(from = 0.1, to = 1, by = 0.1),
-  s = c(8, 11, 12, 14, 18, 21, 24, 28),
-  ...,
-  verbose = FALSE
+  formula,
+  data,
+  coordtype,
+  coords,
+  phis,
+  scale.transform,
+  s,
+  N,
+  burn.in,
+  verbose = TRUE,
+  ...
 )
 }
 \arguments{
+\item{formula}{An object of class "formula" (or one that can be coerced to that class): 
+a symbolic description of the model to be fitted.}
+
+\item{data}{The data frame for which the model formula is to be fitted. 
+If a spatial model is to be fitted then the data 
+frame should contain two columns containing the locations 
+of the coordinates. See the coords argument below.}
+
+\item{coordtype}{Type of coordinates: utm, lonlat or plain with utm 
+(supplied in meters) as the default. 
+Distance will be calculated in units of kilometer 
+if this argument is either utm or lonlat. 
+Euclidean distance will be calculated if this is 
+given as the third type plain. If distance in meter is to be 
+calculated then coordtype should be passed on as plain although 
+the coords are supplied in UTM.}
+
+\item{coords}{A vector of size two identifying the two column 
+numbers of the data frame to take as coordinates. Or this can 
+be given as a matrix of number of sites by 2 
+providing the coordinates of all the data locations.}
+
 \item{phis}{A vector values of phi}
+
+\item{scale.transform}{Transformation of the response variable. 
+It can take three values: SQRT, LOG or NONE.}
 
 \item{s}{A vector giving the validation sites}
 
-\item{...}{Any additional parameter that may be passed to \code{Bspatial}}
-
 \item{verbose}{Logical. Should it print progress?}
+
+\item{...}{Any additional parameter that may be passed to \code{Bspatial}}
 }
 \value{
-A data frame giving the phi values and the corresponding validation statistics
+A data frame giving the phi values and the corresponding 
+validation statistics
 }
 \description{
 Grid search method for choosing phi
 Calculates the validation statistics using the spatial model with a given range of values of
 the decay parameter phi.
+}
+\examples{
+\donttest{
+a <- phichoice_sp(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+coordtype="utm", coords=4:5, 
+phis=seq(from=0.1, to=1, by=0.4), scale.transform="NONE", 
+s=c(8,11,12,14,18,21,24,28), N=20, burn.in=10, verbose=TRUE)
+}
 }

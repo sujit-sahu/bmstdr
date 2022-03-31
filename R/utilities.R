@@ -277,21 +277,51 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
 #' Grid search method for choosing phi
 #' Calculates the validation statistics using the spatial model with a given range of values of
 #' the decay parameter phi.
+#' @param formula An object of class "formula" (or one that can be coerced to that class): 
+#' a symbolic description of the model to be fitted.
+#' @param data The data frame for which the model formula is to be fitted. 
+#' If a spatial model is to be fitted then the data 
+#' frame should contain two columns containing the locations 
+#' of the coordinates. See the coords argument below.
+#' @param  coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (supplied in meters) as the default. 
+#' Distance will be calculated in units of kilometer 
+#' if this argument is either utm or lonlat. 
+#' Euclidean distance will be calculated if this is 
+#' given as the third type plain. If distance in meter is to be 
+#' calculated then coordtype should be passed on as plain although 
+#' the coords are supplied in UTM.
+#' @param coords 	A vector of size two identifying the two column 
+#' numbers of the data frame to take as coordinates. Or this can 
+#' be given as a matrix of number of sites by 2 
+#' providing the coordinates of all the data locations.
+#' @param scale.transform	Transformation of the response variable. 
+#' It can take three values: SQRT, LOG or NONE.
 #' @param phis A vector values of phi
 #' @param s A vector giving the validation sites
 #' @param verbose Logical. Should it print progress? 
 #' @param ... Any additional parameter that may be passed to \code{Bspatial}
-#' @return  A data frame giving the phi values and the corresponding validation statistics
+#' @return  A data frame giving the phi values and the corresponding 
+#' validation statistics
+#' @examples
+#' \donttest{
+#' a <- phichoice_sp(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+#' coordtype="utm", coords=4:5, 
+#' phis=seq(from=0.1, to=1, by=0.4), scale.transform="NONE", 
+#' s=c(8,11,12,14,18,21,24,28), N=20, burn.in=10, verbose=TRUE)
+#' }
 #' @export
-phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
-                         s=c(8,11,12,14,18,21,24,28), ..., verbose=FALSE) {
+phichoice_sp <- function(formula, data, coordtype, coords, phis, scale.transform, 
+                         s, N, burn.in, verbose=TRUE, ...) {
   n <- length(phis)
   res <- matrix(NA, nrow=n+2, ncol=4)
-  d <- Bspatial(model="lm", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s, mchoice=FALSE, verbose=TRUE, ...)
+  d <- Bspatial(model="lm", formula=formula, data=data, 
+                coordtype=coordtype, coords=coords, validrows =s, 
+                mchoice=FALSE, verbose=verbose, N=N, burn.in=burn.in, ...)
   res[n+2, ] <- unlist(d$stats)
-  b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                coordtype="utm", coords=4:5, validrows =s,  mchoice=FALSE, verbose=TRUE, ...)
+  b <- Bspatial(model="spat",   formula=formula, data=data,
+                coordtype=coordtype, coords=coords, validrows =s,  
+                mchoice=FALSE, verbose=verbose, N=N, burn.in=burn.in, ...)
   res[n+1, ] <- unlist(b$stats)
   a <- c(phis, b$phi, 0)
   
@@ -299,8 +329,9 @@ phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
   for (i in 1:n) {
     if (verbose) cat("Now doing ", i, "to go to ", n, "\n")
     phi <- phis[i]
-    b <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
-                  coordtype="utm", coords=4:5, validrows=s, verbose=TRUE, mchoice=FALSE, phi=phi, ...)
+    b <- Bspatial(model="spat", formula=formula, data=data, 
+                  coordtype=coordtype, coords=coords, validrows=s, 
+                  verbose=verbose, mchoice=FALSE, phi=phi, N=N, burn.in=burn.in, ...)
     res[i, ] <- unlist(b$stats)
     # setTxtProgressBar(pb, i)
   }
@@ -314,6 +345,26 @@ phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
 # Grid search method for choosing phi(s) and phi(t)
 #' Calculates the validation statistics using the spatial model with a given range of values of
 #' the decay parameter phi.
+#' @param formula An object of class "formula" (or one that can be coerced to that class): 
+#' a symbolic description of the model to be fitted.
+#' @param data The data frame for which the model formula is to be fitted. 
+#' If a spatial model is to be fitted then the data 
+#' frame should contain two columns containing the locations 
+#' of the coordinates. See the coords argument below.
+#' @param  coordtype Type of coordinates: utm, lonlat or plain with utm 
+#' (supplied in meters) as the default. 
+#' Distance will be calculated in units of kilometer 
+#' if this argument is either utm or lonlat. 
+#' Euclidean distance will be calculated if this is 
+#' given as the third type plain. If distance in meter is to be 
+#' calculated then coordtype should be passed on as plain although 
+#' the coords are supplied in UTM.
+#' @param coords 	A vector of size two identifying the two column 
+#' numbers of the data frame to take as coordinates. Or this can 
+#' be given as a matrix of number of sites by 2 
+#' providing the coordinates of all the data locations.
+#' @param scale.transform	Transformation of the response variable. 
+#' It can take three values: SQRT, LOG or NONE.
 #' @param phis A vector values of phi for spatial decay 
 #' @param phit A vector values of phi for temporal decay
 #' @param valids A vector giving the validation sites
@@ -321,25 +372,29 @@ phichoice_sp <- function(phis=seq(from=0.1, to=1, by=0.1),
 #' @return  A data frame giving the phi values and the corresponding validation statistics
 #' @examples
 #' \donttest{
-#' asave <-  phichoicep()
+#' a <-  phichoicep(formula=y8hrmax ~ xmaxtemp+xwdsp+xrh, data=nysptime, 
+#' coordtype="utm", coords=4:5, scale.transform = "SQRT",  
+#' phis=c(0.001,  0.005, 0.025, 0.125, 0.625), phit=c(0.05, 0.25, 1.25, 6.25), 
+#' valids=c(8,11,12,14,18,21,24,28), N=20, burn.in=10, verbose=TRUE)
 #' }
 #' @export 
-phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
-                       phit=c(0.05, 0.25, 1.25, 6.25), 
-                       valids=c(8,11,12,14,18,21,24,28), verbose=TRUE) {
+phichoicep <- function(formula, data, coordtype, coords, scale.transform, 
+                       phis, phit, valids, N, burn.in, verbose=TRUE) {
   a <- expand.grid(phis, phit)
   n <- length(a[,1])
   res <- matrix(NA, nrow=n+2, ncol=4)
   vrows <-  which(nysptime$s.index%in% valids)
   f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
-  b <- Bsptime(model="separable",formula=f2, data=nysptime,
-               coordtype="utm", coords=4:5, validrows=vrows,
-               scale.transform = "SQRT", mchoice=FALSE, verbose=TRUE)
+  b <- Bsptime(model="separable",formula=formula, data=data,
+               coordtype=coordtype, coords=coords, validrows=vrows,
+               scale.transform = scale.transform, N=N, burn.in=burn.in, 
+               mchoice=FALSE, verbose=verbose)
   a[n+1, ] <- c(b$phi.s, b$phi.t)
   res[n+1, ] <- unlist(b$stats)
   
-  b <- Bsptime(model="lm", validrows=vrows, formula=f2, data=nysptime,
-               scale.transform = "SQRT", mchoice=FALSE, verbose=TRUE)
+  b <- Bsptime(model="lm", formula=formula, data=data, coordtype=coordtype, coords=coords, validrows=vrows,
+               scale.transform = scale.transform, N=N, burn.in=burn.in, 
+               mchoice=FALSE, verbose=verbose)
   a[n+2, ] <- c(0, 0)
   res[n+2, ] <- unlist(b$stats)
   
@@ -347,10 +402,11 @@ phichoicep <- function(phis=c(0.001,  0.005, 0.025, 0.125, 0.625),
     if (verbose) cat("Now doing ", i, "to go to ", n, "\n")
     phi.s <- a[i,1]
     phi.t <- a[i,2]
-    b <- Bsptime(model="separable", formula=f2, data=nysptime,
-                 validrows=vrows, coordtype="utm", coords=4:5,
-                 verbose=TRUE, mchoice=FALSE, phi.s=phi.s, phi.t=phi.t,
-                 scale.transform = "SQRT")
+    b <- Bsptime(model="separable", formula=formula, data=data,
+                 validrows=vrows, coordtype=coordtype, coords=coords,
+                 N=N, burn.in=burn.in, 
+                 verbose=verbose, mchoice=FALSE, phi.s=phi.s, phi.t=phi.t,
+                 scale.transform =scale.transform)
     res[i, ] <- unlist(b$stats)
     
   }
