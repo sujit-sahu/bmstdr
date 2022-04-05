@@ -437,7 +437,8 @@ if (require(INLA)) {
     f2 <- y8hrmax ~ xmaxtemp + xwdsp + xrh
     M6 <- Bsptime(package = "inla", model = "AR", formula = f2, data = nysptime,
         coordtype = "utm", coords = 4:5, scale.transform = "SQRT", 
-        mchoice = TRUE)
+        offset = c(100, 200), max.edge = c(500, 10000),
+        mchoice = TRUE, plotit=TRUE)
     # Takes 5 minutes
     summary(M6)
 }

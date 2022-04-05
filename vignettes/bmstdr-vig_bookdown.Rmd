@@ -35,8 +35,8 @@ vignette: >
   
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-   tidy.opts = list(width.cutoff = 60), 
-   tidy = TRUE,
+  # tidy.opts = list(width.cutoff = 60), 
+  # tidy = TRUE, 
    collapse = TRUE,
    class.source="watch-out",
    comment = "#>")
