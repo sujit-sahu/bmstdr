@@ -4,8 +4,9 @@
 \name{colpalette}
 \alias{colpalette}
 \title{The color palette used to draw maps to illustrate the package 
-\insertCite{Sahubook;textual}{bmstdr}
-colpalette <- c("dodgerblue4", "dodgerblue2", "firebrick2",  "firebrick4",  "purple")}
+bmstdr, see  \insertCite{Sahubook;textual}{bmstdr}
+It has the values in order: dodgerblue4, dodgerblue2, firebrick2,  
+firebrick4 and purple.}
 \format{
 An object of class \code{character} of length 5.
 }
@@ -14,8 +15,9 @@ colpalette
 }
 \description{
 The color palette used to draw maps to illustrate the package 
-\insertCite{Sahubook;textual}{bmstdr}
-colpalette <- c("dodgerblue4", "dodgerblue2", "firebrick2",  "firebrick4",  "purple")
+bmstdr, see  \insertCite{Sahubook;textual}{bmstdr}
+It has the values in order: dodgerblue4, dodgerblue2, firebrick2,  
+firebrick4 and purple.
 }
 \examples{
  colpalette
