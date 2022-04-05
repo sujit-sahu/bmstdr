@@ -40,7 +40,7 @@ The data frame should be in long format having one row for each location and  ti
 combination. The data frame must be ordered by time within each site, and should
 optionally have a column, named s.index,  providing the site indices.
 Thus the data,  with n sites and T times within each site, should be
-organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
+organized in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
 The data frame should also contain two columns giving the coordinates of the
 locations for spatio temporal model fitting.}
 
@@ -61,8 +61,8 @@ should be positive integers starting from 1.}
 \item{prior.tau2}{Shape and scale parameter value for the gamma prior on tau^2, the nugget effect.}
 
 \item{prior.phi}{Specifies the prior distribution for \eqn{\phi} only when 
-package is one of Stan, Sptimer or spTDyn.  Distribution options 
-unform specified by "Unif" and gamma specified by "Gamm" have been implemented in 
+package is one of Stan, spTimer or spTDyn.  Distribution options 
+uniform specified by "Unif" and gamma specified by "Gamm" have been implemented in 
 both Stan and spTimer. Additionally a half-Cauchy prior distribution specified as "Cauchy"
 has been implemented in Stan. In the case of spTimer the uniform distribution is discrete 
 while in the case of Stan the uniform distribution is continuous. In the case of 
@@ -105,7 +105,7 @@ or a vector giving the row numbers of the data set for validation.}
 
 \item{plotit}{Logical scalar value: whether to plot the predictions against the observed values.}
 
-\item{rseed}{Random number seed that controls the starting point for the random numer stream.
+\item{rseed}{Random number seed that controls the starting point for the random number stream.
 A set value is required to help reproduce the results.}
 
 \item{verbose}{Logical scalar value: whether to print various estimates and statistics.}
@@ -140,8 +140,8 @@ A list containing:
    the model.  
    \item scale.transform  -   The transformation adopted by the 
     input argument with the same name.  
-   \item sn   -   The number of data lomessageions used in fitting.  
-   \item tn   -   The number of time points used in fitting for each lomessageion.  
+   \item sn   -   The number of data locations used in fitting.  
+   \item tn   -   The number of time points used in fitting for each location.  
    \item computation.time  -   Computation time required 
    to run the model fitting.     
 }

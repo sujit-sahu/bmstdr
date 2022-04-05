@@ -27,7 +27,7 @@ with two added columns providing the UTM X- and Y- coordinates.
   \item{Month}{Month taking values 7 for July and 8 for August}
   \item{Day}{Day taking values 1 to 31}
   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-  \item{xwdsp}{Windspeed (nautical mile per hour)}
+  \item{xwdsp}{wind speed (nautical mile per hour)}
   \item{xrh}{Relative humidity}
 }
 
@@ -47,7 +47,7 @@ with two added columns providing the UTM X- and Y- coordinates.
   \item{Month}{Month taking values 7 for July and 8 for August}
   \item{Day}{Day taking values 1 to 31}
   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-  \item{xwdsp}{Windspeed (nautical mile per hour)}
+  \item{xwdsp}{wind speed (nautical mile per hour)}
   \item{xrh}{Relative humidity}
 }
 }

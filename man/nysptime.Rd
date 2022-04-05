@@ -26,7 +26,7 @@ with two added columns providing the UTM X- and Y- coordinates.
   \item{Day}{Day taking values 1 to 31}
   \item{y8hrmax}{Daily 8-hour maximum ozone concentration value}
   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-  \item{xwdsp}{Windspeed (nautical mile per hour)}
+  \item{xwdsp}{wind speed (nautical mile per hour)}
   \item{xrh}{Relative humidity}
 }
 }

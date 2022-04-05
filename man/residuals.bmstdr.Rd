@@ -16,7 +16,7 @@ of the data frame - sorted by space and then time within space.}
 \item{...}{Any other additional arguments.}
 }
 \value{
-Returns a vecor of residuals. If appropriate, it draws a 
+Returns a vector of residuals. If appropriate, it draws a 
 time series plot of residuals. Otherwise, it draws a plot of residuals 
 against observation numbers.
 }

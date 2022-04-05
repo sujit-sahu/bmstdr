@@ -8,7 +8,7 @@
 #' combination. The data frame must be ordered by time within each site, and should
 #' optionally have a column, named s.index,  providing the site indices.
 #' Thus the data,  with n sites and T times within each site, should be
-#' organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
+#' organized in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
 #' The data frame should also contain two columns giving the coordinates of the
 #' locations for spatio temporal model fitting.  
 #' @param package Which package is to be used in model fitting? Currently available 
@@ -21,14 +21,14 @@
 #' \item{"spTimer" }{All possible models in this package can be fitted.}
 #' \item{"sptDyn" }{All possible models in this package can be fitted.}
 #' \item{"none". } {In this case case, the argument  \code{model} must be 
-#' specified either as "lm" or "seperable". See below}
+#' specified either as "lm" or "separable". See below}
 #' }
 #' Further details and more examples are provided in Chapters 7-9 of the book 
 #' \insertCite{Sahubook;textual}{bmstdr}.
 #' @param model The model to be fitted. This argument is passed to the fitting package. 
-#' In case the package is none, then it can be either "lm" or "seperable". 
+#' In case the package is none, then it can be either "lm" or "separable". 
 #' The "lm" option is for an independent error regression model 
-#' while the other option fits a seperable model without any nugget effect.
+#' while the other option fits a separable model without any nugget effect.
 #' The separable model fitting method cannot handle missing data. All missing data points
 #' in the response variable will be replaced by the grand mean of the available observations.  
 #' @param coordtype Type of coordinates: utm, lonlat or plain with utm 
@@ -41,7 +41,7 @@
 #' Or this can be given as a  matrix of number of sites by 2 providing the coordinates of all the
 #' data locations. 
 #' @param validrows A vector of row numbers of the supplied data frame 
-#' which should be used for validation. When the model is "seperable" this argument 
+#' which should be used for validation. When the model is "separable" this argument 
 #' must include all the time points for the sites to be validated.  Otherwise, the 
 #' user is allowed to select the row numbers of the data frame validation as they wish. 
 #' The default NULL value instructs that validation will not be performed. 
@@ -63,17 +63,17 @@
 #' @param prior.tau2 Shape and scale parameter value for the gamma prior on tau^2, the nugget effect. 
 #' @param prior.sigma.eta Shape and scale parameter value for the inverse gamma prior 
 #' distribution for sigma^2 eta; only used in the spBayes package. 
-#' @param phi.s Only used if the model is "seperable". The value of the 
+#' @param phi.s Only used if the model is "separable". The value of the 
 #'  fixed spatial decay parameter for the exponential covariance function.
 #' If this is not provided then a value is chosen which corresponds to an effective range
 #' which is the maximum distance between the data locations.
-#' @param phi.t  Only used if the model is "seperable". 
+#' @param phi.t  Only used if the model is "separable". 
 #' The fixed decay parameter for the exponential covariance function in the temporal domain.
 #' If this is not provided then a value is chosen which corresponds to an effective temporal
 #' range which is the maximum time of the data set.
 #' @param prior.phi Specifies the prior distribution for \eqn{\phi} only when 
-#' package is one of Stan, Sptimer or spTDyn.  Distribution options 
-#' unform specified by "Unif" and gamma specified by "Gamm" have been implemented in 
+#' package is one of Stan, spTimer or spTDyn.  Distribution options 
+#' uniform specified by "Unif" and gamma specified by "Gamm" have been implemented in 
 #' both Stan and spTimer. Additionally a half-Cauchy prior distribution specified as "Cauchy"
 #' has been implemented in Stan. In the case of spTimer the uniform distribution is discrete 
 #' while in the case of Stan the uniform distribution is continuous. In the case of 
@@ -88,7 +88,7 @@
 #' and for the Cauchy distribution the default values are 0, 1 which specifies
 #' a half-Cauchy distribution in \eqn{(0, \infty)}.  
 #' @param phi.tuning Only relevant for spTimer and spTDyn models. 
-#' Tuning prameter fo sampling phi. See the help file for spT.Gibbs
+#' Tuning parameter fo sampling phi. See the help file for spT.Gibbs
 #' @param phi.npoints  Only relevant for spTimer and spTDyn models. 
 #' Number of points for the discrete uniform prior distribution on phi. See the help file for spT.Gibbs
 #' @param g_size   Only relevant for GPP models fitted by either spTimer or spTDyn. 
@@ -131,8 +131,8 @@
 #' that \eqn{P(\sigma > \sigma_0)=p_{\sigma}}, where \eqn{\sigma} is the marginal 
 #' standard deviation of the field. If Psigma is NA, then sigma0 is taken as the fixed value of 
 #' this parameter.
-#' @param offset Only used in INLA based modelling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
-#' @param max.edge Only used in INLA based modelling. See documentation for \code{inla.mesh.2d}.
+#' @param offset Only used in INLA based modeling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
+#' @param max.edge Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Model for the covariance function. Only relevant for the spBayes, spTimer and the spTDyn packages.  Default is the exponential model. 
 #' See the documentation for \code{\link{spLM}} in the package spBayes. 
 #' @param tol.dist	Minimum separation distance between any two locations out of those specified by 
@@ -142,7 +142,7 @@
 #' @param N MCMC sample size. 
 #' @param burn.in How many initial iterations to discard. 
 #' Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.  
-#' @param rseed Random number seed that controls the starting point for the random numer stream.
+#' @param rseed Random number seed that controls the starting point for the random number stream.
 #' A set value is required to help reproduce the results.
 #' @param n.report  How many times to report in MCMC progress. This is only used when the package is spBayes or spTimer. 
 #' @param no.chains Number of parallel chains to run in Stan. 

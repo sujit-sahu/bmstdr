@@ -387,7 +387,7 @@ with a low coverage of 57.14% for Fold 3.
 ```
 
 A validation plot is automatically drawn each time a validation is performed. Below, we include the validation plot for fold-3 only. 
-```{r valplot1, echo=T, eval=T, message=FALSE, results='hide', fig.cap="Prediction against observation plot with the prediction intervals included. The `in/out' symbol in the plot indicates whether or not a prediction interval incudes the 45 degree line.", fig.height=5, fig.width=6}
+```{r valplot1, echo=T, eval=T, message=FALSE, results='hide', fig.cap="Prediction against observation plot with the prediction intervals included. The `in/out' symbol in the plot indicates whether or not a prediction interval includes the 45 degree line.", fig.height=5, fig.width=6}
 M2.v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
                coordtype="utm", coords=4:5, validrows= s3, phi=0.4, verbose = FALSE)
 ```
@@ -715,7 +715,7 @@ The AR models `M5` and `M6` produces the following model choice results in Table
    set_caption('(#tab:mcvm5m6) Model choice and validation statistics for the two AR models M5 and M6.')
 ```
 
-Parameter estimates from the two models are shown in Table \@ref(tab:mparm-m5-m6). The `r BiocStyle::Rpackage("INLA")` implemented model autoregressive nodel `M6` has been fitted without an intercept as this has been seen to be better than `r BiocStyle::CRANpkg("spTimer")` model `M5`. Other parameter estimates are somewhat comparable but there are large differences  also, see e.g., the estimates of the autoregressive parameter $\rho$ and the spatial decay parameter $\phi$. These differences are expected as the two packages use different model parameterisations and prior distributions. The current package `r BiocStyle::CRANpkg("bmstdr")`  facilitates this sort of model comparison without much additional programming effort.  
+Parameter estimates from the two models are shown in Table \@ref(tab:mparm-m5-m6). The `r BiocStyle::Rpackage("INLA")` implemented model autoregressive model `M6` has been fitted without an intercept as this has been seen to be better than `r BiocStyle::CRANpkg("spTimer")` model `M5`. Other parameter estimates are somewhat comparable but there are large differences  also, see e.g., the estimates of the autoregressive parameter $\rho$ and the spatial decay parameter $\phi$. These differences are expected as the two packages use different model parameterisations and prior distributions. The current package `r BiocStyle::CRANpkg("bmstdr")`  facilitates this sort of model comparison without much additional programming effort.  
 ```{r, echo=FALSE, eval=TRUE}
    table6 %>%
    as_hux(add_colnames = FALSE) %>%

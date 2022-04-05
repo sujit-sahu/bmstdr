@@ -66,11 +66,11 @@
 #' @param N MCMC sample size. Default value 5000. 
 #' @param burn.in How many initial iterations to discard. Default value 1000. 
 #' Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.  
-#' @param rseed Random number seed that controls the starting point for the random numer stream.
+#' @param rseed Random number seed that controls the starting point for the random number stream.
 #' A set value is required to help reproduce the results.
 #' @param n.report  How many times to report in MCMC progress. This is used only when the package is spBayes. 
 #' @param no.chains Number of parallel chains to run in Stan. 
-#' @param ad.delta Adaptive delta controling the behaviour of Stan during fitting. 
+#' @param ad.delta Adaptive delta controlling the behavior of Stan during fitting. 
 #' @param t.depth Maximum allowed tree depth in the fitting process of Stan. 
 #' @param s.size step size in the fitting process of Stan. 
 #' @param plotit  Logical scalar value: whether to plot the predictions against the observed values.

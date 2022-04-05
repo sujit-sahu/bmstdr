@@ -143,7 +143,7 @@ plot.bmstdr <- function(x, segments=TRUE, ...) {
 #' @param numbers a list with two components: sn=number of spatial locations 
 #' tn=number of time points. Residuals will be assumed to follow the arrangement 
 #' of the data frame - sorted by space and then time within space.
-#' @return Returns a vecor of residuals. If appropriate, it draws a 
+#' @return Returns a vector of residuals. If appropriate, it draws a 
 #' time series plot of residuals. Otherwise, it draws a plot of residuals 
 #' against observation numbers.     
 #' @param ... Any other additional arguments. 

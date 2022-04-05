@@ -31,8 +31,8 @@
 #'    the model.  
 #'    \item scale.transform  -   The transformation adopted by the 
 #'     input argument with the same name.  
-#'    \item sn   -   The number of data lomessageions used in fitting.  
-#'    \item tn   -   The number of time points used in fitting for each lomessageion.  
+#'    \item sn   -   The number of data locations used in fitting.  
+#'    \item tn   -   The number of time points used in fitting for each location.  
 #'    \item computation.time  -   Computation time required 
 #'    to run the model fitting.     
 #' }

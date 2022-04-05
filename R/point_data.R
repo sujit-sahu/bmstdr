@@ -34,8 +34,8 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #'   \item{utmx}{UTM X-coordinate of the site}
 #'   \item{utmy}{UTM Y-coordinate of the site}
 #'   \item{yo3}{Average ozone concentration value (ppb) at the site over 62 days in July and August, 2006}
-#'   \item{xmaxtemp}{Average maximum temperature (degree celsius) at the site over 62 days in  July and August, 2006}
-#'   \item{xwdsp}{Average windspeed (nautical mile per hour) over 62 days in  July and August, 2006}
+#'   \item{xmaxtemp}{Average maximum temperature (degree Celsius) at the site over 62 days in  July and August, 2006}
+#'   \item{xwdsp}{Average wind speed (nautical mile per hour) over 62 days in  July and August, 2006}
 #'   \item{xrh}{Average relative humidity over 62 days in  July and August, 2006}
 #' }
 # usethis::use_data(nyspatial, overwrite = TRUE)
@@ -66,7 +66,7 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #'   \item{Day}{Day taking values 1 to 31}
 #'   \item{y8hrmax}{Daily 8-hour maximum ozone concentration value}
 #'   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-#'   \item{xwdsp}{Windspeed (nautical mile per hour)}
+#'   \item{xwdsp}{wind speed (nautical mile per hour)}
 #'   \item{xrh}{Relative humidity}
 #' }
 # usethis::use_data(nysptime, overwrite = TRUE)
@@ -95,7 +95,7 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #'   \item{Month}{Month taking values 7 for July and 8 for August}
 #'   \item{Day}{Day taking values 1 to 31}
 #'   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-#'   \item{xwdsp}{Windspeed (nautical mile per hour)}
+#'   \item{xwdsp}{wind speed (nautical mile per hour)}
 #'   \item{xrh}{Relative humidity}
 #' }
 # usethis::use_data(gridnysptime, overwrite = TRUE)
@@ -119,8 +119,8 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #'   \item{Latitude}{Latitude of the site}
 #'   \item{utmx}{UTM X-coordinate of the site}
 #'   \item{utmy}{UTM Y-coordinate of the site}
-#'   \item{xmaxtemp}{Average maximum temperature (degree celsius) at the site over 62 days in  July and August, 2006}
-#'   \item{xwdsp}{Average windspeed (nautical mile per hour) over 62 days in  July and August, 2006}
+#'   \item{xmaxtemp}{Average maximum temperature (degree Celsius) at the site over 62 days in  July and August, 2006}
+#'   \item{xwdsp}{Average wind speed (nautical mile per hour) over 62 days in  July and August, 2006}
 #'   \item{xwdsp}{Average relative humidity over 62 days in  July and August, 2006}
 #' }
 #usethis::use_data(gridnyspatial, overwrite = TRUE)
@@ -148,7 +148,7 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #'   \item{Month}{Month taking values 7 for July and 8 for August}
 #'   \item{Day}{Day taking values 1 to 31}
 #'   \item{xmaxtemp}{Maximum temperature (degree Celsius)}
-#'   \item{xwdsp}{Windspeed (nautical mile per hour)}
+#'   \item{xwdsp}{wind speed (nautical mile per hour)}
 #'   \item{xrh}{Relative humidity}
 #' }
 # usethis::use_data(gridnysptime, overwrite = TRUE)

@@ -124,14 +124,14 @@ See the documentation for \code{\link{spLM}} in the package spBayes.}
 \item{burn.in}{How many initial iterations to discard. Default value 1000. 
 Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.}
 
-\item{rseed}{Random number seed that controls the starting point for the random numer stream.
+\item{rseed}{Random number seed that controls the starting point for the random number stream.
 A set value is required to help reproduce the results.}
 
 \item{n.report}{How many times to report in MCMC progress. This is used only when the package is spBayes.}
 
 \item{no.chains}{Number of parallel chains to run in Stan.}
 
-\item{ad.delta}{Adaptive delta controling the behaviour of Stan during fitting.}
+\item{ad.delta}{Adaptive delta controlling the behavior of Stan during fitting.}
 
 \item{s.size}{step size in the fitting process of Stan.}
 

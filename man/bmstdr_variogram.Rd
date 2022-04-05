@@ -29,7 +29,7 @@ A list containing:
   \itemize{
    \item cloud - A data frame containing the variogram cloud. 
    This contains pairs of all the data locations, distance 
-   between the locations and the variogram valuefor the pair. 
+   between the locations and the variogram value for the pair. 
    \item variogram  A data frame containing the variogram values in 
    each bin.   
    \item cloudplot A ggplot2 object of the plot of the  variogram cloud. 
