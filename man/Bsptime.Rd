@@ -432,14 +432,14 @@ M9 <- Bsptime(package = "spTimer", model = "GPP", g_size = 5, formula = f2,
     N = N, burn.in = burn.in, n.report = n.report)
 summary(M9)
 
-# Takes a long time to fit spatio-temporal models using INLA
+# This INLA run may take a long time
 if (require(INLA)) {
     f2 <- y8hrmax ~ xmaxtemp + xwdsp + xrh
     M6 <- Bsptime(package = "inla", model = "AR", formula = f2, data = nysptime,
         coordtype = "utm", coords = 4:5, scale.transform = "SQRT", 
         offset = c(100, 200), max.edge = c(500, 10000),
         mchoice = TRUE, plotit=TRUE)
-    # Takes 5 minutes
+    # Takes a minute
     summary(M6)
 }
 }
