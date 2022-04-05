@@ -5,24 +5,40 @@
 ## Email: S.K.Sahu@soton.ac.uk
 ## Binary versions of the package are available from: 
 ## https://www.sujitsahu.com/#bmstdr
-## A second package databmstdr is also required to reproduce 
-## some of the results. Please download and install it from the above webpage.
 
 ## The total time to run all the code in this vignette is about 2 hours on a fast PC. 
-## Please start with a clear work space and restart R
-rm(list=ls())
 
-# Set working directory to the package directory first  
+
 ## Please set  folder paths for saving the tables and graphs. 
 
-yourpath <- getwd()
-allfigurepath <- "../jss-bmstdr/figures/"
+# Only for the maintainer needs to set the following 
+# to the package directory 
+# yourpath <- getwd() # Only the maintainer needs to set this 
+
+# For all other users the output files are written in the sub-folders in the 
+# temporary directory. 
+
+yourpath <- tempdir()
+allfigurepath <- paste0(yourpath, "/jss-bmstdr/figures")
 figpath <- paste0(yourpath, "/inst/figs")
-tablepath <- paste0(yourpath, "/inst/txttables")
+tablepath <- paste0(yourpath,"/inst/txttables")
 tablepathsecond <- paste0(yourpath, "/inst/last3tables")
 
-## These objects are required for mapping 
-colpalette <- c("dodgerblue4", "dodgerblue2", "firebrick2",  "firebrick4",  "purple")     
+if (!file.exists(allfigurepath)) {
+  dir.create(allfigurepath)
+}  
+if (!file.exists(figpath)) {
+  dir.create(figpath)
+}  
+if (!file.exists(tablepath)) {
+  dir.create(tablepath)
+}  
+if (!file.exists(tablepathsecond)) {
+  dir.create(tablepathsecond)
+}  
+
+
+## This is a map of English local autthorities required for mapping 
 englamap <- read.csv("https://www.sujitsahu.com/bmbook/englamap.csv", head=T)
 
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 

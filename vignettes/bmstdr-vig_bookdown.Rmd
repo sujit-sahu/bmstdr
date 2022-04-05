@@ -25,12 +25,24 @@ vignette: >
 ```{r style, echo = FALSE, results = 'asis'}
   BiocStyle::markdown()
 ```
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightpurple;
+  border: 3px solid purple;
+  font-weight: bold;
+}
+```  
   
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>")
+   tidy.opts = list(width.cutoff = 60), 
+   tidy = TRUE,
+   collapse = TRUE,
+   class.source="watch-out",
+   comment = "#>")
 ```
+
+
 
 ```{r setup,  eval=TRUE, echo=FALSE, include=FALSE}
 library(bmstdr)

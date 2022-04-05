@@ -157,3 +157,13 @@ ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.
 #' @examples
 #'  summary(gridnysptime[, 9:11])
 "gridnysptime"
+
+#' The color palette used to draw maps to illustrate the package 
+#' \insertCite{Sahubook;textual}{bmstdr}
+#' colpalette <- c("dodgerblue4", "dodgerblue2", "firebrick2",  "firebrick4",  "purple")     
+# usethis::use_data(colpalette, overwrite = TRUE)
+#' @examples
+#'  colpalette
+#' @references
+#' \insertAllCited{}
+"colpalette"

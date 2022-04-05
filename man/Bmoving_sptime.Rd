@@ -150,7 +150,7 @@ A list containing:
 Model fitting and validation for spatio-temporal data from moving sensors in time.
 }
 \examples{
-\dontrun{
+\donttest{
 deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 deep$x2inter <- deep$xinter*deep$xinter
 deep$month <- factor(deep$month)

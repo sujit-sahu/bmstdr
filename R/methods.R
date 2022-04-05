@@ -108,7 +108,8 @@ object$fitteds
 #' @rdname plot.bmstdr 
 #' @export
 plot.bmstdr <- function(x, segments=TRUE, ...) { 
-  old.par <- par()
+  old.par <- par(no.readonly = TRUE)
+  on.exit(par(old.par))
   if (x$package == "spTimer")  {   
     plot(x$fit) 
     par(mfrow=c(1,1))

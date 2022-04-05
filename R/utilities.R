@@ -46,7 +46,6 @@ NULL
 obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median") {
 ## yobs is r by 1
 ## predsums is r by 4 data frame where the four columns are mean, sd, up and low
-# par(mfrow=c(1,1))
 #
   adat <- data.frame(yobs=as.numeric(yobs), predsums)
   adat <- adat[!is.na(adat$yobs), ]
@@ -254,7 +253,7 @@ bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=ny
   
   colnames(bigmat) <- c("p1.x", "p1.y", "p2.x", "p2.y", "distance", "variogram" )
   
-  # par(ask=TRUE)
+  
   a <- cut(bigmat[,5], nbins)
   mvar <- as.vector(tapply(bigmat[,6], a, mean))
   mdis <- as.vector(tapply(bigmat[,5], a, mean))
@@ -439,12 +438,12 @@ quant <- function(x){
 ## #' response data vector y.   
 ## #' @export
 getXy <- function(formula, data) { 
-  # yX <- spTimer::Formula.matrix(formula=formula, data=data)
+  old <- options()  # Save old options
+  on.exit(options(old)) # On exit restore old options
   options(na.action='na.pass')
   X <- model.matrix(formula, data=data)
   a <- model.frame(formula=formula, data=data)
   y <- as.vector(model.response(a))
-  options(na.action='na.omit')
   list(X=X, y=y)
 }
 
