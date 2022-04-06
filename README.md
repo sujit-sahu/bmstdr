@@ -1,11 +1,9 @@
-# bmstdr
-title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
-author: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
-Abstract: This is the R package bmstdr. The package facilitates Bayesian modeling of both point referenced and areal unit spatial 
-and spatio-temporal data. Three main functions in the package: Bspatial and Bsptime for spatial and spatio-temporal point 
-referenced data respectively and Bcartime for areal unit data, which may also vary in time, perform the main modeling 
-and validation tasks. Computations and inference in a Bayesian modeling framework   
-are done using packages such as spBayes, spTimer, spTDyn, CARBayes, CARBayesST and also bespoke 
+# bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
+# author: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
+# Abstract: 
+
+This is the R package bmstdr. The package facilitates Bayesian modeling of both point referenced and areal unit spatial  and spatio-temporal data. Three main functions in the package: Bspatial and Bsptime for spatial and spatio-temporal point referenced data respectively and Bcartime for areal unit data, which may also vary in time, perform the main modeling 
+and validation tasks. Computations and inference in a Bayesian modeling framework are done using packages such as spBayes, spTimer, spTDyn, CARBayes, CARBayesST and also bespoke 
 code written in INLA and rstan. The user of bmstdr is afforded the flexibility to choose 
 an appropriate package and is also free to name the rows of their input data frame for validation purposes. 
 The package is illustrated with five data sets: three on point referenced data on air pollution, 
