@@ -1,4 +1,8 @@
-<!-- # bmstdr: Bayesian Modeling of Spatio-Temporal Data with R -->
+# bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
+
+## <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
+
+### “2022-04-07”
 
 # Summary:
 

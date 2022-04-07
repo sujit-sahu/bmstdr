@@ -1,13 +1,11 @@
 ---
-title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
 output: 
   md_document
-date: "`r Sys.Date()`"
-author: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
 ---
   
-<!-- # bmstdr: Bayesian Modeling of Spatio-Temporal Data with R --> 
-
+# bmstdr: Bayesian Modeling of Spatio-Temporal Data with R 
+## <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
+### "`r Sys.Date()`"
 # Summary: 
 
 This is the R package bmstdr. The package facilitates Bayesian modeling of both point referenced and areal unit spatial  and spatio-temporal data. Three main functions in the package: Bspatial and Bsptime for spatial and spatio-temporal point referenced data respectively and Bcartime for areal unit data, which may also vary in time, perform the main modeling 
