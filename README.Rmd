@@ -1,9 +1,6 @@
 ---
 title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
 output: 
-   BiocStyle::html_document:
-    number_sections: true
-    toc: true
     md_document:
     variant: markdown_github
 date: "`r Sys.Date()`"
