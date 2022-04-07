@@ -4,7 +4,7 @@ output:
    BiocStyle::html_document:
 bibliography: REFERENCES.bib
 number_sections: true
-date: "`r Sys.Date()`"
+date: "`r today <- Sys.Date(); format(today, format="%B %d,  %Y")`"
 author: 
 - name: Sujit K. Sahu
   affiliation:  University of Southampton

@@ -1,8 +1,8 @@
 # bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
 
-## <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
+## Author: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
 
-### “2022-04-07”
+### Date: “April 07, 2022”
 
 # Introduction:
 
@@ -21,10 +21,14 @@ done using popular `R` software packages such as
 *[CARBayes](https://CRAN.R-project.org/package=CARBayes)*,
 *[CARBayesST](https://CRAN.R-project.org/package=CARBayesST)* and also
 code written using computing platforms *INLA* and
-*[rstan](https://CRAN.R-project.org/package=rstan)*. Point reference
-data are modeled using the Gaussian error distribution only but a top
-level generalized linear model is used for areal data modeling. The user
-of *[bmstdr](https://CRAN.R-project.org/package=bmstdr)* is afforded the
+*[rstan](https://CRAN.R-project.org/package=rstan)*.
+
+<p>
+
+Point reference data are modeled using the Gaussian error distribution
+only but a top level generalized linear model is used for areal data
+modeling. The user of
+*[bmstdr](https://CRAN.R-project.org/package=bmstdr)* is afforded the
 flexibility to choose an appropriate package and is also free to name
 the rows of their input data frame for validation purposes. The package
 incorporates a range of prior distributions allowable in the nominated
