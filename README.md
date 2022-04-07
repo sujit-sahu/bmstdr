@@ -1,4 +1,4 @@
-# bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
+<!-- # bmstdr: Bayesian Modeling of Spatio-Temporal Data with R -->
 
 # Summary:
 

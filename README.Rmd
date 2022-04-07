@@ -1,19 +1,12 @@
 ---
 title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
 output: 
-    md_document:
-    variant: markdown_github
+  md_document
 date: "`r Sys.Date()`"
-author: 
-- name: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
-  affiliation:  University of Southampton
-  email: S.K.Sahu@soton.ac.uk 
+author: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
 ---
   
-
-
-
-# bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
+<!-- # bmstdr: Bayesian Modeling of Spatio-Temporal Data with R --> 
 
 # Summary: 
 
