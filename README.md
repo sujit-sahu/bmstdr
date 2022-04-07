@@ -7,14 +7,19 @@
 # Introduction:
 
 This is the github page for the `R` package
-*[bmstdr](https://CRAN.R-project.org/package=bmstdr)*. This package
-facilitates Bayesian modeling of both point referenced and areal unit
-data with or without temporal replications. Three main functions in the
-package: `Bspatial` for spatial only point referenced data, `Bsptime`
-for spatio-temporal point reference data and `Bcartime` for areal unit
-data, which may also vary in time, perform the main modeling and
-validation tasks. Computations and inference in a Bayesian modeling
-framework are done using popular `R` software packages such as
+*[bmstdr](https://CRAN.R-project.org/package=bmstdr)*. This is the
+companion `R` package for the book
+<a href="https://www.sujitsahu.com/bookbmstdr/">Bayesian Modeling of
+Spatio-Temporal Data with R </a> published by Chapman and Hall.  
+<p>
+
+The package facilitates Bayesian modeling of both point referenced and
+areal unit data with or without temporal replications. Three main
+functions in the package: `Bspatial` for spatial only point referenced
+data, `Bsptime` for spatio-temporal point reference data and `Bcartime`
+for areal unit data, which may also vary in time, perform the main
+modeling and validation tasks. Computations and inference in a Bayesian
+modeling framework are done using popular `R` software packages such as
 *[spBayes](https://CRAN.R-project.org/package=spBayes)*,
 *[spTimer](https://CRAN.R-project.org/package=spTimer)*,
 *[spTDyn](https://CRAN.R-project.org/package=spTDyn)*,
@@ -24,7 +29,6 @@ code written using computing platforms *INLA* and
 *[rstan](https://CRAN.R-project.org/package=rstan)*.
 
 <p>
-
 Point referenced data are modeled using the Gaussian error distribution
 only but a top level generalized linear model is used for areal data
 modeling. The user of
@@ -39,8 +43,10 @@ effort. Familiar diagnostic plots and model fit exploration using the S3
 methods such as `summary`, `residuals` and `plot` are included so that a
 beginner user confident in model fitting using the base `R` function
 `lm` can quickly learn to analyzing data by fitting a range of
-appropriate spatial and spatio-temporal models. This vignette
-illustrates the package using five built-in data sets. Three of these
-are on point referenced data on air pollution and temperature at the
-deep ocean and the other two are areal unit data sets on Covid-19
-mortality in England.
+appropriate spatial and spatio-temporal models.
+<a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html">
+The full vignette </a> illustrates the package using five built-in data
+sets. Three of these are on point referenced data on air pollution and
+temperature at the deep ocean, and the other two are areal unit data on
+Covid-19 mortality in England.
+<p>
