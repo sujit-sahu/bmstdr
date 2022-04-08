@@ -1,0 +1,1512 @@
+---
+title: "bmstdr: Bayesian Modeling of Spatio-Temporal Data with R"
+output: 
+  bookdown::html_document2:
+    base_format: rmarkdown::html_vignette
+    number_sections: true
+    toc: true
+bibliography: REFERENCES.bib
+date: "`r Sys.Date()`"
+author: 
+- name: <a href="https://www.sujitsahu.com/">Sujit K. Sahu </a>
+  affiliation:  University of Southampton
+  email: S.K.Sahu@soton.ac.uk 
+package: bmstdr
+abstract: >
+  This is a vignette for the `R` package `r BiocStyle::CRANpkg("bmstdr")`. The package facilitates Bayesian modeling of both point reference and areal unit data with or without temporal replications. Three main functions in the package: `Bspatial` for spatial only point referene data,   `Bsptime` for spatio-temporal point reference data  and `Bcartime` for  areal unit data,  which may also vary in time,  perform the main modeling and validation tasks. Computations and inference in a Bayesian modeling framework   are done using popular `R` software packages such as `r BiocStyle::CRANpkg("spBayes")`, `r BiocStyle::CRANpkg("spTimer")`,  `r BiocStyle::CRANpkg("spTDyn")`, `r BiocStyle::CRANpkg("CARBayes")`, `r BiocStyle::CRANpkg("CARBayesST")` and also code written using computing platforms  `r BiocStyle::Rpackage("INLA")` and `r BiocStyle::CRANpkg("rstan")`. 
+  Point reference data are modeled using the Gaussian error distribution only but a top level  generalized linear model is used for areal data modeling. The user of `r BiocStyle::CRANpkg("bmstdr")` is afforded the flexibility to choose an appropriate package and is also free to name the rows of their input data frame for validation  purposes. The package  incorporates a range of prior distributions allowable in the nominated  packages with default hyperparameter values.   The package allows quick comparison of models using both model choice criteria,  such as DIC  and WAIC,  and facilitates K-fold cross-validation without much programming effort. Familiar diagnostic plots and model fit exploration using the S3 methods such as  `summary`, `residuals` and `plot` are included so that a beginner user  confident in model fitting using the base `R` function  `lm` can quickly learn to analyzing data by fitting  a range of appropriate spatial and spatio-temporal models.  This vignette illustrates the package using five built-in data sets.  Three of these are on point reference data on air pollution and temperature at the deep ocean and the other two are areal unit data sets on Covid-19 mortality in England. 
+keywords: Areal data, CAR models, geostatistical data modeling, model choice and validation
+
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{bmstdr: Bayesian Modeling of Spatio-Temporal Data with R}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+```{r style, echo = FALSE, results = 'asis'}
+  BiocStyle::markdown()
+```
+```{css, echo=FALSE}
+.watch-out {
+  background-color: lightpurple;
+  border: 3px solid purple;
+  font-weight: bold;
+}
+```  
+  
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  # tidy.opts = list(width.cutoff = 60), 
+  # tidy = TRUE, 
+   collapse = TRUE,
+   class.source="watch-out",
+   comment = "#>")
+```
+
+
+
+```{r setup,  eval=TRUE, echo=FALSE, include=FALSE}
+library(bmstdr)
+library(ggplot2)
+require(ggsn)
+library(tidyr)
+library(huxtable)
+library(RColorBrewer)
+library(akima)
+knitr::opts_chunk$set(eval = F)
+
+
+tabs <- lapply(list.files(system.file('txttables', package = 'bmstdr'), full.names = TRUE), dget)
+# print(tabs)
+
+tablepath <- system.file('last3tables', package = 'bmstdr')
+print(tablepath)
+
+table4.1 <- dget(file=paste0(tablepath, "/table4.1.txt"))
+table4.2 <- dget(file=paste0(tablepath, "/table4.2.txt"))
+table4.3 <- dget(file=paste0(tablepath, "/table4.3.txt"))
+print(table4.1)
+print(table4.2)
+print(table4.3)
+
+
+figpath <- system.file("figs", package = "bmstdr") 
+print(figpath)
+
+table1 <-  tabs[[1]]
+table10 <- tabs[[2]]
+table11 <- tabs[[3]]
+table2 <-  tabs[[4]]
+table3 <-  tabs[[5]]
+table4 <- tabs[[6]]
+table5 <- tabs[[7]]
+table6 <- tabs[[8]]
+table7 <- tabs[[9]]
+table8 <- tabs[[10]]
+table9 <- tabs[[11]]
+colpalette <- c("dodgerblue4",  "dodgerblue2",  "firebrick2",   "firebrick4",   "purple")     
+```
+
+
+# Introduction 
+
+
+Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/view=SpatioTemporal">
+Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/view=Spatial"> Analysis of Spatial Data.</a>
+Moreover, there are a number of packages and text books discussing handling of spatial and spatio-temporal data.  For example, see the references @sp1, @sp2, @spacetime1, @splm1, @banerjeebook2015, @wikleetal2019 and @Sahubook.  The diversity in packages, however, is also a source of challenge for an applied scientist who is also interested in exploring solutions offered by other models from rival packages. The challenge comes from the essential requirement to  learn the package specific commands and  setting up of the prior distributions that are to be used for the applied problem at hand. 
+
+
+The current package `r BiocStyle::CRANpkg("bmstdr")` sets out to help  researchers in applied sciences model a large variety of spatial and spatio-temporal data using a multiplicity of packages but by using only three commands with different options. Point reference spatial data, where each observation comes with a single geo-coded location reference such as a latitude-longitude pair, can be analyzed by fitting several spatial   and spatio-temporal models using `R` software packages such as
+`r BiocStyle::CRANpkg("spBayes")` [@spBayes],  `r BiocStyle::CRANpkg("spTimer")` [@spTimer],  `r BiocStyle::Rpackage("INLA")` [@Rue_inla], 
+`r BiocStyle::CRANpkg("rstan")` [@rstan],  and `r BiocStyle::CRANpkg("spTDyn")` [@Bakaretal_spTdynamic].  
+A particular package is chosen with the `package=` option to the `r BiocStyle::CRANpkg("bmstdr")` model fitting  routines `Bspatial` for point reference spatial only data and
+`Bsptime` for spatio-temporal data. In each of these cases a Bayesian linear model, which can be fitted with the option `package="none"` provides a base line for model comparison purposes. For areal unit data modeling the `r BiocStyle::CRANpkg("bmstdr")` function `Bcartime` provides opportunities for model fitting using three packages: 
+`r BiocStyle::CRANpkg("CARBayes")` [@LeeCARBayes2021],  `r BiocStyle::CRANpkg("CARBayesST")` [@CarBayesST] and `r BiocStyle::Rpackage("INLA")` [@blangiardoandcameletti]. Here also a base line Bayesian generalized linear model for independent data, fitted using `CARBayes`,  is included for model comparison purposes. 
+
+Models fitted using `r BiocStyle::CRANpkg("bmstdr")` can be validated using the optional argument `validrows`, which can be a vector of row numbers of the model fitting data  frame, to any of the three model fitting functions. The package then automatically sets aside the nominated data rows as specified by the `validrows` argument and use the remaining data rows for model fitting. Inclusion of this argument also automatically triggers calculation of four popular model validation statistics: root mean square error, mean absolute error, continuous ranked probability score [@gneiting2007] and coverage percentage. While performing validation the package also produces a scatter plot of predictions against observations with further options controlling the behavior of this plot. 
+
+
+The generality of the platforms `r BiocStyle::Rpackage("INLA")`  and `r BiocStyle::CRANpkg("rstan")`  allows tremendous flexibility in modeling and validation. However, bespoke code must be written to implement each different model. The current version of `bmstdr` provides a limited  number of models which can be fitted using `r BiocStyle::Rpackage("INLA")`  and `r BiocStyle::CRANpkg("rstan")`.  For point reference spatial only data a marginal model, after integrating the spatial random effects,  with a known exponential correlation function is implemented using `r BiocStyle::CRANpkg("rstan")`  and for spatio-temporal point reference data a marginal model has also been implemented using this package. A marginal model has also been implemented in a separate `r BiocStyle::CRANpkg("bmstdr")` model fitting function called `Bmoving_sptime` which facilitates modeling of point reference temporal data from moving sensors such as Argo floats in the oceans, see Section \@ref(modeling-data-from-moving-sensors-in-time). 
+`r BiocStyle::Rpackage("INLA")` based models use  a discretized Gaussian Markov random field with penalized complexity prior distribution [@Fuglstad2018]. 
+
+For areal unit data modeling the `r BiocStyle::CRANpkg("bmstdr")` function `Bcartime` provides opportunities for selected model fitting using `r BiocStyle::CRANpkg("CARBayes")` [@LeeCARBayes2021], and  `r BiocStyle::CRANpkg("CARBayesST")` [@CarBayesST] 
+ `r BiocStyle::CRANpkg("CARBayesST")`[@CarBayesST] and also  `r BiocStyle::Rpackage("INLA")` as illustrated by  @blangiardoandcameletti. Here also a base line Bayesian generalized linear model for independent data, fitted using `CARBayes`,  is included for model comparison purposes. The `r BiocStyle::Rpackage("INLA")` based models can fit the celebrated @BYM model and the Leroux model [@Leroux2000]. 
+
+
+Models fitted using `r BiocStyle::CRANpkg("bmstdr")` can be validated using the optional argument `validrows`, which can be a vector of row numbers of the model fitting data  frame, to any of the three model fitting functions. The package then automatically sets aside the nominated data rows as specified by the `validrows` argument and use the remaining data rows for model fitting. Inclusion of this argument also automatically triggers calculation of four popular model validation statistics: root mean square error, mean absolute error, continuous ranked probability score [@gneiting2007] and coverage percentage. While performing validation, the package also produces a scatter plot of predictions against observations with further options controlling the behavior of this plot. 
+
+
+The remainder of this vignette is organized as follows. Section \@ref(point-reference-spatial-data-modeling)  illustrates point reference spatial data modeling with Gaussian error distribution. 
+Section \@ref(point-reference-spatio-temporal-data-modeling) discusses Gaussian 
+models for point reference spatio-temporal data. Area data are modeled in Section 
+\@ref(modeling-areal-unit-data) where Section \@ref(modeling-static-areal-unit-data) illustrates models for static areal unit data and Section   \@ref(modeling-temporal-areal-unit-data) considers areal temporal data. Some summary remarks are provided in Section  \@ref(discussion). 
+
+
+
+# Point reference spatial data modeling
+  
+## Illustration data set nyspatial
+
+To illustrate point reference spatio-temporal data modeling we use the `nyspatial` data set included in the package. This data set has 28 rows and 9 columns containing average ground level ozone air pollution data from 28 sites in the state of New York. The averages are taken over the 62 days in July and August 2006. The full spatio-temporal data set from 28 sites for 62 days is used to illustrate  spatio-temporal modeling, see Section \@ref(illustration-data-set-nysptime). Figure \@ref(fig:vsites3) represents a map of the state of New York  together with the 28 monitoring locations where the three sites 1, 5 and 10 have been identified.   
+
+```{r vsites3, echo=FALSE, eval=TRUE, fig.cap="25 fitted sites and 3 validation sites (numbered) in  New York", fig.width=6, fig.height=5}
+nymap <- map_data(database="state",regions="new york")
+s <- c(1, 5, 10)
+fcoords <- nyspatial[-s, c("Longitude", "Latitude")]
+vcoords <- nyspatial[s,  c("Longitude", "Latitude")]
+library(tidyr)
+label <- tibble(
+   long = -76.1,
+   lat = 41.5,
+   label = "25 fitted (circles) & 3  \n  validation (numbered) sites"
+)
+
+vsites3 <- ggplot() +
+   geom_polygon(data=nymap, aes(x=long, y=lat, group=group),
+                color="black", size = 0.6, fill=NA) +
+   geom_point(data =fcoords, aes(x=Longitude,y=Latitude)) +
+   geom_text(data=vcoords, aes(x=Longitude,y=Latitude, label=s), col=4) +
+   labs( title= "28 air pollution monitoring sites in New York", x="Longitude", y = "Latitude") +
+   geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
+   # geom_rect(mapping=aes(xmin=-80.2, xmax=-77.3, ymin=41, ymax=41.6), color="black", fill=NA) + 
+   geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
+   ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
+                  st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+   ggsn::north(data=nymap, location="topleft", symbol=12) 
+vsites3
+```
+
+
+For regression modeling purposes, the response variable is `yo3` and the three important covariates are maximum temperature: `xmaxtemp` in degree Celsius, wind speed: `xwdsp` in nautical miles and  percentage average relative humidity: `xrh`.
+This data set is included in the package and further information regarding this can be obtained from the help file `?nyspatial`. 
+
+
+## The Bspatial function for fitting spatial regression models
+
+The `r BiocStyle::CRANpkg("bmstdr")` package includes the function `Bspatial` for fitting regression models to point referenced spatial data.
+ The arguments to this function has been documented in the help file which can be viewed by issuing the `R` command `?Bspatial`. The package manual also contains the full documentation. The discussion below highlights the 
+ main features of this model fitting function. 
+ 
+ Besides the usual `data` and `formula` the argument `scale.transform` can take one of three possible values:
+ `NONE, SQRT` and `LOG`. This  argument defines the on the fly transformation for the response variable which 
+ appears on the left hand side of the formula.
+ 
+  Default values of the arguments `prior.beta0, prior.M` and `prior.sigma2` defining the prior
+ distributions for $\mathbf{\beta}$ and $1/\sigma^2_{\epsilon}$ are provided.
+ 
+ The options `model="lm"`  and  `model="spat"`
+ are respectively used for fitting and analysis using the independent spatial regression model with 
+ exponential correlation function.  If the latter regression model is to be fitted, the function requires 
+  three additional arguments, `coordtype`, `coords` and `phi`. The `coords` argument provides the 
+  coordinates of the data locations. The type of these coordinates, specified by
+ the `coordtype` argument, taking one of three possible values: `utm`, `lonlat` and `plain`
+ determines various aspects of  distance calculation and hence model fitting. 
+ The default for this argument is `utm` when it is expected that the coordinates are supplied in units of meter. 
+ The `coords` argument provides the actual coordinate values and this argument  can be supplied as a vector of 
+ size two identifying the two column numbers of the data frame to take as coordinates. Or this argument
+ can be given as a matrix of number of sites by 2 providing the coordinates of all the data locations.
+
+ The parameter `phi` determines the rate of decay of the spatial correlation for the assumed
+ exponential covariance function. The default value, if not provided, is taken to be 3 over the
+ maximum distance between the data locations so that the effective range is
+ the maximum distance.
+
+The argument `package` chooses one package to fit the spatial model from among four possible choices. The default option `none` is used to fit the independent linear regression model and the also the spatial regression model without the nugget effect when the parameter `phi` is assumed to be known. The three other options are 
+`spBayes, stan` and `inla`. Each of these options use the corresponding 
+R packages for model fitting. The exact form of the models in each case is documented in Chapter 6 of the book @Sahubook. 
+
+ 
+ Calculation of model choice statistics is triggered by the option `mchoice=T`. In this case the DIC, WAIC and PMCC
+ values are calculated. 
+ 
+ An optional vector argument `validrows` providing the row numbers of the supplied data frame for 
+ model validation can also be given. The model choice statistics are calculated on the opted scale 
+ but model validations and their uncertainties are calculated on the original scale of the response for ease of interpretation. This strategy of a possible transformed modeling scale but predictions on the original scale is adopted throughout the package. 
+
+ There are other arguments of  `Bspatial`, e.g. `verbose`,  which control various
+ aspects of model fitting and return values. Some of these other arguments are only relevant for specifying prior
+ distributions and performing specific tasks as we will see throughout the remainder of this section. 
+  
+ The return value of `Bspatial` is a list of class `r BiocStyle::CRANpkg("bmstdr")`  providing  parameter estimates, and if requested model choice statistics and validation predictions
+ and statistics. The S3methods `print, plot, summary, fitted`, and `residuals` have been
+ implemented for objects of the `r BiocStyle::CRANpkg("bmstdr")` class.  Thus the user can give the commands such as `summary(M1)` and `plot(M1)` where `M1` is the model fitted object .  
+ 
+
+## Fitting independent error regression models
+
+The `r BiocStyle::CRANpkg("bmstdr")` package allows us to fit the base linear regression model given by: 
+\begin{equation}
+Y_i =  \beta_1 x_{i1} + \ldots + \beta_p x_{ip} + \epsilon_i, 
+i=1, \ldots, n  (\#eq:multireg)
+\end{equation}
+where $\beta_1, \ldots, \beta_p$ are unknown regression coefficients and $\epsilon_i$ is the error term that we assume to
+follow the normal distribution with mean zero and variance $\sigma^2_{\epsilon}$. The usual linear model assumes the errors  $\epsilon_i$ to be independent  for $i=1, \ldots, n$.
+With the suitable default assumptions regarding the prior distributions we can fit the above
+model \@ref(eq:multireg) by using the following command: 
+```{r chunk1, echo=TRUE, eval=FALSE}
+M1 <- Bspatial(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, mchoice=T)
+```
+
+  
+## Fitting linear models with spatial error distribution
+The independent linear regression model \@ref(eq:multireg) is now extended to have 
+spatially colored covariance matrix $\sigma^{2}_{\epsilon}H$ where   $H$ is a known correlation matrix of  the error vector $\mathbf{\epsilon}$, i.e. $H_{ij}=\mbox{Cor}(\epsilon_i, \epsilon_j)$ for $i, j=1, \ldots,n$, 
+\begin{equation}
+  {\bf Y} \sim N_n \left(X{\mathbf \beta}, \sigma^{2}_{\epsilon} H\right)
+  (\#eq:veclinearmod)
+\end{equation}
+Assuming the exponential correlation function, i.e., $H_{ij} = \exp(-\phi d_{ij})$ where $d_{ij}$ is the distance between locations ${\bf s}_i$ and ${\bf s}_j$ we can fit the model  \@ref(eq:veclinearmod) by issuing the command:  
+```{r m2spatial, echo=TRUE, eval=FALSE}
+M2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+      coordtype="utm", coords=4:5, phi=0.4, mchoice=T)
+```
+We discuss the choice of the fixed value of the spatial decay parameter $\phi=0.4$ in `M2`.  We use cross-validation methods to find an optimal value for $\phi$. We take a grid of values for $\phi$ and calculate a cross-validation error statistics, e.g. root mean square-error (rmse),  for each value of $\phi$ in the grid. The optimal $\phi$ is the one that minimizes the statistics.
+
+To perform the grid search a simple `R` function,  `phichoice_sp` is provided.   The documentation of this function explains how to set the arguments. For example, the following commands work:
+```{r, echo=TRUE, eval=FALSE}
+asave <- phichoice_sp(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, coordtype="utm", coords=4:5, phis=seq(from=0.1, to=1, by=0.1), scale.transform="NONE", s=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
+asave
+```
+For the `nyspatial` data example 0.4 turns out to be the optimal value for $\phi$. 
+
+
+## Fitting spatial models with nugget effect
+
+A general spatial model with nugget effect is written as: 
+\begin{equation}
+Y({\bf s}_i) =  {\bf x}'({\bf s}_i) \mathbf{\beta} + w({\bf s}_i) + \epsilon(
+{\bf s}_i)
+(\#eq:spatialwithnugget)
+\end{equation}
+for all $i=1, \ldots, n$. In the above equation, the pure error term $\epsilon({\bf s}_i)$ is assumed to follow the independent zero mean normal distribution
+with variance $\sigma^2_{\epsilon}$, called the nugget effect, for all $i=1. \ldots, n$.  The stochastic process $w({\bf s})$ is assumed to follow a zero mean  Gaussian Process with the exponential covariance function, see @Sahubook for more details. 
+
+
+The un-observed random variables $w({\bf s}_i)$, $i=1, \ldots, n$, also known as 
+the spatial random effects can be integrated out to arrive at the marginal model 
+\begin{align}
+{\bf Y}  & \sim   N\left(X{\mathbf \beta}, \sigma^2_{\epsilon} \, I + \sigma^2_w 
+S_w \right),   (\#eq:spatialmarginal) 
+\end{align}
+where the matrix $S_w$ is determined using the exponential correlation function. 
+This marginal model is fitted using any of the three packages mentioned above. 
+The code for this model fitting is very similar to the one for fitting `M2` above; the only 
+important change is in the `package=` argument as noted below. 
+```{r, echo=TRUE, eval=FALSE}
+M3 <- Bspatial(package="spBayes", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+               coordtype="utm", coords=4:5, prior.phi=c(0.005, 2), mchoice=T)
+M4 <- Bspatial(package="stan", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+               coordtype="utm", coords=4:5,phi=0.4, mchoice=T)
+M5  <- Bspatial(package="inla",formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+               coordtype="utm", coords=4:5, mchoice=T)
+```
+```{r, echo=FALSE, eval=FALSE}
+a3 <- Bmchoice(case="MC.sigma2.unknown", y=ydata)
+# Now organize the all the results for forming Table 1. 
+a5 <- rep(NA, 11)
+a5[c(1, 3, 5, 7, 9:11)] <- unlist(M5$mchoice)
+table1 <- cbind.data.frame(unlist(a3), M1$mchoice, M2$mchoice, M3$mchoice, M4$mchoice,  a5)
+colnames(table1) <- paste("M", 0:5, sep="")
+round(table1,  2)
+dput(table1, file=paste0(path, "table1.txt"))
+```
+
+Model fitting is very fast except for `M4` with the `stan` package. The model run 
+for `M4` takes about 20 minutes on a fast personal computer. These run produces the values of various Bayesian model choice criteria shown in Table \@ref(tab:mchoicenyspatial). 
+```{r tab, echo=FALSE, eval=TRUE}
+   table1 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:mchoicenyspatial) Model choice criteria for various models fitted to the nyspatial data set.')
+
+```
+
+Mathematical expressions for all the quantities in the above table are 
+provided in @Sahubook. Here  M0 is the intercept only model for which the results are obtained using the  following `r BiocStyle::CRANpkg("bmstdr")` command,
+```{r, echo=TRUE, eval=FALSE}
+Bmchoice(case="MC.sigma2.unknown", y=ydata).
+```
+The implementation using `inla` does not calculate the alternative values of the DIC and WAIC.
+
+## Illustrating the model validation statistics
+
+The model fitting function `Bspatial` also calculates the values of four validation 
+statistics: 
+- root mean square-error (rmse), 
+- mean absolute error (mae), 
+- continuous ranked probability score (crps) and
+- coverage (cvg) 
+if an  additional argument `validrows` containing the row numbers of the supplied 
+data frame to be validated is provided. 
+
+Data from eight validation sites 8, 11, 12, 14, 18, 21, 24 and 28 are set aside and model fitting is performed using the data from the remaining 20 sites. 
+
+The `r BiocStyle::CRANpkg("bmstdr")` command for performing validation needs an additional argument `validrows` which are the row numbers of the supplied data frame which should be used for validation.
+```{r, echo=TRUE, eval=FALSE}
+s <- c(8,11,12,14,18,21,24,28)
+f1 <- yo3~xmaxtemp+xwdsp+xrh
+M1.v <-  Bspatial(package="none", model="lm", formula=f1, 
+                  data=nyspatial, validrows=s)
+M2.v <- Bspatial(package="none", model="spat", formula=f1, 
+        data=nyspatial,   coordtype="utm", coords=4:5,phi=0.4,  validrows=s)
+M3.v <-  Bspatial(package="spBayes", prior.phi=c(0.005, 2), formula=f1,
+        data=nyspatial,   coordtype="utm", coords=4:5, validrows=s) 
+M4.v  <- Bspatial(package="stan",formula=f1, 
+    data=nyspatial,   coordtype="utm", coords=4:5,phi=0.4 , validrows=s) 
+M5.v  <- Bspatial(package="inla", formula=f1, data=nyspatial,   
+        coordtype="utm", coords=4:5, validrows=s) 
+```
+
+Table \@ref(tab:mvalidnyspatial) presents the validation statistics for all five models.  Coverage is 100% for all five models and the validation performances are comparable. Model  `M4` with $\phi=0.4$ can  be used as the best model if it is imperative that one must be  chosen using the rmse criterion.  
+```{r, echo=FALSE, eval=TRUE}
+   table2[-4, ] %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(3)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")%>% 
+   set_caption('(#tab:mvalidnyspatial) Model validation statistics for the five models fitted to the nyspatial data set.')
+```
+
+To illustrate $K$-fold cross-validation, the 28 observations  in the `nyspatial` data set are randomly assigned to $K=4$ groups of equal size. 
+```{r, echo=TRUE, eval=TRUE}
+set.seed(44)
+x <- runif(n=28)
+u <- order(x)
+s1 <- u[1:7]
+s2 <- u[8:14]
+s3 <- u[15:21]
+s4 <- u[22:28]
+```
+
+Now the `M2.v` command is called four times with the `validrows` argument taking values `s1, ... s4`.  Table   \@ref(tab:m2-4-fold-validnyspatial) presents the 4-fold cross-validation statistics for `M2` only.  It shows a wide variability in performance
+with a low coverage of 57.14% for Fold 3. 
+```{r, echo=FALSE, eval=TRUE}
+   table3 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(3)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>%
+   set_caption('(#tab:m2-4-fold-validnyspatial) 4-fold cross-validation statistics for model M2 fitted to the nyspatial data set.')
+
+```
+
+A validation plot is automatically drawn each time a validation is performed. Below, we include the validation plot for fold-3 only. 
+```{r valplot1, echo=T, eval=T, message=FALSE, results='hide', fig.cap="Prediction against observation plot with the prediction intervals included. The `in/out' symbol in the plot indicates whether or not a prediction interval includes the 45 degree line.", fig.height=5, fig.width=6}
+M2.v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
+               coordtype="utm", coords=4:5, validrows= s3, phi=0.4, verbose = FALSE)
+```
+
+In this particular instance four of the seven validation observations are over-predicted. The above figure shows low coverage and high rmse. However, these statistics  are  based on data from seven validation sites only and as a result these may have large variability explaining the differences in the $K$-fold validation
+results. 
+
+The above validation plot has been drawn using the `r BiocStyle::CRANpkg("bmstdr")` command `obs_v_pred_plot`. This validation plot may be drawn without the line segments, which is recommended when there are a large number of validation observations. The plot may also use the `mean` values of the predictions instead of the default `median` values. The documentation of the function explains how to do this. For example, having the fitted object `M2.v3`, we may issue the commands: 
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide'}
+names(M2.v3)
+psums <- get_validation_summaries(M2.v3$valpreds)
+names(psums)
+a <- obs_v_pred_plot(yobs=M2.v3$yobs_preds$yo3, predsums=psums, segments=FALSE, summarystat = "mean" )
+```
+
+
+
+# Point reference spatio-temporal data modeling
+
+## Illustration data set nysptime
+
+To illustrate point reference spatio-temporal data modeling we use the `nysptime` data set included in the package. This is a spatio-temporal version of the data set `nyspatial` introduced in Section \@ref(illustration-data-set-nyspatial).  This data set, taken from @sahu_bakar_stamet,  has 1736 rows and 12 columns containing ground level ozone air pollution data from 28 sites in the state of New York for the 62 days in July and August 2006. 
+
+For regression modeling purposes, the response variable is `y8hrmax` and the three important covariates are maximum temperature: `xmaxtemp` in degree Celsius, wind speed: `xwdsp` in nautical miles and  percentage average relative humidity: `xrh`. 
+
+## The Bsptime function for fitting spatio-temporal models
+In this section we extend the spatial model \@ref(eq:spatialwithnugget) to the following spatio-temporal model. 
+\begin{equation}
+Y({\bf s}_i, t) =  {\bf x}'({\bf s}_i, t) \mathbf{\beta} + w({\bf s}_i, t) + \epsilon(
+{\bf s}_i, t)
+(\#eq:spatiotemporalwithnugget)
+\end{equation}
+for $i=1, \ldots, n$ and $t=1, \ldots, T.$ Different distribution specifications for  the spatio-temporal  random effects $w({\bf s}_i, t)$ and the observational errors 
+$\epsilon({\bf s}_i, t)$ give rise to different models. Variations of these models have been described in @Sahubook.  The `r BiocStyle::CRANpkg("bmstdr")` function `Bsptime` has been developed to fit these models. 
+
+Similar to the `Bspatial` function, the `Bsptime` function takes a formula and a data argument. It is important to note that the `Bsptime` function *always assumes* that the data frame is first sorted by space and then time within each site in space. Note that missing covariate values  are not permitted.
+
+The arguments defining the scale, `scale.transform`, 
+and the hyper parameters of the prior distribution for the regression coefficients ${\mathbf \beta}$ and the variance parameters are also similar to the corresponding ones in the spatial model fitting case with `Bspatial`. Other important arguments 
+are described below. 
+
+The arguments `coordtype`, `coords`, and `validrows` are also similarly defined as before. However, note that when the separable  model is fitted the `validrows` argument must include all the rows of time points  for each site to be validated. 
+
+The `package` argument can take one of six values: `spBayes`, `stan`, `inla`, `spTimer`, `sptDyn` and `none` with `none` being the default. Fittings using each of these package options  are illustrated in the sections below. 
+Only a limited number 
+of models, specified by the `model` argument,  can be fitted with each of these six choices.  The `model` argument is described below. 
+
+ In case the package is `none`, the `model` can either be 
+`lm` or `seperable`. The `lm` option is for an independent error regression model while the other option fits a separable spatio-temporal model without any nugget effect. The separable model fitting method cannot handle missing data. All missing data points in the response variable will be replaced by the grand mean of the available observations. When the `package` option is one of the five 
+named packages the `model` argument is passed to the chosen package. 
+
+For fitting a `separable` model `Bsptime` requires specification of
+two decay parameters $\phi_s$ and $\phi_t$. If these are not specified then values are chosen which correspond to the effective ranges  as the maximum distance in space  and length in time.
+
+There are numerous other package specific arguments that define the prior distributions and many important behavioral aspects of the selected package. Those are not described here. Instead the user is directed to the documentation `?Bsptime` and also the vignettes of the individual packages. 
+
+
+With the default value of `package="none"` the independent error regression model `M1` and the separable model `M2` are fitted using the commands: 
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+f2 <- y8hrmax~xmaxtemp+xwdsp+xrh
+M1 <- Bsptime(model="lm", formula=f2, data=nysptime, scale.transform = "SQRT")
+M2 <- Bsptime(model="separable", formula=f2, data=nysptime, scale.transform = "SQRT",
+              coordtype="utm", coords=4:5)
+```
+
+The fitted model objects `M1` and `M2` are of class `r BiocStyle::CRANpkg("bmstdr")` and these can be explored using the S3 methods `print, plot`, `summary` and `residuals`. 
+To explore the model fitted object issue the command `names(M2)`.  Here we explore the residuals by issuing the command: 
+```{r residM2, echo=TRUE, eval=TRUE, fig.width=7, fig.height=5, fig.cap="A multiple time series plot of residuals"}
+a <- residuals(M2)
+```
+
+This command renders a multiple time series plot of the residuals.  However, the same command `a <- residuals(M1)` will not draw the residual plot since the independent error regression model is not aware of the temporal structure of the data. In this case it is possible to modify the command to 
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide'}
+a <- residuals(M1, numbers=list(sn=28, tn=62))
+```
+to have the desired result, see `?residuals.bmstdr`. 
+
+## Exploring the separable model 
+
+The above command for fitting `M2` does not specify the values of the  spatial and temporal decay parameters $\phi_s$ and $\phi_t$. The adopted values of these parameters are printed by the command: 
+```{r, echo=TRUE, eval=FALSE}
+M2$phi.s; M2$phi.t
+```
+
+These values are approximately 0.005 and 0.048 which  correspond to the spatial range (the value of distance by which spatial correlation dies down) of 591 kilometers and the temporal range of 62 days which are the maximum possible values for the spatial and temporal domains of the data. 
+
+Optimal values of  $\phi_s$ and $\phi_t$ can be determined by performing a grid search as in the case spatial only model fitting with `Bspatial`. The `r BiocStyle::CRANpkg("bmstdr")` package contains a function called `phichoice` which does this grid search specifically for the `nysptime` data set using the eight validation sites noted 
+earlier. The command is: 
+```{r, echo=TRUE, eval=FALSE}
+asave <- phichoicep(formula=y8hrmax ~ xmaxtemp+xwdsp+xrh, data=nysptime,
+                coordtype="utm", coords=4:5, scale.transform = "SQRT",  phis=c(0.001,  0.005, 0.025, 0.125, 0.625), phit=c(0.05, 0.25, 1.25, 6.25), 
+valids=c(8,11,12,14,18,21,24,28), N=2000, burn.in=1000)
+```
+The optimal values in this case turns out to be $\phi_s=0.005$ and $\phi_t=0.05$ approximately. 
+
+We now explore model validation for the separable model using the three sites chosen previously.
+```{r valplot21, echo=TRUE, eval=TRUE, message=FALSE, results='hide', fig.show='hide'}
+valids <-  c(1, 5, 10)
+vrows <-  which(nysptime$s.index%in% valids)
+M2.1 <- Bsptime(model="separable",  formula=f2, data=nysptime, 
+             validrows=vrows, coordtype="utm", coords=4:5,
+             phi.s=0.005, phi.t=0.05, scale.transform = "SQRT")
+```
+```{r, echo=TRUE, eval=TRUE, message=FALSE}
+summary(M2.1)
+```
+
+The fitted model `M2.1` can be passed to the `plot` function that may draw 
+several plots depending on the contents of the model fitted object. For example, this always draws a residuals against fitted values plot. The `plot` command for objects of class `r BiocStyle::CRANpkg("bmstdr")` can take  additional arguments such as `segments = FALSE` 
+which will provide a  plot of the predicted values against observations without the line segments. 
+
+## Spatio-temporal model fitting with the spTimer package
+The `spTimer` package @spTimer can be used to fit, predict and forecast using various spatio-temporal models. This package also offers a great deal of flexibility in data modeling since it can model segmented time series data and also mixture of discrete and continuous data such as precipitation. The `r BiocStyle::CRANpkg("bmstdr")` function `Bsptime` can implement these models by invoking the  `package="spTimer"` option. 
+For example:
+```{r, echo=TRUE, eval=TRUE,message=FALSE, results='hide' }
+M3 <- Bsptime(package="spTimer", formula=f2, data=nysptime, n.report=5, 
+              coordtype="utm", coords=4:5, scale.transform = "SQRT")
+```
+
+As before,  the fitted model object `M3` can be explored using the `print, summary, plot` and `residuals` commands. The `plot` command will draw the MCMC trace and density plots for each model parameter.  The output plots of these commands are omitted from this document for brevity. Instead, we show validation performance at three selected sites: 1, 5, and 10 as shown in the map. 
+
+We randomly select 31 time points for validation at the three selected sites and identify the validation rows by using the following commands. 
+```{r, echo=T, eval=T}
+set.seed(44)
+tn <- 62
+sn <- 28
+valids <- c(1, 5, 10)
+validt <- sort(sample(1:tn, size=31))
+vrows <- getvalidrows(sn=sn, tn=tn, valids=valids, validt=validt)
+```
+
+The `getvalidrows` command is included in the `databmstdr` library. Now we use the 
+`spTimer` package to fit and validate the model. 
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide', fig.show='hide'}
+M31 <- Bsptime(package="spTimer",formula=f2, data=nysptime, 
+               coordtype="utm", coords=4:5,
+               validrows=vrows, model="GP", report=5, 
+               mchoice=F, scale.transform = "NONE")
+```
+
+For ease of illustration we have chosen `scale.transform = "NONE"`. More complicated  additional coding will be required if a different scale is chosen. 
+
+We illustrate a plot of the observations, fitted values and the validation predictions and their uncertainty intervals as plotted in Figure 11.13 in the book @banerjeebook2015. 
+The `databmstdr` package includes the function `fig11.13.plot` to generate this plot.
+The arguments required for this function are prepared as follows. The `spTimer` package does not provide the 95% intervals for the fitted values nor does it provide the MCMC samples of the fitted values which can be used to construct the 95% intervals. Hence, in the code below we use a normal approximation to obtain the uncertainty intervals. 
+Now we first organize the data for plotting. 
+```{r, echo=T, eval=T}
+modfit <- M31$fit
+fitall <- data.frame(modfit$fitted)
+fitall$s.index <- rep(1:sn, each=tn)
+library(spTimer)
+vdat <- spT.subset(data=nysptime, var.name=c("s.index"), s=valids)
+fitvalid <- spT.subset(data=fitall, var.name=c("s.index"), s=valids)
+fitvalid$low <- fitvalid$Mean - 1.96 * fitvalid$SD
+fitvalid$up <- fitvalid$Mean + 1.96 * fitvalid$SD
+fitvalid$yobs <- vdat$y8hrmax
+yobs <- matrix(fitvalid$yobs, byrow=T, ncol=tn)
+y.valids.low <- matrix(fitvalid$low, byrow=T, ncol=tn)
+y.valids.med <- matrix(fitvalid$Mean, byrow=T, ncol=tn)
+y.valids.up <- matrix(fitvalid$up, byrow=T, ncol=tn)
+```
+
+Now we call the `fig11.13.plot` function to render the plot for each site.
+```{r valid3sites, echo=T, eval=T, fig.height=8, fig.width=7, fig.cap="Time series of observed and predicted values at three sites."}
+p1 <- fig11.13.plot(yobs[1, ], y.valids.low[1, ], y.valids.med[1, ], 
+                    y.valids.up[1, ], misst=validt)
+p1 <- p1 + ggtitle("Validation for Site 1")
+p2 <- fig11.13.plot(yobs[2, ], y.valids.low[2, ], y.valids.med[2, ], 
+                    y.valids.up[2, ], misst=validt)
+p2 <- p2 + ggtitle("Validation for Site 5")
+p3 <- fig11.13.plot(yobs[3, ], y.valids.low[3, ], y.valids.med[3, ], 
+                    y.valids.up[3, ], misst=validt)
+p3 <- p3 + ggtitle("Validation for Site 10")
+library(ggpubr)
+ggarrange(p1, p2, p3, common.legend = TRUE, legend = "top", nrow = 3, ncol = 1)
+```
+
+This ability to fit and validate using user defined validation rows is an enhancement of the `spTimer` package since that only allows validation at all time points for any selected site. The original package does not allow selective predictions at a subset of time points. 
+
+
+### Illustrating spatio-temporal predictions
+
+The `spTimer` package includes a prediction method function that can be used to predict at a large number locations. It does these predictions at all time points of the modeling data hence the covariates used in the model must be available for all prediction locations and at all time points. We illustrate  the predictions using the fitted model `M3`. We only show the average predicted pollution map over the 62 days. 
+To do the site-wise averaging we use the `sitemeans` function: 
+```{r, echo=T, eval=T}
+sitemeans <- function(a, sn, tn=62) { 
+   u <- matrix(a, nrow=sn, ncol=tn, byrow=T)
+   b <- apply(u, 1, mean)
+   as.vector(b)
+}
+```
+
+The `r BiocStyle::CRANpkg("bmstdr")` package includes the data set `gridnysptime` which contains the prediction data for 100 locations within the state of New York. Here is the 
+code-chunk to perform prediction  at these 100 locations and then averaging: 
+```{r, echo=T, eval=T, message=FALSE, results='hide'}
+post <- M3$fit
+gpred <- predict(post, newdata=gridnysptime, newcoords=~Longitude+Latitude)
+u <- gpred$pred.samples
+v <- apply(u, 2, sitemeans, sn=100)
+a <- get_parameter_estimates(t(v)) 
+b <- data.frame(gridnyspatial[, 1:5], a) 
+```
+The data frame `b` contains the location information and the prediction summaries at the 100 prediction sites. To draw the prediction map we also include the fitted values from the 28 data modeling sites. We extract the fitted values as follows:  
+
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+meanmat <- post$op
+sig2eps <-  post$sig2ep
+sige <- sqrt(sig2eps)
+itmax <- ncol(meanmat)
+nT <- nrow(nysptime)
+sigemat <- matrix(rep(sige, each=nT), byrow=F, ncol=itmax)
+a <- matrix(rnorm(nT*itmax), nrow=nT, ncol=itmax)
+ypreds <- meanmat + a * sigemat
+ypreds <-  (ypreds)^2
+v <- apply(ypreds, 2, sitemeans, sn=28)
+a <- get_parameter_estimates(t(v)) 
+fits <- data.frame(nyspatial[, 1:5], a)
+```
+Finally we combine the predictions and the fitted values by the command: 
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+b <- rbind(b, fits)
+```
+
+Now we can obtain the average pollution map by using the linear interpolation function
+`interp` in the `akima` library. Also we discard the interpolations outside the state of New York by using the function `fnc.delete.map.XYZ` included in the `bmstdr` package. 
+
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+coord <- nyspatial[, c("Longitude","Latitude")]
+library(akima)
+xo <- seq(from=min(coord$Longitude)-0.5, to = max(coord$Longitude)+0.8, length=200)
+yo <- seq(from=min(coord$Latitude)-0.25, to = max(coord$Latitude)+0.8, length=200)
+surf <- interp(b$Longitude, b$Latitude, b$mean,  xo=xo, yo=yo)
+v <- fnc.delete.map.XYZ(xyz=surf)
+
+interp1 <- data.frame(long = v$x, v$z )
+names(interp1)[1:length(v$y)+1] <- v$y
+library(tidyr)
+interp1 <- gather(interp1,key = lat,value =Predicted,-long,convert = TRUE)
+library(ggplot2)
+nymap <- map_data(database="state",regions="new york")
+mappath <- cbind(nymap$long, nymap$lat)
+zr <- range(interp1$Predicted, na.rm=T)
+P <- ggplot() +  
+geom_raster(data=interp1, aes(x = long, y = lat,fill = Predicted)) +
+geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) + 
+geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
+stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = Predicted), colour = "black", binwidth =2) +
+scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
+theme(axis.text = element_blank(), axis.ticks = element_blank()) +
+ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km", st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+ggsn::north(data=interp1, location="topleft", symbol=12) +
+labs(x="Longitude", y = "Latitude", size=2.5) 
+```
+```{r, echo=F, eval=T, fig.height=6, fig.width=8, fig.cap="Predicted map of average ozone air pollution in New York"}
+P
+```
+Similar methods are used to obtain a map of the standard deviations of the predictions which has been omitted for brevity. 
+
+
+## Marginal model fitting with the rstan package
+The option `package="stan"` can be used to fit the only available model, which is a marginalized GP model, like  \@ref(eq:spatialmarginal) independently at each time point. Details for this model are provided in Chapter 7 of the book @Sahubook. In this implementation the spatial decay parameter $\phi$ is sampled and its estimate is made available in the parameter estimates table. 
+
+We illustrate model fitting by comparing the `stan` fitted model with the three previously fitted models. The commands for fitting all four models are: 
+```{r, echo=TRUE, eval=FALSE}
+M1.c <- Bsptime(model="lm", formula=f2, data=nysptime, 
+          scale.transform = "SQRT", mchoice=T)
+M2.c <- Bsptime(model="separable",  formula=f2, data=nysptime, 
+          coordtype="utm", coords=4:5, phi.s=0.005, phi.t=0.05, 
+          scale.transform = "SQRT", mchoice=T)
+M3.c <- Bsptime(package="spTimer", model="GP", 
+        formula=f2, data=nysptime, coordtype="utm", 
+        coords=4:5, scale.transform = "SQRT", 
+        mchoice=T, N=5000)
+M4.c <- Bsptime(package="stan",formula=f2, data=nysptime, 
+        coordtype="utm", coords=4:5, scale.transform = "SQRT", 
+        N=1500, burn.in=500, mchoice=T, verbose = F)
+```
+The above commands have been executed to produce Table \@ref(tab:mchoice-m1-m4) of model choice criteria for the four models M1 to M4. 
+
+```{r, echo=FALSE, eval=TRUE}
+   colnames(table4) <- c("M1", "M2", "M3", "M4")
+   table4 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames(c("Criteria")) %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:mchoice-m1-m4) Model choice  criteria for the four spatio-temporal models M1 to M4.')
+```
+Later we will investigate  how these models perform by refitting  the models by requesting to validate.
+
+## Autoregressive model fitting with spTimer and INLA 
+
+Temporal auto regressive (AR) models can be fitted using both the `spTimer` and `INLA` package. The command for fitting the AR model using the `spTimer` package requires 
+the additional option `model="AR"`: 
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide', fig.show='hide'}
+M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
+                coordtype="utm", coords=4:5, scale.transform = "SQRT", 
+                mchoice=T,  validrows = vrows)
+
+```
+
+To fit and validate with the AR model using the INLA package we issue the command: 
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide'}
+M6 <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime, 
+        coordtype="utm", coords=4:5, scale.transform = "SQRT", 
+        mchoice=T, validrows=vrows)
+```
+The AR models `M5` and `M6` produces the following model choice results in Table \@ref(tab:mcvm5m6). 
+```{r, echo=FALSE, eval=TRUE}
+   table5 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>%
+   set_caption('(#tab:mcvm5m6) Model choice and validation statistics for the two AR models M5 and M6.')
+```
+
+Parameter estimates from the two models are shown in Table \@ref(tab:mparm-m5-m6). The `r BiocStyle::Rpackage("INLA")` implemented model autoregressive model `M6` has been fitted without an intercept as this has been seen to be better than `r BiocStyle::CRANpkg("spTimer")` model `M5`. Other parameter estimates are somewhat comparable but there are large differences  also, see e.g., the estimates of the autoregressive parameter $\rho$ and the spatial decay parameter $\phi$. These differences are expected as the two packages use different model parameterisations and prior distributions. The current package `r BiocStyle::CRANpkg("bmstdr")`  facilitates this sort of model comparison without much additional programming effort.  
+```{r, echo=FALSE, eval=TRUE}
+   table6 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(3)     %>%
+   map_text_color(by_cols("black", "darkred", "blue", "darkgreen", "purple", "darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:mparm-m5-m6) Parameter estimates for the two AR models M5 (first four columns) and M6 (last four columns).')
+```
+
+
+## Spatio-temporal dynamic models using the spTDyn package 
+
+The `r BiocStyle::CRANpkg("spTDyn")` package can be used to fit dynamic models in both time and space. A spatial dynamic model allows the regression coefficient to vary in space. A temporal dynamic model allows the regression coefficient to have a dynamic equation in time. To invoke these dynamic models the regression variables are specified in the 
+formula argument with the optional enclosures `sp` for spatially dynamic and `tp` for temporally dynamic. Here is an example where the model is specified to have spatially varying effects of maximum temperature and dynamic regression coefficients for 
+wind speed. 
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+library(spTDyn)
+f3 <- y8hrmax~ xmaxtemp + sp(xmaxtemp)+ tp(xwdsp) + xrh
+M7 <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
+      coordtype="utm", coords=4:5, scale.transform = "SQRT", n.report=2)
+```
+The model fitting results can be examined by the S3 methods functions as before. Here we explore the spatially varying regression coefficients as follows:
+```{r speffects,  echo=TRUE, eval=TRUE, message=FALSE,  fig.cap="Spatial effects of maximum temperature from model M7", fig.height=5, fig.width=7}
+out <- M7$fit
+dim(out$betasp)
+a <- out$betasp
+u <- c(t(out$betasp))
+sn <- nrow(a)
+itmax <- ncol(a)
+v <- rep(1:sn, each=itmax)
+d <- data.frame(site=as.factor(v), sp = u)
+p <- ggplot(data=d, aes(x=site, y=sp)) + 
+   geom_boxplot(outlier.colour="black", outlier.shape=1,
+                outlier.size=0.5) +
+   geom_abline(intercept=0, slope=0, color="blue") + 
+   labs(title= "Spatial effects of maximum temperature", x="Site", y = "Effects", size=2.5) 
+p 
+```
+Similarly, we provide a plot of the temporal effects parameter. 
+```{r temporaleffects, echo=TRUE, eval=TRUE, message=FALSE, fig.cap="Temporal effects  of wind speed from model M7", fig.height=5, fig.width=7}
+b <- out$betatp
+tn <- nrow(b)
+itmax <- ncol(b)
+tids <- 1:tn 
+stat <- apply(b[tids,], 1, quantile, prob=c(0.025,0.5,0.975))
+tstat <- data.frame(tids, t(stat))
+dimnames(tstat)[[2]] <- c("Days", "low", "median", "up")
+# head(tstat)
+yr <- c(min(c(stat)),max(c(stat)))
+p <- ggplot(data=tstat, aes(x=Days, y=median)) + 
+   geom_point(size=3) + 
+   ylim(yr) + 
+   geom_segment(data=tstat, aes(x=Days, y=median, xend=Days, yend=low), linetype=1) +
+   geom_segment(data=tstat, aes(x=Days, y=median, xend=Days, yend=up), linetype=1) +
+   geom_abline(intercept=0, slope=0, col="blue") +
+   labs(title="Temporal effects of wind speed", x="Days", y="Temporal effects") 
+p 
+```
+
+## Fitting dynamic models using spBayes 
+The package option `package="spBayes"` in the `Bsptime` function triggers model fitting by using a  complex dynamic model due to @gelfand2005, see also 
+Chapter 11 of the book @banerjeebook2015. This model fitting is sensitive to the choice of the prior distributions and the options below leads to a reasonable model fit.  
+```{r echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+M8 <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
+              prior.sigma2=c(2, 25),
+              prior.tau2 =c(2, 25),
+              prior.sigma.eta =c(2, 0.001),
+              coordtype="utm", 
+              coords=4:5, scale.transform = "SQRT", 
+              mchoice=T,  N=5000,  n.report=200)
+```
+The dynamic model parameters are extracted using the code below. 
+```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
+modfit <- M8$fit
+N <- 5000
+burn.in <- 1000
+tn <- 62
+quant95 <- function(x){
+   quantile(x, prob=c(0.025, 0.5, 0.975))
+}
+theta <- apply(modfit$p.theta.samples[burn.in:N,], 2, quant95)
+sigma.sq <- theta[,grep("sigma.sq", colnames(theta))]
+tau.sq <- theta[,grep("tau.sq", colnames(theta))]
+phi <- theta[,grep("phi", colnames(theta))]
+```
+These extracted variance and the range ($3/\phi$) parameters  are plotted using the `ggplot` function. The details are omitted from this document. We also do not provide parameter plots for the regression parameters.  
+
+```{r, echo=FALSE, eval=TRUE, message=FALSE, results='hide'}
+adat <- data.frame(x=1:tn, low=sigma.sq[1, ], med=sigma.sq[2, ], up=sigma.sq[3, ])
+# head(adat)
+
+psigma <- ggplot() + 
+   geom_point(data = adat, aes(x =x, y = med, shape=19), shape=19, col="blue", size = 2) + 
+   geom_ribbon(data = adat, aes(x =x, ymin =low, ymax = up), alpha = 0.2, color = "grey50") +
+   theme(legend.position ="none") + 
+   labs(y = "sigma2", x = "Days") 
+# psigma
+
+adat <- data.frame(x=1:tn, low=tau.sq[1, ], med=tau.sq[2, ], up=tau.sq[3, ])
+# head(adat)
+
+ptau <- ggplot() + 
+   geom_point(data = adat, aes(x =x, y = med, shape=19), shape=19, col="blue", size = 2) + 
+   geom_ribbon(data = adat, aes(x =x, ymin =low, ymax = up), alpha = 0.2, color = "grey50") +
+   theme(legend.position ="none") + 
+   labs(y = "tau2", x = "Days") 
+# ptau
+
+adat <- data.frame(x=1:tn, low=3/phi[3, ], med=3/phi[2, ], up=3/phi[1, ])
+# head(adat)
+
+prange <- ggplot() + 
+   geom_point(data = adat, aes(x =x, y = med, shape=19), shape=19, col="blue", size = 2) + 
+   geom_ribbon(data = adat, aes(x =x, ymin =low, ymax = up), alpha = 0.2, color = "grey50") +
+   theme(legend.position ="none") + 
+   labs(y = "Range", x = "Days") 
+# prange
+```
+
+```{r spBayesplots, echo=FALSE, eval=TRUE, fig.cap="Parameter estimates for the spBayes fitted spatio-temporal model M8", fig.height=10, fig.width=7}
+ggarrange(psigma, ptau, prange, common.legend = TRUE, legend = "none", nrow = 3, ncol = 1)
+```
+
+
+## Autoregressive modeling using Gaussian predictive processes 
+This is a spatio-temporal model proposed by @sahubakarasmbi. This model is suitable for modeling temporal data from a large number of spatial locations. In addition to the fixed effects regression coefficients this model sets up random effects which are temporally autoregreesive but spatially based at a much smaller 
+number of locations called the knots. These knots can be specified by a `knots.coords` argument in `spTimer`. In `r BiocStyle::CRANpkg("bmstdr")` the knots may also be specified by a `g_size` argument which may define a square or a rectangular equi-spaced grid covering the 
+range of coordinates of the data locations. 
+
+The `r BiocStyle::CRANpkg("bmstdr")` command to fit a  model with a square $5 \times 5$ grid of knot locations is given by:    
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide'}
+M9 <-  Bsptime(package="spTimer", model="GPP", g_size=5, 
+               formula=f2, data=nysptime, n.report=5, 
+               coordtype="utm", coords=4:5, scale.transform = "SQRT")
+```
+The grid size parameter `g_size` can be chosen by cross-validation methods as has been demonstrated in @Sahubook. The model fitted object `M9` can be examined using the suite of S3 functions as before.  
+
+## Comparing all the spatio-temporal models 
+The `r BiocStyle::CRANpkg("bmstdr")` package function can be used compare all the model fits and the performance of the models as evaluated by the four validation statistics. 
+We set aside all the data from the eight sites as noted previously. 
+This gives us 496 ($=8 \times 62$) data points the validation set and the model is fitted with remaining 1240 space time observations from the 20 modeling sites.
+Table \@ref(tab:modv-m1-m9) reports the results. 
+```{r, echo=FALSE, eval=TRUE}
+   table7 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Criteria") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:modv-m1-m9) Model choice and validation statistics for the eight models.')
+```
+
+In the above table we have omitted M8, the model based on `spBayes` because we were not able to produce comparable results. We do not report the
+WAIC and the DIC since those are not available in the `r BiocStyle::CRANpkg("bmstdr")` package for all the models. @Sahubook provides further discussion of the results. 
+  
+
+We end this comparison with some words of caution.  The comparison should not be generalized to make statements like package A
+performs better  than package B. For example, the marginal GP model, M4, implemented using `stan` performed slightly worse than M9. But there may
+be another model, e.g. auto-regressive,  implemented using `stan`,  that may perform better than the `spTimer` models.  The worth of this illustration lies in the comparison itself. Using the `r BiocStyle::CRANpkg("bmstdr")` package it is straightforward to compare different models implemented in different packages without having to learn and program the individual packages. 
+
+
+## Modeling data from moving sensors in time
+
+@SahuandChallenor2008 model ocean temperature data from the roaming Argo floats in the North Atlantic Ocean. The locations of the  roaming floats are seen in Figure \@ref(fig:atllocationsdeep). 
+
+```{r atllocationsdeep, echo=T, eval=T, fig.height=5, fig.width = 7, fig.cap="Locations of moving Argo floats in the deep ocean in 2003."}
+atlmap <- map_data("world", xlim=c(-70, 10), ylim=c(15, 65))
+atlmap <- atlmap[atlmap$long < 5, ]
+atlmap <- atlmap[atlmap$long > -70, ]
+atlmap <- atlmap[atlmap$lat < 65, ]
+atlmap <- atlmap[atlmap$lat > 10, ]
+
+argo <- argo_floats_atlantic_2003
+
+deep <- argo[argo$depth==3, ]
+deep$month <- factor(deep$month)
+
+p <- ggplot() +
+  geom_polygon(data=atlmap, aes(x=long, y=lat, group=group),
+               color="black", size = 0.6, fill=NA) +
+  geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
+  labs( title= "Argo float locations in deep ocean in 2003", x="Longitude", y = "Latitude") +
+  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
+  ggsn::north(data=atlmap, location="topright", symbol=12)
+p
+```
+This data set is included in the \pkg{bmstdr} package as the object `argo_floats_atlantic_2003`. In this section we model the temperature data only at the deep ocean using a marginalized Gaussian Process model 
+\begin{equation}
+{\bf Y}_t \sim N\left({\bf X}_t {\bf \beta}, \ \ \sigma^2_{w} A_t S_w A_t' + \sigma^2_{\epsilon}  I\right), t=1, \ldots, T
+ (\#eq:marginalytocean)
+\end{equation}
+where ${\bf Y}_t$ and ${\bf X}_t$ are the vector of observations and covariate values at the $n_t$ locations at time $t$. Here  $A_{t} = C_{t} S_{w}^{-1}$, where $S_{w}$ is $m \times m$ and has elements induced by the GP and $C_t$ is  $n_t  \times m$ having the $j$th row and $k$th column entry   $\exp(-\phi |{\bf s}_j - {\bf s}_k^*|)$ for $j=1, \ldots, n_t$ and $k=1, \ldots, m$. Thus, $C_{t}$ captures the cross-correlation between the observation locations at time $t$ and the $m$ knot locations, ${\bf s}_k^*, k=1, \ldots, m$.
+```{r deep, echo=F, eval=T}
+
+deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
+deep$x2inter <- deep$xinter*deep$xinter
+deep$month <- factor(deep$month)
+
+deep$lat2 <- (deep$lat)^2
+deep$sin1 <- round(sin(deep$time*2*pi/365), 4)
+deep$cos1 <- round(cos(deep$time*2*pi/365), 4)
+deep$sin2 <- round(sin(deep$time*4*pi/365), 4)
+deep$cos2 <- round(cos(deep$time*4*pi/365), 4)
+
+#head(deep)
+## scaling variables 
+deep[, c( "xlat2", "xsin1", "xcos1", "xsin2", "xcos2")] <- 
+  scale(deep[,c("lat2", "sin1", "cos1", "sin2", "cos2")])
+
+f2 <- temp ~ xlon + xlat + xlat2+ xinter + x2inter 
+```
+
+
+
+Assuming that the regression model formula is the object `f2` and the subset data for the 
+deep ocean is `deep`, we use the 
+ command 
+```{r deepmodfitting, echo=TRUE, eval=FALSE, results='hide', message=FALSE}
+Natl <- 110
+Nburn <- 10
+options(warn = -1) 
+M2atl <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", 
+  coords = 1:2, N=Natl, burn.in=Nburn, validrows =NULL, mchoice =F)
+```
+to fit model \@ref(eq:marginalytocean) implemented by code written in   `r BiocStyle::CRANpkg("rstan")`. Like the `Bsptime` function this model fitting function also renders a  `bmstdr` object which can be further investigated. 
+
+The model output is not shown here. But we obtain an  annual prediction map by averaging over the model equation  \@ref(eq:marginalytocean) at each data location. The posterior samples contained in `M2` are used to sample the annual predictions and then those samples are linearly interpolated using the `r BiocStyle::CRANpkg("akima")` library to obtain the  prediction map in Figure \@ref(fig:oceanplot). 
+```{r processdeep, echo=FALSE, eval=FALSE, message=FALSE}
+library(rstan)
+listofdraws <- rstan::extract(M2atl$fit)
+# names(listofdraws)
+# dim(listofdraws$xbmodel)
+# dim(listofdraws$bigS)
+dat <- M2atl$datatostan
+# names(dat)
+## Extract the diagonal elements of all St 
+v <- numeric()
+x <- numeric()
+m <- length(dat$nts)
+for (i in 1:m) {
+  k <- dat$nts[i]
+  a1 <- 1:k^2
+  a2 <- seq(from=1, to =k^2, length=k)
+  b1 <- rep(0, k^2)
+  b1[which(a1==a2)] <- 1
+  cbind(a1, b1)
+  v <- c(v, a1) 
+  x <- c(x, b1) ## indicates if the corresponding index is a diagonal 
+}
+
+# b <- cbind(v, x)
+# b[1:20, ]
+# u <- which(x>0)
+# length(u)
+
+varsamps <- listofdraws$bigS[, which(x>0)]/365
+# dim(varsamps)
+xbeta <- listofdraws$xbmodel
+# dim(xbeta)
+sdsamps <- sqrt(varsamps)
+ntot <- nrow(xbeta) * ncol(xbeta)
+zsamp <- matrix(rnorm(ntot), nrow=nrow(xbeta), ncol=ncol(xbeta))
+# dim(zsamp)
+zsamp <- xbeta + zsamp * sdsamps
+ansummary <- get_parameter_estimates(zsamp)
+# head(ansummary)
+# summary(ansummary$mean)
+# summary(ansummary$sd)
+# summary(ansummary$low)
+# summary(ansummary$up)
+
+pdata <- cbind(deep, ansummary)
+
+atlmap <- map_data("world", xlim=c(-70, 10), ylim=c(15, 65))
+#head(atlmap)
+atlmap <- atlmap[atlmap$long < 5, ]
+atlmap <- atlmap[atlmap$long > -70, ]
+atlmap <- atlmap[atlmap$lat < 65, ]
+atlmap <- atlmap[atlmap$lat > 10, ]
+
+xo <- seq(from=-70, to = 5,  length=200)
+yo <- seq(from= 10, to = 65, length=200)
+
+## Temperature 
+surf <- interp(pdata$lon, pdata$lat, pdata$mean,  xo=xo, yo=yo)
+#names(surf)
+surf <- list(x=surf$x, y=surf$y, z=surf$z)
+interp1 <- data.frame(long = surf$x, surf$z )
+names(interp1)[1:length(surf$y)+1] <- surf$y
+interp1 <- gather(interp1,key = lat,value =Temp,-long,convert = TRUE)
+
+#head(interp1)
+#summary(interp1$Temp)
+pcolors <- topo.colors(5)
+patldeep <- ggplot() +  
+  geom_raster(data=interp1, aes(x = long, y = lat,fill = Temp)) + 
+  # scale_fill_gradientn(colours=c("#0000FFFF","#FFFFFFFF","#FF0000FF")) + 
+  scale_fill_gradientn(colours=pcolors) +  
+  geom_contour(data=interp1, aes(x = long, y = lat,z = Temp)) + 
+  geom_polygon(data=atlmap, aes(x=long, y=lat, group=group),
+               color="black", size = 0.6, fill=NA) + 
+    geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
+  labs( title= "Annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
+  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
+  ggsn::north(data=atlmap, location="topright", symbol=12) 
+
+# patldeep
+
+
+## sd of temperature 
+
+surf <- interp(pdata$lon, pdata$lat, pdata$sd,  xo=xo, yo=yo)
+#names(surf)
+surf <- list(x=surf$x, y=surf$y, z=surf$z)
+interp1 <- data.frame(long = surf$x, surf$z )
+names(interp1)[1:length(surf$y)+1] <- surf$y
+interp1 <- gather(interp1,key = lat,value =sd,-long,convert = TRUE)
+
+# head(interp1)
+#summary(interp1$sd)
+
+patlsd <- ggplot() +  
+  geom_raster(data=interp1, aes(x = long, y = lat,fill = sd)) + 
+  # scale_fill_gradientn(colours=c("#0000FFFF","#FFFFFFFF","#FF0000FF")) + 
+  scale_fill_gradientn(colours=pcolors) + 
+  geom_contour(data=interp1, aes(x = long, y = lat,z = sd)) + 
+  geom_polygon(data=atlmap, aes(x=long, y=lat, group=group),
+               color="black", size = 0.6, fill=NA) + 
+  geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
+  labs( title= "sd of annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
+  ggsn::scalebar(data = atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
+  ggsn::north(data=atlmap, location="topright", symbol=12) 
+
+```
+
+
+```{r oceanplot, eval=TRUE, echo=FALSE, fig.height=6, fig.cap="A map of predicted temperatures in the   deep ocean in 2003", out.width = '90%'}
+knitr::include_graphics(paste0(figpath, "/temp_deep.png"))
+```
+
+
+# Modeling areal unit data 
+
+In contrast to point reference spatial and spatio-temporal data areal unit data  
+refers to a collection of observations  whose spatial references are given by adjacent areas on a map. For example, the next section discusses two data sets on providing the number of  deaths due to Covid-19 in 313 local administrative areas in England.  Areal unit data can often be either discrete, e.g. number of 
+deaths, or continuous e.g. average air pollution level in a city. Hence we proceed to model such data sets using the generalized linear models (GLM) [@McCullaghNelder1989]. 
+Chapter 10 of the  book by @Sahubook also provides a gentle introduction to  GLM. 
+This chapter also discusses spatial and spatio-temporal models based on GLMs. In the remainder of this section we illustrate model fitting and model comparison  for these models. 
+
+
+## Two illustration data sets on Covid-19 mortality from England
+
+The `engtotals` data set  presents the number of deaths due to Covid-19 during the  peak from March 13 to July 31, 2020 in the 313 Local Authority Districts, Counties  and Unitary Authorities  in England. @SahuBohning2021 provides further details of the data set and maps of the local areas. 
+
+The `engdeaths` data set contains 49,292 weekly recorded deaths during this period of 20 weeks. 
+The boxplot of the weekly death rates  shows the first peak during weeks 15 and 16
+(April 10th to 23rd) and a very slow decline of the death numbers after the peak. The main purpose here is to model
+the spatio-temporal variation in the death rates. 
+```{r ptime, echo=T, eval=T, fig.width=7, fig.height=5,  fig.cap="Weekly Covid-19 death rate per 100,000"}
+engdeaths$covidrate <- 100000*engdeaths$covid/engdeaths$popn
+ptime <- ggplot(data=engdeaths,  aes(x=factor(Weeknumber), y=covidrate)) +
+  geom_boxplot() +
+  labs(x = "Week", y = "Death rate per 100,000")  +
+  stat_summary(fun=median, geom="line", aes(group=1, col="red")) +
+  theme(legend.position = "none")
+ptime
+```
+
+
+## The Bcartime function for fitting CAR models
+
+The `r BiocStyle::CRANpkg("bmstdr")` package function `Bcartime` fits a variety of spatial and spatio-temporal models for areal data. These models are based on the generalized linear models with one of binomial, Poisson and Gaussian error distributions and with the canonical link in each case.  Chapter 10 of the book by @Sahubook describe the models. The fitted output can be explored using the S3 methods functions as in the case of `Bspatial` and `Bsptime` for modeling point reference spatial data. More details are provided below. 
+
+To fit the Bayesian GLMs without any random effects
+ `Bcartime` employs the `S.glm` function of the `r BiocStyle::CRANpkg("CARBayes")` package @LeeCARBayes2021.  Deploying the `Bcartime` function requires the following essential arguments:
+ 
+ - `package` can take one of three possible values:  `"CARBayes"`, `"CARBayesST"` or 
+ `"inla"`. The default is  `"CARBayes"`. 
+ - `model` defines the specific spatio temporal model to be fitted. If the package is `"inla"` then the model argument should be a vector with two elements giving the spatial model, e.g. `"bym"` as the first component and the temporal model which could be one of `"iid", "ar1"` or `"none"` as the second component. In case the second component is "none" then no temporal random effects will be fitted. No temporal random effects will be fitted in case model is supplied as a singleton.
+ - `formula` specifying the response and the covariates for forming the linear predictor $\eta$ in a GLM. 
+- `data` containing the data set to be used;
+`family` being one of either `"binomial", "poisson"` `"gaussian"`,  `"multinomial"`,  or `"zip"`. In this illustration we only consider the first three choices. 
+If the binomial family is chosen, the  `trials` argument must be provided. This should be a numeric vector containing the number of for each row of data.
+- `scol`	 Either the name (character) or number of the column in the supplied data frame identifying the spatial units. The program will try to access `data[, scol]` to identify the spatial units. If this is omitted, no spatial modeling will be performed, instead an independent error GLM will be fitted using the `"CARBayes"` package. 
+- `tcol`	 Like the `scol` argument but for the time identifier. Either the name (character) or number of the column in the supplied data frame identifying the time indices. The program will try to access `data[, tcol]` to identify the time points. If this is omitted, no temporal modeling will be performed.
+- `W` A non-negative K by K neighborhood matrix (where K is the number of spatial units). Typically a binary specification is used, where the $jk$th element equals one if areas (j, k) are spatially close (e.g. share a common border) and is zero otherwise. The matrix can be non-binary, but each row must contain at least one non-zero entry. This argument may not need to be specified if `adj.graph` is specified instead.
+- `adj.graph` Adjacency graph which may be specified instead of the adjacency matrix matrix. This argument is used if W has not been supplied. The argument W is used in case both W and adj.graph are supplied.
+
+There are numerous other arguments specifying more details of the models and the prior distributions. Those are documented in the help file `?Bcartime`.  
+
+ Like the `Bsptime` function, model validation is performed automatically by specifying the optional vector valued `validrows` argument containing the row numbers of the supplied data frame that should be used for model validation. As before, the user does not need to modify the data set for validation. This task is done by the `Bcartime` function. 
+ 
+ 
+ The function  `Bcartime` automatically chooses the default prior distributions which can be modified by the many optional arguments, see the documentation of this function and also the `S.glm` function from `r BiocStyle::CRANpkg("CARBayes")`. Three MCMC control parameters  `N, burn.in` and  `thin` determine the number of iterations, burn-in and thinning interval. The default values of these are 2000, 1000 and 10 respectively. In all of our analysis in this section, unless otherwise mentioned, we take these to be 50000, 10000 and 10 respectively.
+ 
+```{r, echo=T, eval=T, message=FALSE, results='hide'}
+Ncar <- 50000
+burn.in.car <- 10000
+thin <- 10
+```
+ 
+## Modeling static areal unit data 
+In this section we model the static `engtotals` data set. Here we 
+employ the conditionally auto regressive (CAR) models for the spatial random effects.
+
+### Logistic regression model for areal unit data 
+Here we first set the logistic regression formula: 
+```{r, echo=TRUE, eval=FALSE, message=FALSE, results='hide'}
+f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
+```
+
+The independent logistic regression model is fitted using the following command. 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M1 <- Bcartime(formula=f1,   data=engtotals, family="binomial",
+trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin) 
+```
+The Leroux model is fitted when the additional options `scol="spaceid"` and `model="leroux"` are provided. 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M1.leroux <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
+model="leroux", W=Weng, family="binomial", trials=engtotals$nweek, 
+N=Ncar, burn.in=burn.in.car, thin=thin)
+```
+The BYM model is fitted by using the command: 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M1.bym <- Bcartime(formula=f1, data=engtotals, 
+scol="spaceid", model="bym", W=Weng, family="binomial", 
+trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin)
+```
+The above model fitting commands use the default `CARBayes` package. We can change the default option to `inla` as illustrated below. 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
+model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
+package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
+```
+
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+a <- rbind(M1$mchoice, M1.leroux$mchoice, M1.bym$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M1.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux", "BYM", "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.1 <- a
+dput(table4.1, file=paste0(tablepath, "/table4.1.txt"))
+```
+
+```{r m1mchoice, echo=FALSE, eval=TRUE}
+
+#table4.1 <- structure(c(4.97364951758527, 85.0582651584891, 87.0579313931239, 
+#76.379205946683, 1503.99901271082, 1352.37719804419, 1353.60166910473, 
+#1348.37610850059, 6.24416032366254, 52.3598308212364, 53.3895453655056, 
+#49.2665262573736, 1505.39538129241, 1330.11305694479, 1330.71580863181, 
+#1330.37517336979), .Dim = c(4L, 4L), .Dimnames = list(c("Independent", 
+#"Leroux", "BYM", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC"
+#)))
+
+ table4.1 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen", "purple")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:logistic) Comparison of logistic regession models for static areal data')
+```
+
+
+### Poisson regression model (disease mapping) for areal unit data 
+
+Below we set the regression model formula. The MCMC control parameters are assumed to be same as before.  
+```{r, echo=T, eval=FALSE}
+f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + sqrt(no2) 
+```
+The model fitting commands are very similar to the ones for fitting logistic regression models. The differences are that we change the `family` argument and instead of the `trials` argument we provide an offset column to take care of the expected number of deaths. Here are the code lines: 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M2 <- Bcartime(formula=f2, data=engtotals, family="poisson",
+              N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.leroux <- Bcartime(formula=f2, data=engtotals,
+            scol="spaceid",  model="leroux",  family="poisson", W=Weng,
+            N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.bym <- Bcartime(formula=f2, data=engtotals,
+                   scol="spaceid",  model="bym",  family="poisson", W=Weng,
+                   N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M2.inla.bym <- Bcartime(formula=f2, data=engtotals, scol ="spaceid",  
+                        model=c("bym"), family="poisson", 
+                        W=Weng, offsetcol="logEdeaths", link="log", 
+                          package="inla", N=Ncar, burn.in = burn.in.car, thin=thin) 
+
+```
+These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
+```{r, echo=FALSE, eval=FALSE, message=FALSE, results='hide'}
+a <- rbind(M2$mchoice, M2.leroux$mchoice, M2.bym$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M2.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux", "BYM",   "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.2 <- a
+dput(table4.2, file=paste0(tablepath, "/table4.2.txt"))
+```
+
+```{r m2mchoice, echo=FALSE, eval=TRUE}
+
+table4.2 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>%
+   set_caption('(#tab:poisson) Comparison of disease mapping models for Covid-19 mortality')
+```
+
+
+### Normal regression model for areal unit data 
+Below we set the regression model formula. The MCMC control parameters are assumed to be the same as before.  
+```{r, echo=T, eval=FALSE}
+f3 <-  sqrt(no2) ~  jsa + log10(houseprice) + log(popdensity) 
+```
+
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+M3 <- Bcartime(formula=f3, data=engtotals, family="gaussian",
+               N=Ncar, burn.in=burn.in.car, thin=thin)
+
+M3.leroux <- Bcartime(formula=f3, data=engtotals,
+                      scol="spaceid",  model="leroux",  family="gaussian", W=Weng,
+                      N=Ncar, burn.in=burn.in.car, thin=thin)
+
+
+M3.inla.bym <- Bcartime(formula=f3, data=engtotals, scol ="spaceid",  
+                        model=c("bym"), family="gaussian", 
+                        W=Weng,  package="inla", N=Ncar, burn.in =burn.in.car, thin=thin) 
+
+```
+These model fitted objects  can be explored as before. The following table reports the model choice statistics. 
+```{r, echo=T, eval=FALSE, message=FALSE, results='hide'}
+a <- rbind(M3$mchoice, M3.leroux$mchoice)
+a <- a[, -(5:6)]
+a <- a[, c(2, 1, 4, 3)]
+b <- M3.inla.bym$mchoice[1:4]
+a <- rbind(a, b)
+rownames(a) <- c("Independent", "Leroux",  "INLA-BYM")
+colnames(a) <- c("pDIC", "DIC", "pWAIC",  "WAIC") 
+table4.3 <- a
+dput(table4.3, file=paste0(tablepath, "/table4.3.txt"))
+```
+
+```{r, echo=FALSE, eval=TRUE}
+# table4.3 <- structure(c(5.01545172916434, 141.392412442474, 119.355981097098, 
+# 473.514497590557, 325.070205308015, 343.268611084862, 6.05910211982487, 
+# 106.79520878445, 94.4196627626064, 474.726483321535, 320.089832117357, 
+# 341.890578348917), .Dim = 3:4, .Dimnames = list(c("Independent", 
+# "Leroux", "INLA-BYM"), c("pDIC", "DIC", "pWAIC", "WAIC")))
+   table4.3 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:staticnormal) Comparison of Gaussian models for NO2 data')
+```
+
+## Modeling temporal areal unit data 
+
+ The data set used in this example is the `engdeaths` data set described earlier. 
+ In this section we will modify the `Bcartime` commands presented earlier to fit all the
+ spatio-temporal models discussed in Chapter 10 of @Sahubook. We will illustrate model fitting, choice and validation
+ using the binomial, Poisson and normal distribution based models as before in the previous section. The user does not need to
+ write any direct code for fitting the models using the `r BiocStyle::CRANpkg("CARBayesST")` package. The `Bcartime` function does this
+ automatically and returns the fitted model object in its entirety and in addition, performs model validation for  the
+ named rows of the supplied data frame as passed on by the `validrows` argument. 
+ 
+ 
+ The previously documented arguments  of  `Bcartime` for spatial model fitting remain the same for the
+ corresponding spatio-temporal models. For example, the arguments
+ `formula, family, trials, scol` and `W` are unchanged  in spatial-temporal model fitting. The `data` argument
+ is changed to the spatio-temporal data set `data=engdeaths`. We keep the MCMC control parameters `N, burn.in` and
+ `thin` to be same as before.
+
+ The additional arguments are `tcol`, similar to `scol`,  which identifies the temporal indices. Like the
+ `scol` argument this may be specified as a column name or number in the supplied data frame.  
+ The  `package` argument must be specified as  `package="CARBayesST"` to change the default
+ `CARBayes` package. The model argument should be changed to one of four models, `"linear", "anova", "sepspatial"` and
+ `"ar"`. Other possibilities for this argument are 
+ `"localised",  `"multilevel"` and  `"dissimilarity"`, but those are not illustrated here. 
+ For the sake of brevity it is undesirable to report parameter estimates  of all the models. 
+ Instead, below we report only selected results. 
+ 
+### Spatio-temporal GLM fitting with binomial distribution
+
+ For the binomial model the response variable is  `highdeathsmr` which is a binary variable
+ taking the value 1 if the SMR for death is larger than 1 in that week and in that local authority. Consequently,
+ the number of trials is set at the constant value 1 by setting:
+```{r, echo=TRUE, eval=FALSE}
+nweek <- rep(1, nrow(engdeaths))
+```
+ The right hand side of the mode regression formula is same as before: 
+```{r, echo=TRUE, eval=FALSE}
+f1 <- highdeathsmr ~  jsa + log10(houseprice) + log(popdensity) 
+```
+The basic model fitting command for fitting the linear trend model is: 
+```{r, echo=T, eval=FALSE}
+M1st <- Bcartime(formula=f1, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+W=Weng, model="linear", family="binomial", package="CARBayesST",  N=Ncar,
+burn.in=burn.in.car, thin=thin)
+```
+ To fit the other models we simply change the  `model` argument to one of
+ `"anova", "sepspatial"` and `"ar"`. For the choice  `"anova"` an additional
+ argument `interaction=F` may be supplied to suppress the interaction term.
+ For the `"ar"` model an additional argument `AR=2` may be provided to opt for a second order auto regressive model. The model fitting commands,   
+ not shown here, produce Table \@ref(tab:m1st). 
+ ```{r, echo=FALSE, eval=TRUE}
+   table8 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:m1st) Model choice criteria values for various spatio-temporal binomial model.')
+```
+Clearly, the AR model is chosen by both the DIC and WAIC.
+
+
+
+###  Spatio-temporal GLM  fitting with Poisson distribution
+
+
+ For fitting the Poisson distribution based model we take the response variable as the column  `covid`, 
+ which records the number of Covid-19 deaths, of the  `engdeaths` data set.
+ The column `logEdeaths` is used as an offset in the model with the default log link function.
+
+ The formula argument for the regression part of the linear predictor is chosen to be the same as the
+ one used by @SahuBohning2021 for a similar data set. The formula contains, in addition to the
+ thee socio-economic variables, the log of the SMR for the number cases in the current week and
+ three previous weeks denoted by `n0, n1, n2` and  `n3`. The formula is given below:
+```{r, echo=TRUE, eval=FALSE}
+f2 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0 + n1 + n2 + n3
+```
+We now fit the Poisson model by keeping  the other arguments  same
+ as before in the previous Section. The command for fitting the
+ temporal auto-regressive model is:
+```{r, echo=FALSE, eval=FALSE}
+M2st <- Bcartime(formula=f2, data=engdeaths, scol=scol, tcol=tcol,  W=Weng,
+model="ar", family="poisson", package="CARBayesST", N=Ncar, burn.in=burn.in.car, thin=thin)
+```
+The `model` argument can be changed to fit the other models. The resulting model fits are used to obtain the  model choice statistics presented in Table \@ref(tab:m2st). 
+```{r, echo=FALSE, eval=TRUE}
+   table9 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")%>% 
+   set_caption('(#tab:m2st) Model choice criteria values for the spatio-temporal Poisson model.')
+```
+
+To  investigate the differences in  model choice by DIC and WAIC we test both models for validation.  We randomly select 10\% data rows for validation 
+by issuing the command
+```{r, echo=TRUE, eval=FALSE}
+vs <- sample(nrow(engdeaths), 0.1*nrow(engdeaths))
+```
+
+This gives us 626 data points for validation purposes. We then refit the Anova model with interaction and both the AR (1) and AR (2) models and also the   `r BiocStyle::Rpackage("INLA")` based model by supplying the additional argument `validrows=vs`. The validation statistics are presented in Table \@ref(tab:m2st-valid). These statistics show that the `r BiocStyle::Rpackage("INLA")` based model has less bias than the  `r BiocStyle::CRANpkg("CARBayesST")` models but it fails to capture the full variability of the set aside data as its coverage percentage is very low. Figure \@ref(fig:obsvpredplot) highlights this problem. The prediction intervals are too narrow for the  `r BiocStyle::Rpackage("INLA")` based model but AR (2) model gets this uncertainty exactly as expected. Again, we end this comparison with a word of caution that  `r BiocStyle::Rpackage("INLA")` is merely a computing platform and there can be other models which can achieve  better coverage than the one reported here. 
+
+
+```{r m2st-valid, echo=FALSE, eval=TRUE}
+   table10 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red")%>% 
+   set_caption('(#tab:m2st-valid) Model validation statistics for the Anova and AR model.')
+```
+
+```{r obsvpredplot-m2st, echo=TRUE, eval=FALSE, message=FALSE, results='hide',  fig.show='hide'}
+f20 <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity) + n0
+model <- c("bym", "ar1")
+f2inla <-  covid ~  jsa + log10(houseprice) + log(popdensity) + n0 
+set.seed(5)
+vs <- sample(nrow(engdeaths), 0.1*nrow(engdeaths))
+M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol="spaceid", tcol= "Weeknumber",  
+                       W=Weng, model="ar", AR=2, family="poisson", package="CARBayesST", 
+                       N=Ncar, burn.in=burn.in.car, thin=thin, 
+                       validrows=vs, verbose=F)
+M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol ="spaceid", tcol="Weeknumber",  
+                        offsetcol="logEdeaths",  model=model,  link="log", family="poisson", package="inla", validrow=vs, N=N, burn.in=0) 
+yobspred <- M2st_ar2.0$yobs_preds
+names(yobspred)
+yobs <- yobspred$covid
+predsums <- get_validation_summaries(t(M2st_ar2.0$valpreds))
+dim(predsums)
+b <- obs_v_pred_plot(yobs, predsums, segments=T) 
+names(M2stinla.0)
+inlapredsums <- get_validation_summaries(t(M2stinla.0$valpreds))
+dim(inlapredsums)
+a <- obs_v_pred_plot(yobs, inlapredsums, segments=T) 
+inlavalid <- a$pwithseg
+ar2valid <- b$pwithseg
+library(ggpubr)
+ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
+ggsave(filename = paste0(figpath, "/inlavAR2.png"))
+```
+
+
+```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", out.width = '90%'}
+knitr::include_graphics(paste0(figpath, "/inlavAR2.png"))
+```
+
+### Spatio-temporal GLM  fitting with normal distribution
+ 
+ We now illustrate spatio-temporal random effects  fitting of the model 
+ `f3` for NO$_2$. We fit the `"gaussian"` family model but keep the  other arguments  same
+ as before in the previous two sections for fitting binomial and Poisson models.
+ The command for fitting the temporal auto-regressive model is:
+```{r, echo=T, eval=FALSE}
+M3st <- Bcartime(formula=f3, data=engdeaths, scol=scol, tcol=tcol, 
+W=Weng, model="ar", family="gaussian", package="CARBayesST", 
+N=Ncar, burn.in=burn.in.car, thin=thin)
+```
+Table \@ref(tab:m3st-no2) produces the model choice statistics.  
+```{r m3st-no2, echo=FALSE, eval=TRUE, caption="Model choice criteria values for the spatio-temporal Gaussian model."}
+   table11 %>%
+   as_hux(add_colnames = FALSE) %>%
+   set_number_format(2)     %>%
+   map_text_color(by_cols("darkred", "blue", "darkgreen")) %>%
+   add_colnames("Model") %>%
+   set_header_rows(1, TRUE) %>% 
+   add_rownames() %>%
+   set_all_borders(1)  %>%
+   set_bold(1, everywhere) %>% 
+   style_headers(bold = TRUE, text_color = "red") %>% 
+   set_caption('(#tab:m3st-no2) Model choice criteria values for the spatio-temporal Gaussian model.')
+```
+
+The AR model is the best according to  both DIC and WAIC although it receives much higher penalty.  Note that model validation can be performed by supplying the `validrows` argument.   
+
+
+
+# Discussion 
+
+  
+The  `r BiocStyle::CRANpkg("bmstdr")` package enables the user to use a plurality of `R` packages for fitting spatial and spatio-temporal models both for point reference and aerial data sets. The package allows a researcher in applied sciences  to explore many solutions so that they are able to choose the best model and software package among the  ones available. The package functions are  illustrated throughout using realistic real data examples including recent epidemiological data on Covid-19 pandemic in England. 
+
+The package also includes several utility and plot functions which the reader may find useful in their modeling and analysis work. For example, the function `calculate_validation_statistic` calculates four validation statistics from input observed data and posterior samples. Users of other packages, not included in `r BiocStyle::CRANpkg("bmstdr")`,   may find such functions useful. A list of all the functions is available by running the command `ls("package:bmstdr")`. 
+
+
+There are many current limitations of the`r BiocStyle::CRANpkg("bmstdr")` package. The foremost among those  is that the package  does not allow modeling of  point reference spatial data which are discrete. Such modeling is challenging and at the moment only a few packages such as `INLA` can be used. Bayesian modeling of such data will be considered in a future version. 
+
+The  package offers only a limited number of models using the `r BiocStyle::Rpackage("rstan")`
+and  `r BiocStyle::Rpackage("INLA")` computing platforms. Spatio-temporal models offering richer structures can be fitted using these two and other `R` packages. Moreover, the current version does not allow fitting of multivariate models. Such modeling will be considered in future updates of this package.  
+
+
+
+# References 
