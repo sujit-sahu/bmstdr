@@ -64,13 +64,13 @@ Bcartime(
 a symbolic description of the regression model to be fitted.}
 
 \item{data}{The data frame for which the model formula is to be fitted.
-The data frame should be in long format having one row for each lomessageion and  time
+The data frame should be in long format having one row for each location and  time
 combination. The data frame must be ordered by time within each site, and should
 optionally have a column, named s.index,  providing the site indices.
 Thus the data,  with n sites and T times within each site, should be
-organised in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
+organized in the order: (s1, t1), (s1, t2), ... (s1, T), ... (sn, t1), ... (sn, T). 
 The data frame should also contain two columns giving the coordinates of the
-lomessageions for spatio temporal model fitting.}
+locations for spatio temporal model fitting.}
 
 \item{family}{One of either "gaussian", "binomial","poisson" or "zip", 
 which respectively specify a Gaussian, binomial likelihood model with the 
@@ -83,7 +83,7 @@ ignored for the CARBayes and   CARBayesST models.}
 \item{trials}{A vector the same length as the response containing the total number of trials 
 for each area. Only used if family="binomial".}
 
-\item{offsetcol}{Only used in INLA based modelling. The column name or number 
+\item{offsetcol}{Only used in INLA based modeling. The column name or number 
 in the data frame that should be used as the offset.}
 
 \item{formula.omega}{
@@ -95,13 +95,13 @@ zero-inflated Poisson models.
 }
 
 \item{scol}{Either the name (character) or number of the column in the supplied data frame 
-identifying the spatial units. The programme will try to access data[, scol] 
-to identify the spatial units. If this is omitted, no spatial modelling will be performed.}
+identifying the spatial units. The program will try to access data[, scol] 
+to identify the spatial units. If this is omitted, no spatial modeling will be performed.}
 
 \item{tcol}{Like the \code{scol} argument for the time identifier. 
  Either the name (character) or number of the column in the supplied data frame 
-identifying the  time indices. The programme will try to access data[, tcol] 
-to identify the time points. If this is omitted, no temporal modelling will be performed.}
+identifying the  time indices. The program will try to access data[, tcol] 
+to identify the time points. If this is omitted, no temporal modeling will be performed.}
 
 \item{package}{Which package is to be used in model fitting? Currently available 
 packages are:
@@ -127,8 +127,8 @@ giving the spatial model, e.g. "bym" as the first component and the temporal mod
 The order of the autoregressive time series process that must be either 1 or 2. 
 }
 
-\item{W}{A non-negative K by K neighbourhood matrix (where K is the number of spatial units). 
-Typically a binary specifimessageion is used, where the jkth element equals one if areas (j, k) 
+\item{W}{A non-negative K by K neighborhood matrix (where K is the number of spatial units). 
+Typically a binary specification is used, where the jkth element equals one if areas (j, k) 
 are spatially close (e.g. share a common border) and is zero otherwise. 
 The matrix can be non-binary, but each row must contain at least one non-zero entry.
 This argument may not need to be specified if \code{adj.graph} is specified instead.}
@@ -143,7 +143,7 @@ Default is "response" type observed minus fitted. The other option "pearson" is 
 Pearson residuals in GLM. For INLA based model fitting only the default response 
 residuals are calculated.}
 
-\item{interaction}{TRUE or FALSE indimessageing whether the spatio-temporal interaction 
+\item{interaction}{TRUE or FALSE indicating whether the spatio-temporal interaction 
 random effects should be included. Defaults to TRUE unless family="gaussian" in which 
 case interactions are not allowed.}
 
@@ -260,17 +260,17 @@ fixed at if it should not be estimated. If this argument is NULL then rho.S is
 estimated in the model.}
 
 \item{rho}{The value in the interval [0, 1] that the spatial dependence parameter rho 
-is fixed at if it should not be estimated. If this arugment is NULL 
+is fixed at if it should not be estimated. If this argument is NULL 
 then rho is estimated in the model. Setting rho=1, reduces the random effects 
 prior to the intrinsic CAR model but does require epsilon>0.}
 
 \item{rho.slo}{The value in the interval [0, 1] that the spatial dependence parameter 
 for the slope of the linear time trend, rho.slo, is fixed at if it should not be estimated. 
-If this arugment is NULL then rho.slo is estimated in the model.}
+If this argument is NULL then rho.slo is estimated in the model.}
 
 \item{rho.int}{The value in the interval [0, 1] that the spatial dependence parameter for 
 the intercept of the linear time trend, rho.int, is fixed at if it should not 
-be estimated. If this arugment is NULL then rho.int is estimated in the model.}
+be estimated. If this argument is NULL then rho.int is estimated in the model.}
 
 \item{MALA}{Logical, should the function use Metropolis adjusted Langevin algorithm (MALA) 
 updates (TRUE) or simple random walk (FALSE, default) updates for the 
@@ -284,7 +284,7 @@ Only relevant for MCMC based model fitting, i.e., when package is spBayes or Sta
 \item{thin}{The level of thinning to apply to the MCMC samples to reduce 
 their temporal autocorrelation. Defaults to 1 (no thinning).}
 
-\item{rseed}{Random number seed that controls the starting point for the random numer stream.
+\item{rseed}{Random number seed that controls the starting point for the random number stream.
 A set value is required to help reproduce the results.}
 
 \item{Nchains}{

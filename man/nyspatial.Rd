@@ -20,8 +20,8 @@ See the NYdata set in spTimer package, \insertCite{spTimer;textual}{bmstdr}.
   \item{utmx}{UTM X-coordinate of the site}
   \item{utmy}{UTM Y-coordinate of the site}
   \item{yo3}{Average ozone concentration value (ppb) at the site over 62 days in July and August, 2006}
-  \item{xmaxtemp}{Average maximum temperature (degree celsius) at the site over 62 days in  July and August, 2006}
-  \item{xwdsp}{Average windspeed (nautical mile per hour) over 62 days in  July and August, 2006}
+  \item{xmaxtemp}{Average maximum temperature (degree Celsius) at the site over 62 days in  July and August, 2006}
+  \item{xwdsp}{Average wind speed (nautical mile per hour) over 62 days in  July and August, 2006}
   \item{xrh}{Average relative humidity over 62 days in  July and August, 2006}
 }
 }

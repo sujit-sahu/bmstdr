@@ -6,18 +6,55 @@
 the decay parameter phi.}
 \usage{
 phichoicep(
-  phis = c(0.001, 0.005, 0.025, 0.125, 0.625),
-  phit = c(0.05, 0.25, 1.25, 6.25),
-  valids = c(8, 11, 12, 14, 18, 21, 24, 28),
+  formula,
+  data,
+  coordtype,
+  coords,
+  scale.transform,
+  phis,
+  phit,
+  valids,
+  N,
+  burn.in,
   verbose = TRUE
 )
 }
 \arguments{
+\item{formula}{An object of class "formula" (or one that can be coerced to that class): 
+a symbolic description of the model to be fitted.}
+
+\item{data}{The data frame for which the model formula is to be fitted. 
+If a spatial model is to be fitted then the data 
+frame should contain two columns containing the locations 
+of the coordinates. See the coords argument below.}
+
+\item{coordtype}{Type of coordinates: utm, lonlat or plain with utm 
+(supplied in meters) as the default. 
+Distance will be calculated in units of kilometer 
+if this argument is either utm or lonlat. 
+Euclidean distance will be calculated if this is 
+given as the third type plain. If distance in meter is to be 
+calculated then coordtype should be passed on as plain although 
+the coords are supplied in UTM.}
+
+\item{coords}{A vector of size two identifying the two column 
+numbers of the data frame to take as coordinates. Or this can 
+be given as a matrix of number of sites by 2 
+providing the coordinates of all the data locations.}
+
+\item{scale.transform}{Transformation of the response variable. 
+It can take three values: SQRT, LOG or NONE.}
+
 \item{phis}{A vector values of phi for spatial decay}
 
 \item{phit}{A vector values of phi for temporal decay}
 
 \item{valids}{A vector giving the validation sites}
+
+\item{N}{MCMC sample size.}
+
+\item{burn.in}{How many initial iterations to discard. 
+Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.}
 
 \item{verbose}{Logical. Should progress be printed?}
 }
@@ -30,6 +67,9 @@ the decay parameter phi.
 }
 \examples{
 \donttest{
-asave <-  phichoicep()
+a <-  phichoicep(formula=y8hrmax ~ xmaxtemp+xwdsp+xrh, data=nysptime, 
+coordtype="utm", coords=4:5, scale.transform = "SQRT",  
+phis=c(0.001,  0.005, 0.025, 0.125, 0.625), phit=c(0.05, 0.25, 1.25, 6.25), 
+valids=c(8,11,12,14,18,21,24,28), N=20, burn.in=10, verbose=TRUE)
 }
 }

@@ -1038,6 +1038,8 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
  #  mesh <- INLA::inla.mesh.2d(  loc = coords, max.edge = c(1,5)*max.edge, offset = c(max.edge, bound.outer), cutoff = max.edge/5)
   
  mesh <- INLA::inla.mesh.2d(loc=coords, offset=offset, max.edge=max.edge)
+ old.par <- par(no.readonly = TRUE)
+ on.exit(par(old.par))
  
  if (plotit)  { 
    par(mfrow=c(1, 1))

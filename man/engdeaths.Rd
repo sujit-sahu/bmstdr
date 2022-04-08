@@ -31,11 +31,11 @@ An object of class \code{data.frame} with 6260 rows and 28 columns.
   \item{lag2noofcases}{Number of cases during the second week before}
   \item{lag3noofcases}{Number of cases during the third week before}
   \item{lag4noofcases}{Number of cases during the fourth week before}
-  \item{n0}{Log of the standardised case morbidity during the current week}
-  \item{n1}{Log of the standardised case morbidity during the week before}
-  \item{n2}{Log of the standardised case morbidity during the second week before}
-  \item{n3}{Log of the standardised case morbidity during the third week before}
-  \item{n4}{Log of the standardised case morbidity during the fourth week before}
+  \item{n0}{Log of the standardized case morbidity during the current week}
+  \item{n1}{Log of the standardized case morbidity during the week before}
+  \item{n2}{Log of the standardized case morbidity during the second week before}
+  \item{n3}{Log of the standardized case morbidity during the third week before}
+  \item{n4}{Log of the standardized case morbidity during the fourth week before}
   \item{Edeaths}{Expected number of Covid-19 deaths. See Sahu and 
   Bohning (2021) for methodology. }
   \item{Ecases}{Expected number of cases.} 

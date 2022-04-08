@@ -1,10 +1,13 @@
 #' Model fitting and validation for spatio-temporal data from moving sensors in time. 
 #' @inheritParams Bsptime
 #' @param coords A vector of size 2 giving the column numbers of the data 
-#' frame which contain the coordinates of the lomessageions.  
+#' frame which contain the coordinates of the data locations.  
+#' Here the supplied data frame must contain a column named `time` which 
+#' should indicate the time index of the data row. The values in the column `time` 
+#' should be positive integers starting from 1.  
 #' @param validrows Either a number of randomly selected data rows to validate
 #' or a vector giving the row numbers of the data set for validation.
-#' @param predspace A 0-1 flag indimessageing whether spatial predictions are to be made.
+#' @param predspace A 0-1 flag indicating whether spatial predictions are to be made.
 #' @param newdata A new data frame with the same column structure as the model fitting data set. 
 #' @seealso \code{\link{Bsptime}} for spatio-temporal  model fitting.
 #' @return A list containing:
@@ -28,13 +31,13 @@
 #'    the model.  
 #'    \item scale.transform  -   The transformation adopted by the 
 #'     input argument with the same name.  
-#'    \item sn   -   The number of data lomessageions used in fitting.  
-#'    \item tn   -   The number of time points used in fitting for each lomessageion.  
+#'    \item sn   -   The number of data locations used in fitting.  
+#'    \item tn   -   The number of time points used in fitting for each location.  
 #'    \item computation.time  -   Computation time required 
 #'    to run the model fitting.     
 #' }
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 #' deep$x2inter <- deep$xinter*deep$xinter
 #' deep$month <- factor(deep$month)
