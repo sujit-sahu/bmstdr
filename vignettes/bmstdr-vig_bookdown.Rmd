@@ -78,7 +78,7 @@ table6 <- tabs[[8]]
 table7 <- tabs[[9]]
 table8 <- tabs[[10]]
 table9 <- tabs[[11]]
-colpalette <- c("dodgerblue4",  "dodgerblue2",  "firebrick2",   "firebrick4",   "purple")     
+# colpalette <- c("dodgerblue4",  "dodgerblue2",  "firebrick2",   "firebrick4",   "purple")     
 ```
 
 
