@@ -90,7 +90,7 @@ colnames(Mall.table) <- paste("M", c(1:3), sep = "")
 round(Mall.table, 3)
 
 
-if (require(INLA)) {
+if (require(INLA) & require(inlabru)) {
     N <- 10
     burn.in <- 5
     # Spatial model fitting using INLA

@@ -130,6 +130,9 @@ A list containing:
    decay parameter \eqn{phi}.   
    \item prior.phi  -    This contains the name of  of the prior 
    distribution for the spatial decay parameter \eqn{phi}.  
+   \item validationplots - Present only if validation has been performed. 
+   Contains three validation plots with or without segment and 
+   an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more. 
    \item fitteds  -   A vector of fitted values.   
    \item residuals   -   A vector of residual values.  
    \item package   -   The name of the package used for model fitting.  

@@ -133,7 +133,10 @@
 #'    This is present only if model validation has been performed.  
 #'    \item valpreds -   A matrix containing the MCMC samples of the validation predictions. 
 #'    The dimension of this matrix is the number of validations times the number of retained 
-#'    MCMC samples. This is present only if model validation has been performed.   
+#'    MCMC samples. This is present only if model validation has been performed. 
+#'    \item validationplots - Present only if validation has been performed. 
+#'    Contains three validation plots with or without segment and 
+#'    an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more.   
 #'    \item sn -   The number of areal units used in fitting.   
 #'    \item tn -  The number of time points used in fitting.  
 #'    \item formula - The input formula for the regression part of the model.   
@@ -193,10 +196,12 @@ Bcartime <- function(formula,
  set.seed(rseed)
  start.time<-proc.time()[3]
  data <- as.data.frame(data)
+ if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+ if (!inherits(formula, "formula")) stop("Need a valid formula")
+ 
+ 
  s1 <- length(scol)
  t1 <- length(tcol)
- 
- # message("in Bcartime N=", N, " burn in=", burn.in, " thin =", thin, "\n")
  indep <- F
  spatialonly <- F
  sptemporal <- F 
@@ -439,8 +444,13 @@ if (indep ==T) {
    newresults$stats <- bstat$stats
    newresults$yobs_preds <- yvalids 
    newresults$valpreds <- yits
+   
+   allvplots <- obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   newresults$validationplots <- allvplots
+   if (plotit)  plot(allvplots$pwithseg)
+   
    if (verbose) print(newresults$stats)
-   if (plotit) obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   # if (plotit) obs_v_pred_plot(yobs=yholdout, predsums = psums)
  }
  
  newresults$sn <- sn

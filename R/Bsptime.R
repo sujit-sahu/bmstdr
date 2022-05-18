@@ -180,6 +180,9 @@
 #'    the number of retained 
 #'    MCMC samples. This is present only if model validation has 
 #'    been performed.  
+#'    \item validationplots - Present only if validation has been performed. 
+#'    Contains three validation plots with or without segment and 
+#'    an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more. 
 #'    \item residuals   -   A vector of residual values.  
 #'    \item sn   -   The number of data locations used in fitting.  
 #'    \item tn   -   The number of time points used in fitting. 
@@ -240,7 +243,12 @@ Bsptime <- function(formula,
  start.time<-proc.time()[3]
  data <- as.data.frame(data)
 # Error checking 
-  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+ if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+ if (!inherits(formula, "formula")) stop("Need a valid formula")
+ if (!is.null(coordtype)) coordtype <- match.arg(coordtype, 
+                                                 choices=c("utm", "lonlat", "plain"))
+ if (!is.null(scale.transform)) scale.transform <- match.arg(scale.transform, 
+                                                             choices=c("NONE", "SQRT", "LOG"))
   
   if (model !="lm") { # Will fit spatio-temporal models 
     s1 <- length(coords)
@@ -254,7 +262,6 @@ Bsptime <- function(formula,
     sn <- nrow(data)
     tn <- 0
   }
-  
 
  implemented <- c("inla", "spBayes", "stan", "spTimer", "spTDyn")
  a <- grepl(package, x=implemented, ignore.case = TRUE)
@@ -268,6 +275,9 @@ Bsptime <- function(formula,
      package <- "none"
    } else { stop("Wrong package or model. Please see helpfile")}
    }
+ 
+ # implemented <- c("none", "inla", "spBayes", "stan", "spTimer", "spTDyn")
+ # package <-  match.arg(arg = package, choices = implemented)
  
  if (package=="inla") {
    if (inlabru::bru_safe_inla()) {
@@ -292,7 +302,7 @@ Bsptime <- function(formula,
                         prior.sigma2=prior.sigma2,
                         mchoice=mchoice, N=N, verbose =verbose, rseed =rseed,
                         plotit=plotit)
-     } else { stop("Model not implemented.") }
+     } else { stop("Model not implemented for package=none.") }
   } else  if (package=="spBayes") { 
      results <- BspBayes_sptime(formula=formula, data=data,
                         validrows=validrows,  scale.transform =scale.transform,

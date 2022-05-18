@@ -98,6 +98,9 @@
 #'    \item  valpreds -  A matrix containing the MCMC samples of the validation predictions. 
 #'    The dimension of this matrix is the number of validations times the number of retained 
 #'    MCMC samples. This is present only if model validation has been performed.  
+#'    \item validationplots - Present only if validation has been performed. 
+#'    Contains three validation plots with or without segment and 
+#'    an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more. 
 #'    \item  residuals -  A vector of residual values.  
 #'    \item  sn -  The number of data locations used in fitting.
 #'    \item  tn  Defaults to 1. Used for plotting purposes. 
@@ -144,20 +147,37 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
  start.time<-proc.time()[3]
  set.seed(rseed)
  data <- as.data.frame(data)
- implemented <- c("inla", "spBayes", "stan")
- a <- grepl(package, x=implemented, ignore.case = TRUE)
- if (any(a)) { 
+ 
+ # Error checking 
+ if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+ if (!inherits(formula, "formula")) stop("Need a valid formula")
+ if (!is.null(coordtype)) coordtype <- match.arg(coordtype, 
+                                    choices=c("utm", "lonlat", "plain"))
+ if (!is.null(scale.transform)) scale.transform <- match.arg(scale.transform, 
+                                                             choices=c("NONE", "SQRT", "LOG"))
+ 
+ 
+  implemented <- c("inla", "spBayes", "stan")
+  a <- grepl(package, x=implemented, ignore.case = TRUE)
+  if (any(a)) { 
    package <- implemented[which(a)]
    } else { 
   imodel <- c("lm", "spat")
    b <-  grepl(model, x=imodel, ignore.case = TRUE)
-   if (any(b)) { 
+  if (any(b)) { 
      model <- imodel[which(b)]
-     package <- "none"
-   } else { stop("Wrong package or model. Please see helpfile")}
+      package <- "none"
+    } else { stop("Wrong package or model. Please see helpfile")}
    }
+  # package <- c("none", "inla", "spBayes", "stan")
+  # package <-  match.arg(package, several.ok = TRUE)
+  # message("package=", package, "model=", model)
   
- # message("package=", package, "model=", model)
+  if (model !="lm") { # Will fit spatio-temporal models 
+     s1 <- length(coords)
+     if (s1 !=2) stop("Need 2-dimensional spatial coordinates in the coords argument\n")
+  }
+ 
  if (package=="inla") {
    if (inlabru::bru_safe_inla()) {
      if (verbose) message("INLA will be used.")

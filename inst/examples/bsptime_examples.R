@@ -119,7 +119,7 @@ M9 <- Bsptime(package = "spTimer", model = "GPP", g_size = 5, formula = f2,
 summary(M9)
 
 # This INLA run may take a long time
-if (require(INLA)) {
+if (require(INLA) & require(inlabru)) {
     f2 <- y8hrmax ~ xmaxtemp + xwdsp + xrh
     M6 <- Bsptime(package = "inla", model = "AR", formula = f2, data = nysptime,
         coordtype = "utm", coords = 4:5, scale.transform = "SQRT", 
