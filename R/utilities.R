@@ -196,9 +196,7 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
   if (!is.vector(yval)) {
     stop("The yobs argument must be a vector\n")
   }
-  if (length(yval) != nrow(yits)) {
-    stop("Number of observed data is not the same as the number of prediction variables\n")
-  }
+  
   low <- (1 - level/100)/2
   up <- 1 - low
   yval <- as.numeric(yval)
