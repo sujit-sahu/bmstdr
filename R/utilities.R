@@ -4,6 +4,7 @@
 #' @import CARBayes
 #' @import CARBayesST
 #' @import ggplot2
+#' @import MCMCpack
 #' @import Rcpp
 #' @import methods 
 #' @import graphics
@@ -186,17 +187,20 @@ get_validation_summaries <- function(samps, level=95) {
 #' M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
 #' validrows=vrows, scale.transform = "SQRT")
 #' valstats <- calculate_validation_statistics(M1$yobs_preds$y8hrmax, 
-#' yits=M1$valpreds)
+#' yits=t(M1$valpreds))
 #' unlist(valstats)
 #' @export
 calculate_validation_statistics <- function(yval, yits, level=95, summarystat="mean"){
   ## yval is the actual n observations
-  ## yits is the mcmc samples with dim n x N iteration
+  ## yits is the mcmc samples with dim n by N iteration
 
   if (!is.vector(yval)) {
     stop("The yobs argument must be a vector\n")
   }
-  
+   if (length(yval) != nrow(yits)) {
+     cat(length(yval), "length and dim", dim(yits))
+    stop("Number of observed data is not the same as the number of prediction variables\n")
+   }
   low <- (1 - level/100)/2
   up <- 1 - low
   yval <- as.numeric(yval)

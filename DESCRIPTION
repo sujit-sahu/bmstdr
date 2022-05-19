@@ -70,4 +70,4 @@ LinkingTo:
     StanHeaders (>= 2.18.0)
 VignetteBuilder: knitr
 SystemRequirements: GNU make
-Additional_repositories: https://inla.r-inla-download.org/R/stable
+Additional_repositories: https://inla.r-inla-download.org/R/testing

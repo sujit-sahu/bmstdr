@@ -42,7 +42,6 @@ Bcartime(
   epsilon = 0,
   G = NULL,
   ind.area = NULL,
-  ind.re = NULL,
   trends = NULL,
   rho.T = NULL,
   rho.S = NULL,

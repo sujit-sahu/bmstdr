@@ -4,10 +4,10 @@
 \alias{coef.bmstdr}
 \title{Prints and returns the estimates of the coefficients}
 \usage{
-\method{coef}{bmstdr}(x, digits = 3, ...)
+\method{coef}{bmstdr}(object, digits = 3, ...)
 }
 \arguments{
-\item{x}{A bmstdr model fit object.}
+\item{object}{A bmstdr model fit object.}
 
 \item{digits}{How many significant digits after the decimal to print, defaults to 3.}
 

@@ -10,8 +10,6 @@
 \item{x}{A bmstdr model fit object.}
 
 \item{...}{Any other additional arguments}
-
-\item{digits}{How many significant digits after the decimal to print, defaults to 3.}
 }
 \value{
 Terms in the model formula

@@ -33,6 +33,6 @@ vrows <- sample(nrow(nysptime), 100)
 M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
 validrows=vrows, scale.transform = "SQRT")
 valstats <- calculate_validation_statistics(M1$yobs_preds$y8hrmax, 
-yits=M1$valpreds)
+yits=t(M1$valpreds))
 unlist(valstats)
 }

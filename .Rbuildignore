@@ -7,3 +7,4 @@
 ^\.gitignore$
 ^vignettes/.gitignore$
 ^\.git$
+^README.*$

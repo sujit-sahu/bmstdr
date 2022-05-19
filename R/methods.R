@@ -31,25 +31,24 @@ print.bmstdr <- function(x, digits=3, ...)
 }
 # Coefficient method for bmstdr objects. 
 #' Prints and returns the estimates of the coefficients
-#' @param x A bmstdr model fit object. 
+#' @param object A bmstdr model fit object. 
 #' @param digits How many significant digits after the decimal to print, defaults to 3.
 #' @param ... Any other additional arguments 
 #' @return Coefficients are returned as a data frame preserving the names of 
 #' the covariates  
 #' @method coef bmstdr
 #' @export
-coef.bmstdr <- function(x, digits=3, ...)
+coef.bmstdr <- function(object, digits=3, ...)
 {
   # message("\nCoefficients:\n")
   # print(round(x$params[, 1], digits = digits))
   # message("\n")
-  coefs <- x$params[, 1, drop=FALSE] 
+  coefs <- object$params[, 1, drop=FALSE] 
   round(coefs, digits = digits)
 }
 # terms method for bmstdr objects. 
 #' Prints the terms
 #' @param x A bmstdr model fit object. 
-#' @param digits How many significant digits after the decimal to print, defaults to 3.
 #' @param ... Any other additional arguments 
 #' @return Terms in the model formula
 #' @method terms bmstdr
@@ -98,7 +97,8 @@ summary.bmstdr <- function(object, digits=3, ...)
   
   if (exists("stats", object))  { #  Validation has been performed  
     cat("\nValidation Statistics:\n")
-    print(round(unlist(object$stats), digits = digits))
+    # print(round(unlist(object$stats), digits = digits))
+    print(object$stats)
   }
   
 }

@@ -1344,7 +1344,7 @@ burn.in=burn.in.car, thin=thin)
  argument `interaction=F` may be supplied to suppress the interaction term.
  For the `"ar"` model an additional argument `AR=2` may be provided to opt for a second order auto regressive model. The model fitting commands,   
  not shown here, produce Table \@ref(tab:m1st). 
- ```{r, echo=FALSE, eval=TRUE}
+```{r, echo=FALSE, eval=TRUE}
    table8 %>%
    as_hux(add_colnames = FALSE) %>%
    set_number_format(2)     %>%
@@ -1357,6 +1357,7 @@ burn.in=burn.in.car, thin=thin)
    style_headers(bold = TRUE, text_color = "red") %>% 
    set_caption('(#tab:m1st) Model choice criteria values for various spatio-temporal binomial model.')
 ```
+
 Clearly, the AR model is chosen by both the DIC and WAIC.
 
 
