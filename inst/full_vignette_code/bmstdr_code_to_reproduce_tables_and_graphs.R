@@ -1,4 +1,4 @@
-## The code in this file will re-produce the table results reported in the vignette 
+## The code in this file will re-produce the tables reported in the vignette 
 ## and paper: 
 ## bmstdr: Bayesian Modeling of Spatio-Temporal Data with R
 ## by Sujit Sahu, University of Southampton, 
@@ -6,30 +6,23 @@
 ## Binary versions of the package are available from: 
 ## https://www.sujitsahu.com/#bmstdr
 
+# Set the working directory  
+
+# setwd("myfolder/jss-bmstdr/")
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+print(getwd())
+yourpath <- getwd() 
+allfigurepath <- paste0(yourpath, "/figures/")
+tablepath <- paste0(yourpath,"/txttables/")
+tablepathsecond <- paste0(yourpath, "/last3tables/")
+
 ## The total time to run all the code in this vignette is about 2 hours on a fast PC. 
-
-
-## Please set  folder paths for saving the tables and graphs. 
-
-# Only for the maintainer needs to set the following 
-# to the package directory 
-# yourpath <- getwd() # Only the maintainer needs to set this 
-
-# For all other users the output files are written in the sub-folders in the 
-# temporary directory. 
-
-yourpath <- tempdir()
-allfigurepath <- paste0(yourpath, "/jss-bmstdr/figures")
-figpath <- paste0(yourpath, "/inst/figs")
-tablepath <- paste0(yourpath,"/inst/txttables")
-tablepathsecond <- paste0(yourpath, "/inst/last3tables")
+## 
 
 if (!file.exists(allfigurepath)) {
   dir.create(allfigurepath)
 }  
-if (!file.exists(figpath)) {
-  dir.create(figpath)
-}  
+
 if (!file.exists(tablepath)) {
   dir.create(tablepath)
 }  
@@ -54,7 +47,7 @@ library("spTDyn")
 library("tidyr")
 library("xtable")
 library("ggpubr")
-library("akima")
+library("interp") # changed on 7th June
 library("tidyr")
 library("doBy")
 
@@ -98,8 +91,8 @@ vsites3 <- ggplot() +
    labs(x="Longitude", y = "Latitude") +
    # geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
    # geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
-   ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-                  st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
+   ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km",
+                  st.dist = .05, st.size = 5, height = .06, st.bottom=TRUE, model="WGS84") +
    ggsn::north(data=nymap, location="topleft", symbol=12) 
 
 
@@ -111,7 +104,7 @@ ggsave(filename = paste0(allfigurepath, "figure1.png"))
 
 ## Fitting independent error regression model 
 f1 <- yo3 ~ xmaxtemp + xwdsp + xrh
-M1 <- Bspatial(formula=f1, data=nyspatial, mchoice=T, N=N, burn.in = burn.in)
+M1 <- Bspatial(formula=f1, data=nyspatial, mchoice=TRUE, N=N, burn.in = burn.in)
 plot(M1)
 ## Plots are not saved 
 summary(M1)
@@ -120,7 +113,7 @@ summary(M1)
 ## Fitting a spatial model without the nugget effect. 
 ## This run is very quick. 
 M2 <- Bspatial(model="spat", formula=f1, data=nyspatial, 
-        coordtype="utm", coords=4:5, phi=0.4, mchoice=T, N=N, burn.in = burn.in)
+        coordtype="utm", coords=4:5, phi=0.4, mchoice=TRUE, N=N, burn.in = burn.in)
 ## 
 summary(M2)
 plot(M2)
@@ -134,7 +127,7 @@ a
 
 ## Model fitting using spBayes 
 M3 <- Bspatial(package="spBayes", formula=f1, data=nyspatial, coordtype="utm", 
-            coords=4:5, prior.phi=c(0.005, 2), mchoice=T, 
+            coords=4:5, prior.phi=c(0.005, 2), mchoice=TRUE, 
             N=N, burn.in = burn.in, n.report=2)
 summary(M3)
 
@@ -142,14 +135,14 @@ summary(M3)
 ## Run with 2000 iterations and 1000 burn-in
 ## This takes 16 minutes to run. 
 M4 <- Bspatial(package="stan", formula=f1, data=nyspatial, coordtype="utm", 
-          coords=4:5,phi=0.4, mchoice=T, N=Nstan)
+          coords=4:5,phi=0.4, mchoice=TRUE, N=Nstan)
 summary(M4)
 
 
 
 ## Model fitting using the INLA package 
 M5  <- Bspatial(package="inla",formula=f1, data=nyspatial, 
-            coordtype="utm", coords=4:5, mchoice=T, 
+            coordtype="utm", coords=4:5, mchoice=TRUE, 
             N=N, burn.in=burn.in)
 summary(M5)
 
@@ -209,18 +202,18 @@ s4 <- u[22:28]
 summary((1:28) - sort(c(s1, s2, s3, s4))) ## check
 
 M2.v1 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
-               coordtype="utm", coords=4:5,validrows= s1, phi=0.4, mchoice=F, 
+               coordtype="utm", coords=4:5,validrows= s1, phi=0.4, mchoice=FALSE,  
                N=N, burn.in = burn.in)
 M2.v2 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
-               coordtype="utm", coords=4:5,validrows= s2,  phi=0.4, mchoice=F, 
+               coordtype="utm", coords=4:5,validrows= s2,  phi=0.4, mchoice=FALSE,  
                N=N, burn.in = burn.in)
 
 M2.v4 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
-               coordtype="utm", coords=4:5,validrows= s4,  phi=0.4, mchoice=F, 
+               coordtype="utm", coords=4:5,validrows= s4,  phi=0.4, mchoice=FALSE,  
                N=N, burn.in = burn.in)
 
 M2.v3 <- Bspatial(model="spat", formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial, 
-                  coordtype="utm", coords=4:5, validrows= s3, phi=0.4, mchoice=F, 
+                  coordtype="utm", coords=4:5, validrows= s3, phi=0.4, mchoice=FALSE,  
                   N=N, burn.in = burn.in )
 ## Save this as Figure 2.  
 ggsave(filename = paste0(allfigurepath, "figure2.png"))
@@ -295,7 +288,7 @@ vrows <- getvalidrows(sn=sn, tn=tn, valids=valids, validt=validt)
 
 M31 <- Bsptime(package="spTimer",formula=f2, data=nysptime, 
     coordtype="utm", coords=4:5, validrows=vrows, model="GP", 
-    mchoice=F, scale.transform = "NONE", 
+    mchoice=FALSE,  scale.transform = "NONE", 
     N=N, burn.in = burn.in, n.report=5)
 
 modfit <- M31$fit
@@ -306,10 +299,10 @@ fitvalid <- spT.subset(data=fitall, var.name=c("s.index"), s=valids)
 fitvalid$low <- fitvalid$Mean - 1.96 * fitvalid$SD
 fitvalid$up <- fitvalid$Mean + 1.96 * fitvalid$SD
 fitvalid$yobs <- vdat$y8hrmax
-yobs <- matrix(fitvalid$yobs, byrow=T, ncol=tn)
-y.valids.low <- matrix(fitvalid$low, byrow=T, ncol=tn)
-y.valids.med <- matrix(fitvalid$Mean, byrow=T, ncol=tn)
-y.valids.up <- matrix(fitvalid$up, byrow=T, ncol=tn)
+yobs <- matrix(fitvalid$yobs, byrow=TRUE, ncol=tn)
+y.valids.low <- matrix(fitvalid$low, byrow=TRUE, ncol=tn)
+y.valids.med <- matrix(fitvalid$Mean, byrow=TRUE, ncol=tn)
+y.valids.up <- matrix(fitvalid$up, byrow=TRUE, ncol=tn)
 
 p1 <- fig11.13.plot(yobs[1, ], y.valids.low[1, ], y.valids.med[1, ], 
                     y.valids.up[1, ], misst=validt)
@@ -334,7 +327,7 @@ ggarrange(p1, p2, p3, common.legend = TRUE, legend = "top", nrow = 3, ncol = 1)
 
 # function to calculate site-wise averages 
 sitemeans <- function(a, sn, tn=62) { 
-   u <- matrix(a, nrow=sn, ncol=tn, byrow=T)
+   u <- matrix(a, nrow=sn, ncol=tn, byrow=TRUE)
    as.vector(apply(u, 1, mean))
 }
 
@@ -353,7 +346,7 @@ sig2eps <-  post$sig2ep
 sige <- sqrt(sig2eps)
 itmax <- ncol(meanmat)
 nT <- nrow(nysptime)
-sigemat <- matrix(rep(sige, each=nT), byrow=F, ncol=itmax)
+sigemat <- matrix(rep(sige, each=nT), byrow=FALSE,  ncol=itmax)
 a <- matrix(rnorm(nT*itmax), nrow=nT, ncol=itmax)
 ypreds <- meanmat + a * sigemat
 ypreds <-  (ypreds)^2
@@ -376,7 +369,7 @@ interp1 <- gather(interp1,key = lat,value =Predicted,-long,convert = TRUE)
 
 nymap <- map_data(database="state",regions="new york")
 mappath <- cbind(nymap$long, nymap$lat)
-zr <- range(interp1$Predicted, na.rm=T)
+zr <- range(interp1$Predicted, na.rm=TRUE)
 P <- ggplot() +  
 geom_raster(data=interp1, aes(x = long, y = lat,fill = Predicted)) +
 geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) + 
@@ -384,10 +377,13 @@ geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
 stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = Predicted), colour = "black", binwidth =2) +
 scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
 theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km", st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
-ggsn::north(data=interp1, location="topleft", symbol=12) +
-labs(x="Longitude", y = "Latitude", size=2.5) 
-
+ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km", st.dist = .05, st.size = 5, height = .06, 
+               st.bottom=TRUE, model="WGS84") +
+ggsn::north(data=interp1, location="topright", symbol=12) +
+labs(x="Longitude", y = "Latitude", size=2.5) + 
+  theme(legend.position=c(0.10, 0.80),
+        legend.background = element_blank())
+# P
 # Repeat for sd 
 surf <- interp(b$Longitude, b$Latitude, b$sd,  xo=xo, yo=yo)
 v <- fnc.delete.map.XYZ(xyz=surf)
@@ -396,34 +392,37 @@ names(interp1)[1:length(v$y)+1] <- v$y
 interp1 <- gather(interp1,key = lat,value =sd,-long,convert = TRUE)
 nymap <- map_data(database="state",regions="new york")
 mappath <- cbind(nymap$long, nymap$lat)
-zr <- range(interp1$sd, na.rm=T)
+zr <- range(interp1$sd, na.rm=TRUE)
 Psd <- ggplot() +
     geom_raster(data=interp1, aes(x = long, y = lat,fill = sd)) +
     geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) +
     geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
     stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = sd), colour = "black", binwidth =0.1) +    scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
     theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-    ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-                   st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
-    ggsn::north(data=interp1, location="topleft", symbol=12) +
-    labs(x="Longitude", y = "Latitude", size=2.5)
+    ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", 
+                   transform=TRUE, dist_unit = "km",
+                   st.dist = .05, st.size = 5, height = .06, st.bottom=TRUE, model="WGS84") +
+    ggsn::north(data=interp1, location="topright", symbol=12) +
+    labs(x="Longitude", y = "Latitude", size=2.5) + 
+  theme(legend.position=c(0.10, 0.80),
+        legend.background = element_blank())
 
-# Psd
+Psd
 ggpubr::ggarrange(P, Psd, common.legend = FALSE, nrow = 1, ncol = 2)
 ggsave(filename = paste0(allfigurepath, "figure5.png"))
 
 # Takes 2 minutes to run 
 M4 <- Bsptime(package="stan",formula=f2, data=nysptime,   coordtype="utm", coords=4:5, 
-              scale.transform = "SQRT", mchoice=T, verbose = F, N=Nstan)
+              scale.transform = "SQRT", mchoice=TRUE, verbose = F, N=Nstan)
 
 M1 <- Bsptime(model="lm", formula=f2, data=nysptime, scale.transform = "SQRT", 
-            mchoice=T, N=N, burn.in = burn.in)
+            mchoice=TRUE,  N=N, burn.in = burn.in)
 M2 <- Bsptime(model="separable", formula=f2, data=nysptime, 
-    scale.transform = "SQRT", coordtype="utm", coords=4:5, mchoice=T, 
+    scale.transform = "SQRT", coordtype="utm", coords=4:5, mchoice=TRUE, 
     N=N, burn.in = burn.in)
 M3 <- Bsptime(package="spTimer", formula=f2, data=nysptime, 
               model="GP", coordtype="utm", coords=4:5, 
-        scale.transform = "SQRT", mchoice=T, N=N, burn.in = burn.in, 
+        scale.transform = "SQRT", mchoice=TRUE, N=N, burn.in = burn.in, 
         n.report=5)
 
 table4 <- cbind(M1$mchoice, M2$mchoice, M3$mchoice, M4$mchoice)
@@ -433,13 +432,13 @@ dput(table4, file=paste0(tablepath, "/table4.txt"))
 
 M5 <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                mchoice=T,  N=N, burn.in = burn.in, n.report=5)
+                mchoice=TRUE,  N=N, burn.in = burn.in, n.report=5)
 
 a <- residuals(M5)
 # Takes 4 mins 45 sec 
 M6 <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime,
          coordtype="utm", coords=4:5, scale.transform = "SQRT",
-         mchoice=T,  N=N, burn.in=burn.in)
+         mchoice=TRUE,  N=N, burn.in=burn.in)
 
 summary(M5)
 summary(M6)
@@ -464,7 +463,7 @@ dput(table6, file=paste0(tablepath, "/table6.txt"))
 f3 <- y8hrmax~ xmaxtemp + sp(xmaxtemp)+ tp(xwdsp) + xrh
 M7 <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
       coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-      mchoice=T,  n.report=5, N=N, burn.in = burn.in )
+      mchoice=TRUE,  n.report=5, N=N, burn.in = burn.in )
 
 ## Generating the plots 
 
@@ -502,14 +501,14 @@ pwdsp <- ggplot(data=tstat, aes(x=Days, y=median)) +
 
 
 
-ggarrange(ptmp, pwdsp, common.legend = FALSE, nrow = 2, ncol = 1)
+ggarrange(ptmp, pwdsp, common.legend = FALSE, nrow = 1, ncol = 2)
 ggsave(filename = paste0(allfigurepath, "figure6.png"))
 
 ## Model fitting using spBayes 
 M8 <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
 prior.sigma2=c(2, 25), prior.tau2 =c(2, 25), prior.sigma.eta =c(2, 0.001),
 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-mchoice=T,  n.report=5, N=N,  burn.in = burn.in)
+mchoice=TRUE,  n.report=5, N=N,  burn.in = burn.in)
 
 
 modfit <- M8$fit
@@ -553,7 +552,7 @@ prange <- ggplot() +
 prange
 
 
-ggarrange(psigma, prange, common.legend = TRUE, legend = "none", nrow = 2, ncol = 1)
+ggarrange(psigma, prange, common.legend = TRUE, legend = "none", nrow = 1, ncol = 2)
 ggsave(filename = paste0(allfigurepath, "figure7.png"))
 
 vnames <- all.vars(f2)
@@ -613,43 +612,43 @@ a <- residuals(M9)
 summary(M9)
 
 valids <- c(8,11,12,14,18,21,24,28)
-vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=T)
+vrows <- getvalidrows(sn=28, tn=62, valids=valids, allt=TRUE)
 
 M1.v <- Bsptime(model="lm", formula=f2, data=nysptime, 
-                scale.transform = "SQRT", validrows=vrows, mchoice=T, 
+                scale.transform = "SQRT", validrows=vrows, mchoice=TRUE, 
                 N=N, burn.in = burn.in)
 
 M2.v <- Bsptime(model="separable",  formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, 
                 phi.s=0.005, phi.t=0.05, scale.transform = "SQRT", 
-                validrows=vrows, mchoice=T, 
+                validrows=vrows, mchoice=TRUE, 
                 N=N, burn.in = burn.in)
 
 M3.v <- Bsptime(package="spTimer", model="GP", formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                mchoice=T, validrows=vrows, n.report=2, 
+                mchoice=TRUE,  validrows=vrows, n.report=2, 
                 N=N, burn.in = burn.in)
 
 M4.v <- Bsptime(package="stan",formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                 mchoice=T, validrows=vrows, verbose = F, 
+                 mchoice=TRUE,  validrows=vrows, verbose = F, 
                 N=Nstan)
 
 # 8 mins 
 M5.v <- Bsptime(package="spTimer", model="AR", formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                validrows=vrows, mchoice=T,  n.report = 2, 
+                validrows=vrows, mchoice=TRUE,   n.report = 2, 
                 N=N, burn.in = burn.in)
 
 M6.v <- Bsptime(package="inla", model="AR", formula=f2, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                validrows=vrows,  mchoice=T, N=N, burn.in=burn.in)
+                validrows=vrows,  mchoice=TRUE,  N=N, burn.in=burn.in)
 #6 mins 41s
 
 
 M7.v <- Bsptime(package="sptDyn", model="GP", formula=f3, data=nysptime, 
                 coordtype="utm", coords=4:5, scale.transform = "SQRT", 
-                mchoice=T, validrows=vrows, n.report=5, 
+                mchoice=TRUE,  validrows=vrows, n.report=5, 
                 N=N, burn.in = burn.in)
 
 M8.v <- Bsptime(package="spBayes",  formula=f2, data=nysptime, 
@@ -657,12 +656,12 @@ M8.v <- Bsptime(package="spBayes",  formula=f2, data=nysptime,
                 prior.sigma2=c(2, 25),
                 prior.tau2 =c(2, 25),
                 prior.sigma.eta =c(2, 0.001),
-                mchoice=T,  validrows=vrows,  n.report=2, 
+                mchoice=TRUE,   validrows=vrows,  n.report=2, 
                 N=N, burn.in = burn.in)
 
 M9.v <-   Bsptime(package="spTimer", model="GPP", g_size=5, 
                   formula=f2, data=nysptime, validrow=vrows, 
-                  coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=T, 
+                  coordtype="utm", coords=4:5, scale.transform = "SQRT", mchoice=TRUE,  
                   n.report=2, N=N, burn.in = burn.in)
 
 
@@ -690,7 +689,33 @@ dput(table7, file=paste0(tablepath, "/table7.txt"))
 ## Ocean temperature 
 
 
-deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
+atlmap <- map_data("world", xlim=c(-70, 10), ylim=c(15, 65))
+head(atlmap)
+
+atlmap <- atlmap[atlmap$long < 5, ]
+atlmap <- atlmap[atlmap$long > -70, ]
+
+atlmap <- atlmap[atlmap$lat < 65, ]
+atlmap <- atlmap[atlmap$lat > 10, ]
+
+argo <- argo_floats_atlantic_2003
+
+deep <- argo[argo$depth==3, ]
+deep$month <- factor(deep$month)
+
+p <- ggplot() +
+  geom_polygon(data=atlmap, aes(x=long, y=lat, group=group),
+               color="black", size = 0.6, fill=NA) +
+  geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
+  labs( title= "Argo float locations in deep ocean in 2003", x="Longitude", y = "Latitude") +
+  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=TRUE,  dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=TRUE,  model="WGS84") +
+  ggsn::north(data=atlmap, location="topright", symbol=12)
+p
+ggsave(filename = paste0(allfigurepath, "argo_float_locations_deep.png"),  width=8.27, height=5, dpi=300)
+
+
+# deep <- argo_floats_atlantic_2003[argo_floats_atlantic_2003$depth==3, ]
 deep$x2inter <- deep$xinter*deep$xinter
 deep$month <- factor(deep$month)
 
@@ -797,14 +822,13 @@ P <- ggplot() +
                color="black", size = 0.6, fill=NA) + 
   geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
   labs( title= "Annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
-  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
-                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
+  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=TRUE,  dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=TRUE,  model="WGS84") +
   ggsn::north(data=atlmap, location="topright", symbol=12) 
 
 P 
 
 ggsave(filename = paste0(allfigurepath, "temp_deep.png"),  width=8.27, height=5, dpi=300)
-ggsave(filename = paste0(figpath, "/temp_deep.png"),  width=8.27, height=5, dpi=300)
 
 ## sd of temperature 
 
@@ -827,8 +851,8 @@ psd <- ggplot() +
                color="black", size = 0.6, fill=NA) + 
   geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
   labs( title= "sd of annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
-  ggsn::scalebar(data = atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
-                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
+  ggsn::scalebar(data = atlmap, dist = 1000, location = "bottomleft", transform=TRUE,  dist_unit = "km",
+                 st.dist = .05, st.size =5, height = .05, st.bottom=TRUE,  model="WGS84") +
   ggsn::north(data=atlmap, location="topright", symbol=12) 
 
 psd 
@@ -853,7 +877,7 @@ ptime
 ggsave(filename = paste0(allfigurepath, "figure8.png"))
 
 
-bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=T, all.x=F)
+bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=TRUE,  all.x=F)
 bdf$covidrate <- bdf$covid/bdf$popn*100000
 plimits <- range(bdf$covidrate)
 prate <-  ggplot(data=bdf, aes(x=long, y=lat, group = group, fill=covidrate)) +
@@ -1011,7 +1035,7 @@ M1st_linear <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trial
 
 
 M1st_anova_nointer <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
-                               W=Weng, model="anova", interaction=F, family="binomial", 
+                               W=Weng, model="anova", interaction=FALSE,  family="binomial", 
                                package="CARBayesST", N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M1st_anova_nointer)
 
@@ -1071,7 +1095,7 @@ summary(M2st_anova)
 
 
 M2st_anova_nointer <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,  
-                               W=Weng, model="anova",interaction=F,  family="poisson", 
+                               W=Weng, model="anova",interaction=FALSE,   family="poisson", 
                                package="CARBayesST", N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M2st_anova_nointer)
 
@@ -1194,7 +1218,7 @@ pwkfit <- ggplot() +
   geom_line(data=adata, aes(x=factor(Weeknumber), y=vfits, group=intervals, color=intervals)) +
   geom_point(data=pdata, aes(x=factor(Weeknumber), y=vfits,  shape=fits)) + 
   labs(x ="Week number", y = "Average number of covid deaths per 100,000")+
-  theme(legend.position=c(0.65, 0.5))
+  theme(legend.position=c(0.80, 0.80))
 pwkfit
 
 
@@ -1254,7 +1278,6 @@ ar2valid <- b$pwithseg
 
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
 ggsave(filename = paste0(allfigurepath, "figure11.png"))
-ggsave(filename = paste0(figpath, "/inlavAR2.png"))
 
 
 f2s <-  covid ~ offset(logEdeaths) + jsa + log10(houseprice) + log(popdensity)
@@ -1278,7 +1301,7 @@ summary(M3st_linear)
 
 M3st_anova <- Bcartime(formula=f3, data=engdeaths, scol=scol, tcol=tcol, 
                        W=Weng, model="anova", family="gaussian", package="CARBayesST", 
-                       interaction=F, N=Ncar, burn.in=burn.in.car, thin=thin)
+                       interaction=FALSE,  N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M3st_anova)
 
 
