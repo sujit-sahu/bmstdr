@@ -53,7 +53,7 @@ Suggests:
     testthat, 
     ggsn, 
     ggpubr,
-    akima, 
+    interp, 
     tidyr, 
     huxtable, 
     RColorBrewer, 

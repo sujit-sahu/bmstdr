@@ -45,7 +45,7 @@
 #' Local Authority Districts, Counties  and Unitary Authorities (LADCUA) in 
 #' England during the 20 peaks in the first peak from March 13 to July 31, 2020. 
 #' @source \insertCite{SahuBohning2021;textual}{bmstdr}. 
-#'  @format A data frame with 6260 rows and 19 columns:
+#'  @format A data frame with 6260 rows and 24 columns:
 #' \describe{
 #'   \item{Areacode}{Areacode identifier of the 313 
 #'   Local Authority Districts, Counties  and Unitary Authorities (LADCUA)}
@@ -61,10 +61,6 @@
 #'   \item{covid}{Number of Covid-19 deaths within 28 days of a positive test}
 #'   \item{allcause}{Number deaths}
 #'   \item{noofcases}{Number of cases}
-#'   \item{lag1noofcases}{Number of cases during the week before}
-#'   \item{lag2noofcases}{Number of cases during the second week before}
-#'   \item{lag3noofcases}{Number of cases during the third week before}
-#'   \item{lag4noofcases}{Number of cases during the fourth week before}
 #'   \item{n0}{Log of the standardized case morbidity during the current week}
 #'   \item{n1}{Log of the standardized case morbidity during the week before}
 #'   \item{n2}{Log of the standardized case morbidity during the second week before}
@@ -84,7 +80,7 @@
 #' @examples
 #'  colnames(engdeaths)
 #'  dim(engdeaths)
-#'  summary(engdeaths[, 11:28])
+#'  summary(engdeaths[, 11:24])
 "engdeaths"
 
 
