@@ -32,7 +32,7 @@ if (!file.exists(tablepathsecond)) {
 
 
 ## This is a map of English local autthorities required for mapping 
-englamap <- read.csv("https://www.sujitsahu.com/bmbook/englamap.csv", head=T)
+englamap <- read.csv("https://www.sujitsahu.com/bmbook/englamap.csv", head=TRUE)
 
 ## The figures in the package vignette are drawn by the vignette Rmd file itself. 
 ## Except for the temperature map of the deep ocean and 
@@ -733,7 +733,7 @@ deep[, c( "xlat2", "xsin1", "xcos1", "xsin2", "xcos2")] <-
 # 15 minutes 
 f2 <- temp ~ xlon + xlat + xlat2+ xinter + x2inter 
 M2atl <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat", coords = 1:2,
-                     N=1100, burn.in=100, validrows =NULL, mchoice =T)
+                     N=1100, burn.in=100, validrows =NULL, mchoice =TRUE)
 summary(M2atl)
 plot(M2atl)
 names(M2atl)
@@ -877,7 +877,7 @@ ptime
 ggsave(filename = paste0(allfigurepath, "figure8.png"))
 
 
-bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=TRUE,  all.x=F)
+bdf <- merge(englamap, engtotals, by.x="id", by.y="mapid", all.y=TRUE,  all.x=FALSE)
 bdf$covidrate <- bdf$covid/bdf$popn*100000
 plimits <- range(bdf$covidrate)
 prate <-  ggplot(data=bdf, aes(x=long, y=lat, group = group, fill=covidrate)) +
@@ -1237,12 +1237,12 @@ M2st_anova.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,
 M2st_ar.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,  
                       W=Weng, model="ar", AR=1,  family="poisson", package="CARBayesST", 
                       N=Ncar, burn.in=burn.in.car, thin=thin, 
-                      validrows=vs, verbose=T)
+                      validrows=vs, verbose=TRUE)
 
 M2st_ar2.0 <- Bcartime(formula=f20, data=engdeaths, scol=scol, tcol=tcol,  
                        W=Weng, model="ar", AR=2, family="poisson", package="CARBayesST", 
                        N=Ncar, burn.in=burn.in.car, thin=thin, 
-                       validrows=vs, verbose=T)
+                       validrows=vs, verbose=TRUE)
 
 
 M2stinla.0  <- Bcartime(data=engdeaths, formula=f2inla, W=Weng, scol =scol, tcol=tcol,  
@@ -1263,14 +1263,14 @@ names(yobspred)
 yobs <- yobspred$covid
 predsums <- get_validation_summaries(t(M2st_ar2.0$valpreds))
 dim(predsums)
-b <- obs_v_pred_plot(yobs, predsums, segments=T) 
+b <- obs_v_pred_plot(yobs, predsums, segments=TRUE) 
 b
 names(M2stinla.0)
 inlayobspred <- M2stinla.0$yobs_preds
 names(inlayobspred)
 inlapredsums <- get_validation_summaries(t(M2stinla.0$valpreds))
 dim(inlapredsums)
-a <- obs_v_pred_plot(yobs, inlapredsums, segments=T) 
+a <- obs_v_pred_plot(yobs, inlapredsums, segments=TRUE) 
 a
 
 inlavalid <- a$pwithseg
