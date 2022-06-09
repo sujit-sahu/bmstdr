@@ -10,6 +10,7 @@
 
 # setwd("myfolder/jss-bmstdr/")
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# Run this from the inst folder within bmstdr 
 print(getwd())
 yourpath <- getwd() 
 allfigurepath <- paste0(yourpath, "/figures/")
@@ -50,6 +51,7 @@ library("ggpubr")
 library("interp") # changed on 7th June
 library("tidyr")
 library("doBy")
+library("RColorBrewer")
 
 # Is INLA available? 
 if (require(INLA)) {
@@ -357,6 +359,8 @@ fits <- data.frame(nyspatial[, 1:5], a)
 # Combine the fitted values and the predictions 
 b <- rbind(b, fits)
 
+# pcolors <- brewer.pal(8,"Dark2")
+pcolors <- brewer.pal(9,"YlOrRd")
 
 coord <- nyspatial[, c("Longitude","Latitude")]
 xo <- seq(from=min(coord$Longitude)-0.5, to = max(coord$Longitude)+0.8, length=200)
@@ -375,7 +379,7 @@ geom_raster(data=interp1, aes(x = long, y = lat,fill = Predicted)) +
 geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) + 
 geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
 stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = Predicted), colour = "black", binwidth =2) +
-scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
+scale_fill_gradientn(colours=pcolors, na.value="gray95", limits=zr) +
 theme(axis.text = element_blank(), axis.ticks = element_blank()) +
 ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=TRUE, dist_unit = "km", st.dist = .05, st.size = 5, height = .06, 
                st.bottom=TRUE, model="WGS84") +
@@ -397,7 +401,8 @@ Psd <- ggplot() +
     geom_raster(data=interp1, aes(x = long, y = lat,fill = sd)) +
     geom_polygon(data=nymap, aes(x=long, y=lat, group=group), color="black", size = 0.6, fill=NA) +
     geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
-    stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = sd), colour = "black", binwidth =0.1) +    scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
+    stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = sd), colour = "black", binwidth =0.1) +   
+  scale_fill_gradientn(colours=pcolors, na.value="gray95", limits=zr) +
     theme(axis.text = element_blank(), axis.ticks = element_blank()) +
     ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", 
                    transform=TRUE, dist_unit = "km",

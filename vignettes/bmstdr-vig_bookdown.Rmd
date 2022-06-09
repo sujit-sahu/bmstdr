@@ -47,7 +47,7 @@ library(tidyr)
 library(huxtable)
 library(RColorBrewer)
 library(interp)
-knitr::opts_chunk$set(eval = F)
+knitr::opts_chunk$set(eval = FALSE)
 
 
 tabs <- lapply(list.files(system.file('txttables', package = 'bmstdr'), full.names = TRUE), dget)
@@ -64,7 +64,7 @@ print(table4.2)
 print(table4.3)
 
 
-figpath <- system.file("figs", package = "bmstdr") 
+figpath <- system.file("figures", package = "bmstdr") 
 print(figpath)
 
 table1 <-  tabs[[1]]
@@ -84,6 +84,8 @@ table9 <- tabs[[11]]
 
 # Introduction 
 
+A fuller version of this document with additional graphical illustrations 
+<a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html" > is also available.  </a> 
 
 Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/view=SpatioTemporal">
 Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/view=Spatial"> Analysis of Spatial Data.</a>
@@ -1447,12 +1449,12 @@ inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 library(ggpubr)
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
-ggsave(filename = paste0(figpath, "/inlavAR2.png"))
+ggsave(filename = paste0(figpath, "/figure11.png"))
 ```
 
 
 ```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", fig.width=6}
-knitr::include_graphics(paste0(figpath, "/inlavAR2.png"))
+knitr::include_graphics(paste0(figpath, "/figure11.png"))
 ```
 
 ### Spatio-temporal GLM  fitting with normal distribution
@@ -1498,6 +1500,9 @@ There are many current limitations of the`r CRANpkg("bmstdr")` package. The fore
 The  package offers only a limited number of models using the `r Rpackage("rstan")`
 and  `r Rpackage("INLA")` computing platforms. Spatio-temporal models offering richer structures can be fitted using these two and other `R` packages. Moreover, the current version does not allow fitting of multivariate models. Such modeling will be considered in future updates of this package.  
 
+
+A fuller version of this document with additional graphical illustrations 
+<a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html" > is also available.  </a> 
 
 
 # References 
