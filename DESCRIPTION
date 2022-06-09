@@ -1,7 +1,7 @@
 Package: bmstdr
 Type: Package
 Title: Bayesian Modeling of Spatio-Temporal Data with R
-Version: 0.1.5
+Version: 0.2.1
 Authors@R: c(person(given="Sujit K.", family="Sahu", email="S.K.Sahu@soton.ac.uk", role = c("aut", "cre"), 
     comment = c(ORCID = "0000-0003-2315-3598")), person(given="Duncan P.", family="Lee", 
     email="Duncan.Lee@glasgow.ac.uk", role="aut"),  person(given="K. Shuvo", family="Bakar", 
