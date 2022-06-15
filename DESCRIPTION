@@ -28,7 +28,9 @@ Imports:
     CARBayesST, 
     spTDyn, 
     MCMCpack, 
-    Rdpack
+    Rdpack, 
+    mnormt, 
+    inlabru
 RdMacros: Rdpack
 Depends:
     R (>= 3.4.0), 
@@ -42,7 +44,6 @@ Suggests:
     rstantools (>= 2.0.0),
     xtable,
     MASS,
-    mnormt,
     loo,
     cowplot,
     ggrepel,
@@ -60,7 +61,6 @@ Suggests:
     magick, 
     markdown, 
     bookdown, 
-    inlabru, 
     BiocStyle
 LinkingTo: 
     BH (>= 1.66.0),

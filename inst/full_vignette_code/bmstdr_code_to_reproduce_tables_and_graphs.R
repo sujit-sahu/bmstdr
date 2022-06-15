@@ -235,7 +235,7 @@ dput(table3, file=paste0(tablepath, "/table3.txt"))
 
 f2 <- y8hrmax ~ xmaxtemp+xwdsp+xrh
 M1 <- Bsptime(model="lm", formula=f2, data=nysptime, scale.transform = "SQRT",
-              N=Ncar, burn.in = burn.in)
+              N=N, burn.in = burn.in)
 M2 <- Bsptime(model="separable", formula=f2, data=nysptime, 
               scale.transform = "SQRT", coordtype="utm", coords=4:5,  
               N=N, burn.in = burn.in)

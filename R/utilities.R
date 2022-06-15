@@ -9,10 +9,12 @@
 #' @import methods 
 #' @import graphics
 #' @import stats 
+#' @importFrom mnormt dmnorm
 #' @importFrom utils combn
 #' @importFrom utils head
 #' @importFrom rstan sampling 
 #' @importFrom Rdpack reprompt
+#' @importFrom inlabru bru_safe_inla
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)
