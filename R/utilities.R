@@ -4,14 +4,18 @@
 #' @import CARBayes
 #' @import CARBayesST
 #' @import ggplot2
+#' @import MCMCpack
 #' @import Rcpp
 #' @import methods 
 #' @import graphics
 #' @import stats 
+#' @importFrom mnormt dmnorm
 #' @importFrom utils combn
 #' @importFrom utils head
 #' @importFrom rstan sampling 
 #' @importFrom Rdpack reprompt
+#' @importFrom inlabru bru_safe_inla
+#' @importFrom ggpubr ggarrange
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)
@@ -47,6 +51,19 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
 ## yobs is r by 1
 ## predsums is r by 4 data frame where the four columns are mean, sd, up and low
 #
+  if (!is.vector(yobs)) {
+    stop("The yobs argument must be a vector\n")
+  }
+  if (length(yobs) != nrow(predsums)) {
+    stop("Number of observed data is not the same as the number of predictions\n")
+  }
+  needs <- c("meanpred", "medianpred", "low", "up")
+  pnames <- colnames(predsums)
+  # pnames <- c("meanpred", "medianpred", "low", "up")
+  a <- match(x=needs, table=pnames)
+  k <- sum(is.na(a))
+  if (k>0) stop("Some required prediction summaries are missing from obs_v_pred_plot")
+  
   adat <- data.frame(yobs=as.numeric(yobs), predsums)
   adat <- adat[!is.na(adat$yobs), ]
   
@@ -173,12 +190,20 @@ get_validation_summaries <- function(samps, level=95) {
 #' M1 <- Bsptime(model="lm", formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, 
 #' validrows=vrows, scale.transform = "SQRT")
 #' valstats <- calculate_validation_statistics(M1$yobs_preds$y8hrmax, 
-#' yits=M1$valpreds)
+#' yits=t(M1$valpreds))
 #' unlist(valstats)
 #' @export
 calculate_validation_statistics <- function(yval, yits, level=95, summarystat="mean"){
-  ## yits is the mcmc samples with dim n x N iteration
   ## yval is the actual n observations
+  ## yits is the mcmc samples with dim n by N iteration
+
+  if (!is.vector(yval)) {
+    stop("The yobs argument must be a vector\n")
+  }
+   if (length(yval) != nrow(yits)) {
+     cat(length(yval), "length and dim", dim(yits))
+    stop("Number of observed data is not the same as the number of prediction variables\n")
+   }
   low <- (1 - level/100)/2
   up <- 1 - low
   yval <- as.numeric(yval)
@@ -224,11 +249,17 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
 #' a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
 #' coordtype="utm", nb=50)
 #' names(a)
-#' library(ggpubr)
-#' ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
+#' if (require(ggpubr)) ggarrange(a$cloudplot, a$variogramplot, nrow=1, ncol=2)
 #' @export
 bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=nyspatial, nbins=30)
 {
+  
+  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+  if (!inherits(formula, "formula")) stop("Need a valid formula")
+  if (!is.null(coordtype)) coordtype <- match.arg(coordtype, 
+                                                  choices=c("utm", "lonlat", "plain"))
+  
+  
   X <- model.matrix(formula, data=data)
   a <- model.frame(formula=formula, data=data)
   y <- model.response(a)
@@ -504,6 +535,9 @@ cal_valstats_from_summary <- function(yval, pred_summary, nsample, level=95) {
 #' @return a list containing four values pdic, pdicalt, dic and dicalt
 ## #' @export
 calculate_dic <- function(loglikatthetahat, logliks) {
+  if (!is.vector(logliks)) {
+    stop("The logliks argument must be a vector\n")
+  }
   expected_log_lik <- mean(logliks)
  # expected_log_lik
   pdic <- 2 * (loglikatthetahat -  expected_log_lik)
@@ -524,6 +558,11 @@ calculate_dic <- function(loglikatthetahat, logliks) {
 #' @return a list containing four values p_waic, p_waic alt, waic and waic_alt
 ## #' @export
 calculate_waic <- function(v) {
+  if (!is.matrix(v)) {
+    stop("The argument to calculate WAIC must be a 
+         N (MCMC) by n (data) sample size matrix\n")
+  }
+  
   var_log_liks <-  apply(v, 2, var) ## Estimate of Var log( f(y_i| theta) from MCMC
   pwaic2 <- sum(var_log_liks)
   logmin <- min(v)  ## Remember the minimum

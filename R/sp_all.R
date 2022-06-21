@@ -195,7 +195,12 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     allres$stats <- results$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Validation complete
@@ -220,9 +225,7 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
     vdat <- data[validrows, ]     ## validation data set
     r <- nrow(vdat)
     n <- nrow(fdat)
-    # yXpred <- Formula.matrix(formula=formula, data=vdat)
-    # vdaty <- as.vector(yXpred[[1]])
-    # xpreds <- as.matrix(yXpred[[2]])
+    
    
     u <- getXy(formula=formula, data=vdat)
     xpreds <- u$X
@@ -426,7 +429,11 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
   allres$stats <- results$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
-  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allres$validationplots <- allvplots
+  if (plotit)  plot(allvplots$pwithseg)
+  
+  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
   if (verbose) print(round(unlist(allres$stats), 3))
   }
 
@@ -604,10 +611,16 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   yvalidrows <- data.frame(vdat, predsums)
 
   b <- calculate_validation_statistics(vdaty, ypreds)
-  if (plotit)   obs_v_pred_plot(vdaty, predsums)
+  
+ 
   allres$stats <- b$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
+  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allres$validationplots <- allvplots
+  if (plotit)  plot(allvplots$pwithseg)
+  
+  # if (plotit)   obs_v_pred_plot(vdaty, predsums)
   }
   
 allres$prior.phi.param <- prior.phi.param
@@ -820,10 +833,16 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     predsums  <- get_validation_summaries(ypreds)
     yvalidrows <- data.frame(vdat,  predsums)
     b <- calculate_validation_statistics(vdaty, t(ypreds))
-    if (plotit)   obs_v_pred_plot(vdaty, predsums)
+   
     allres$stats <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- ypreds
+    
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)   obs_v_pred_plot(vdaty, predsums)
   } # Else returning the fitted model
 
   
@@ -995,10 +1014,14 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     yvalidrows <- data.frame(vdat, predsums)
 
     b <- calculate_validation_statistics(vdaty, ypreds)
-    if (plotit)   obs_v_pred_plot(vdaty, predsums)
+    
     allres$stats <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    # if (plotit)   obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(allres$stats)
   } # Else returning the fitted model
 

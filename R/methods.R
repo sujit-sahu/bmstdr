@@ -20,14 +20,42 @@ print.bmstdr <- function(x, digits=3, ...)
   print(x$formula)
   message("\n")
   
-  message("\nCoefficients:")
+  message("\nCoefficients:\n")
   print(round(x$params[, 1], digits = digits))
   message("\n")
   
   if (exists("computation.time", x))  { #  Validation has been performed  
-    cat(x$computation.time)
+    cat(x$computation.time, "\n")
   }
   
+}
+# Coefficient method for bmstdr objects. 
+#' Prints and returns the estimates of the coefficients
+#' @param object A bmstdr model fit object. 
+#' @param digits How many significant digits after the decimal to print, defaults to 3.
+#' @param ... Any other additional arguments 
+#' @return Coefficients are returned as a data frame preserving the names of 
+#' the covariates  
+#' @method coef bmstdr
+#' @export
+coef.bmstdr <- function(object, digits=3, ...)
+{
+  # message("\nCoefficients:\n")
+  # print(round(x$params[, 1], digits = digits))
+  # message("\n")
+  coefs <- object$params[, 1, drop=FALSE] 
+  round(coefs, digits = digits)
+}
+# terms method for bmstdr objects. 
+#' Prints the terms
+#' @param x A bmstdr model fit object. 
+#' @param ... Any other additional arguments 
+#' @return Terms in the model formula
+#' @method terms bmstdr
+#' @export
+terms.bmstdr <- function(x,...)
+{
+  terms(x$formula)
 }
 ## Summary method for bmstdr objects. 
 #' Provides basic summaries of model fitting. 
@@ -69,7 +97,8 @@ summary.bmstdr <- function(object, digits=3, ...)
   
   if (exists("stats", object))  { #  Validation has been performed  
     cat("\nValidation Statistics:\n")
-    print(round(unlist(object$stats), digits = digits))
+    # print(round(unlist(object$stats), digits = digits))
+    print(object$stats)
   }
   
 }
@@ -129,14 +158,16 @@ plot.bmstdr <- function(x, segments=TRUE, ...) {
   if (exists("stats", x))  { #  Validation has been performed  
     message("\nValidation Statistics:\n")
     print(round(unlist(x$stats), digits=3))
-    df <- x$yobs_preds
-    k <- ncol(df)
-    predsums <- df[, (k-3):k]
-    u <- all.vars(x$formula)
-    b <- as.character(u[1])
-    yobs <- df[, b]
-    obs_v_pred_plot(yobs, predsums, segments = segments) 
-  }   
+    # df <- x$yobs_preds
+    # k <- ncol(df)
+    # predsums <- df[, (k-4):k]
+    # u <- all.vars(x$formula)
+    # b <- as.character(u[1])
+    # yobs <- df[, b]
+    # allplots <- obs_v_pred_plot(yobs, predsums, segments = segments, summarystat = summarystat) 
+    if (segments) plot(x$validationplots$pwithseg)
+    else plot(x$validationplots$pwithoutseg)
+    }   
 }
 #' Extract residuals from a bmstdr  fitted object. 
 #' @param object A bmstdr model fit object. 
@@ -202,7 +233,6 @@ message("\n Note that the residuals are provided on the transformed scale. Pleas
      geom_abline(intercept = 0, slope = 0, col="red") + 
      labs(title= "Plot of residuals against observation numbers", x="Observation number", 
           y = "Residuals", size=2.5) 
-   #library(ggplot2)
    plot(rplot)  
  }
  a 

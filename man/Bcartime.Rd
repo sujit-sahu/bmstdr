@@ -42,7 +42,6 @@ Bcartime(
   epsilon = 0,
   G = NULL,
   ind.area = NULL,
-  ind.re = NULL,
   trends = NULL,
   rho.T = NULL,
   rho.S = NULL,
@@ -181,7 +180,7 @@ assumed). Defaults to a vector of zeros.
 
 \item{prior.var.beta}{
 A vector of prior variances for the regression parameters beta (Gaussian priors 
-are assumed). Defaults to a vector with values 100000.
+are assumed). Defaults to a vector with values 100,000.
 }
 
 \item{prior.mean.gamma}{
@@ -191,7 +190,7 @@ assumed). Defaults to a vector of zeros.
 
 \item{prior.var.gamma}{
 A vector of prior variances for the temporal trend parameters (Gaussian priors 
-are assumed). Defaults to a vector with values 100000.
+are assumed). Defaults to a vector with values 100,000.
 }
 
 \item{prior.sigma2}{
@@ -233,11 +232,6 @@ model fitting in CARBayesST.}
         A vector of integers the same length as the number of data points (individuals) 
         giving which spatial unit (nunmbered from 1 to K to align with the rows of
         the W matrix) each individual belongs to.
-        }
-
-\item{ind.re}{
-        A categorical variable where each level will be assigned a different independent
-        random effect. If NULL these random effects are omitted.
         }
 
 \item{trends}{
@@ -314,7 +308,10 @@ A list containing:
    This is present only if model validation has been performed.  
    \item valpreds -   A matrix containing the MCMC samples of the validation predictions. 
    The dimension of this matrix is the number of validations times the number of retained 
-   MCMC samples. This is present only if model validation has been performed.   
+   MCMC samples. This is present only if model validation has been performed. 
+   \item validationplots - Present only if validation has been performed. 
+   Contains three validation plots with or without segment and 
+   an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more.   
    \item sn -   The number of areal units used in fitting.   
    \item tn -  The number of time points used in fitting.  
    \item formula - The input formula for the regression part of the model.   

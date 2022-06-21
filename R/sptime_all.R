@@ -219,8 +219,12 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     allres$stats <- results$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
+    # Added May 17 2022
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
     
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    #if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Validation complete
@@ -578,7 +582,12 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   allres$stats <- results$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
-  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  # Added May 17 2022
+  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allres$validationplots <- allvplots
+  if (plotit)  plot(allvplots$pwithseg)
+  
+  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
   if (verbose) print(round(unlist(allres$stats), 3))
 
 
@@ -762,7 +771,13 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     allres$stats  <-  a$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    
+    # Added May 17 2022
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Finished validation
@@ -954,7 +969,12 @@ if (nvalid>0) {
   allres$stats <- a$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
-  if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  # Added May 17 2022
+  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allres$validationplots <- allvplots
+  if (plotit)  plot(allvplots$pwithseg)
+  
+  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
   if (verbose) print(allres$stats)
 
 }
@@ -1199,7 +1219,12 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   }
@@ -1303,7 +1328,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
  
 
   newformula <- update(formula, ynavec ~ .)
-  # library(spTDyn)
+
   fit <- spTDyn::GibbsDyn(formula=newformula, data=data,
                                model=model, coords=coords, time.data=time.data, 
                                nItr =N, nBurn=burn.in, distance.method=distance.method,
@@ -1376,7 +1401,12 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
   }
  
@@ -1599,7 +1629,11 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
+    if (plotit)  plot(allvplots$pwithseg)
+    
+    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
   }
  

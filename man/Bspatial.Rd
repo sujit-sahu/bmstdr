@@ -167,6 +167,9 @@ A list containing:
    \item  valpreds -  A matrix containing the MCMC samples of the validation predictions. 
    The dimension of this matrix is the number of validations times the number of retained 
    MCMC samples. This is present only if model validation has been performed.  
+   \item validationplots - Present only if validation has been performed. 
+   Contains three validation plots with or without segment and 
+   an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more. 
    \item  residuals -  A vector of residual values.  
    \item  sn -  The number of data locations used in fitting.
    \item  tn  Defaults to 1. Used for plotting purposes. 
@@ -286,7 +289,7 @@ colnames(Mall.table) <- paste("M", c(1:3), sep = "")
 round(Mall.table, 3)
 
 
-if (require(INLA)) {
+if (require(INLA) & require(inlabru)) {
     N <- 10
     burn.in <- 5
     # Spatial model fitting using INLA

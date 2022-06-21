@@ -21,6 +21,9 @@
 #'    decay parameter \eqn{phi}.   
 #'    \item prior.phi  -    This contains the name of  of the prior 
 #'    distribution for the spatial decay parameter \eqn{phi}.  
+#'    \item validationplots - Present only if validation has been performed. 
+#'    Contains three validation plots with or without segment and 
+#'    an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more. 
 #'    \item fitteds  -   A vector of fitted values.   
 #'    \item residuals   -   A vector of residual values.  
 #'    \item package   -   The name of the package used for model fitting.  
@@ -71,9 +74,20 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
 {
   start.time<-proc.time()[3]
   set.seed(rseed)
-  dcoords <- data[, coords]
-  ## For predictions at new lomessageions 
   
+  data <- as.data.frame(data)
+  # Error checking 
+  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+  if (!inherits(formula, "formula")) stop("Need a valid formula")
+  if (!is.null(coordtype)) coordtype <- match.arg(coordtype, 
+                                                  choices=c("utm", "lonlat", "plain"))
+  if (!is.null(scale.transform)) scale.transform <- match.arg(scale.transform, 
+                                                              choices=c("NONE", "SQRT", "LOG"))
+  s1 <- length(coords)
+  if (s1 !=2) stop("Need 2-dimensional spatial coordinates in the coords argument\n")
+  
+  dcoords <- data[, coords]
+  ## For predictions at new locations
   data$mod <- 1 ## Flag for modelling data
   data$val <- 0
     
@@ -328,9 +342,12 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
     yvalids <- data.frame(vdat, predsums)
     allres$stats <- a$stats
     allres$yobs_preds <- yvalids
-    allres$mcmcvalid <- ypreds
+    allres$valpreds <- ypreds
+    # Added May 17 2022
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
     
-    if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    if (plotit)  plot(allvplots$pwithseg)
     if (verbose) print(allres$stats)
     
     

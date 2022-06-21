@@ -44,6 +44,5 @@ Calculates and plots the variogram cloud and an estimated variogram.
 a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
 coordtype="utm", nb=50)
 names(a)
-library(ggpubr)
-ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
+if (require(ggpubr)) ggarrange(a$cloudplot, a$variogramplot, nrow=1, ncol=2)
 }

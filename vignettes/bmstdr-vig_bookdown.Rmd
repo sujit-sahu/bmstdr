@@ -46,8 +46,8 @@ require(ggsn)
 library(tidyr)
 library(huxtable)
 library(RColorBrewer)
-library(akima)
-knitr::opts_chunk$set(eval = F)
+library(interp)
+knitr::opts_chunk$set(eval = FALSE)
 
 
 tabs <- lapply(list.files(system.file('txttables', package = 'bmstdr'), full.names = TRUE), dget)
@@ -64,7 +64,7 @@ print(table4.2)
 print(table4.3)
 
 
-figpath <- system.file("figs", package = "bmstdr") 
+figpath <- system.file("figures", package = "bmstdr") 
 print(figpath)
 
 table1 <-  tabs[[1]]
@@ -84,6 +84,8 @@ table9 <- tabs[[11]]
 
 # Introduction 
 
+A fuller version of this document with additional graphical illustrations 
+<a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html" > is also available.  </a> 
 
 Model-centric analysis of spatial and spatio-temporal data is essential in many applied areas of research such as atmospheric sciences, climatology, ecology, environmental health and  oceanography. Such diversity in application areas is being serviced by the rich diversity of `R` contributed packages listed in the abstract and many others, see the CRAN Task Views: <a href="https://cran.r-project.org/view=SpatioTemporal">
 Handling and Analyzing Spatio-Temporal Data  </a> and <a href="https://cran.r-project.org/view=Spatial"> Analysis of Spatial Data.</a>
@@ -602,11 +604,11 @@ b <- rbind(b, fits)
 ```
 
 Now we can obtain the average pollution map by using the linear interpolation function
-`interp` in the `akima` library. Also we discard the interpolations outside the state of New York by using the function `fnc.delete.map.XYZ` included in the `bmstdr` package. 
+`interp` in the `interp` library. Also we discard the interpolations outside the state of New York by using the function `fnc.delete.map.XYZ` included in the `bmstdr` package. 
 
 ```{r, echo=TRUE, eval=TRUE, message=FALSE, results='hide'}
 coord <- nyspatial[, c("Longitude","Latitude")]
-library(akima)
+library(interp)
 xo <- seq(from=min(coord$Longitude)-0.5, to = max(coord$Longitude)+0.8, length=200)
 yo <- seq(from=min(coord$Latitude)-0.25, to = max(coord$Latitude)+0.8, length=200)
 surf <- interp(b$Longitude, b$Latitude, b$mean,  xo=xo, yo=yo)
@@ -942,7 +944,7 @@ M2atl <- Bmoving_sptime(formula=f2, data = deep, coordtype="lonlat",
 ```
 to fit model \@ref(eq:marginalytocean) implemented by code written in   `r CRANpkg("rstan")`. Like the `Bsptime` function this model fitting function also renders a  `bmstdr` object which can be further investigated. 
 
-The model output is not shown here. But we obtain an  annual prediction map by averaging over the model equation  \@ref(eq:marginalytocean) at each data location. The posterior samples contained in `M2` are used to sample the annual predictions and then those samples are linearly interpolated using the `r CRANpkg("akima")` library to obtain the  prediction map in Figure \@ref(fig:oceanplot). 
+The model output is not shown here. But we obtain an  annual prediction map by averaging over the model equation  \@ref(eq:marginalytocean) at each data location. The posterior samples contained in `M2` are used to sample the annual predictions and then those samples are linearly interpolated using the `r CRANpkg("interp")` library to obtain the  prediction map in Figure \@ref(fig:oceanplot). 
 ```{r processdeep, echo=FALSE, eval=FALSE, message=FALSE}
 library(rstan)
 listofdraws <- rstan::extract(M2atl$fit)
@@ -1344,7 +1346,7 @@ burn.in=burn.in.car, thin=thin)
  argument `interaction=F` may be supplied to suppress the interaction term.
  For the `"ar"` model an additional argument `AR=2` may be provided to opt for a second order auto regressive model. The model fitting commands,   
  not shown here, produce Table \@ref(tab:m1st). 
- ```{r, echo=FALSE, eval=TRUE}
+```{r, echo=FALSE, eval=TRUE}
    table8 %>%
    as_hux(add_colnames = FALSE) %>%
    set_number_format(2)     %>%
@@ -1357,6 +1359,7 @@ burn.in=burn.in.car, thin=thin)
    style_headers(bold = TRUE, text_color = "red") %>% 
    set_caption('(#tab:m1st) Model choice criteria values for various spatio-temporal binomial model.')
 ```
+
 Clearly, the AR model is chosen by both the DIC and WAIC.
 
 
@@ -1446,12 +1449,12 @@ inlavalid <- a$pwithseg
 ar2valid <- b$pwithseg
 library(ggpubr)
 ggarrange(ar2valid, inlavalid, common.legend = TRUE, legend = "top", nrow = 2, ncol = 1)
-ggsave(filename = paste0(figpath, "/inlavAR2.png"))
+ggsave(filename = paste0(figpath, "/figure11.png"))
 ```
 
 
 ```{r obsvpredplot, echo=FALSE, eval=TRUE, fig.cap="Predictions with 95% limits against observations for two models: AR (2) on the left panel and INLA on the right panel", fig.width=6}
-knitr::include_graphics(paste0(figpath, "/inlavAR2.png"))
+knitr::include_graphics(paste0(figpath, "/figure11.png"))
 ```
 
 ### Spatio-temporal GLM  fitting with normal distribution
@@ -1497,6 +1500,9 @@ There are many current limitations of the`r CRANpkg("bmstdr")` package. The fore
 The  package offers only a limited number of models using the `r Rpackage("rstan")`
 and  `r Rpackage("INLA")` computing platforms. Spatio-temporal models offering richer structures can be fitted using these two and other `R` packages. Moreover, the current version does not allow fitting of multivariate models. Such modeling will be considered in future updates of this package.  
 
+
+A fuller version of this document with additional graphical illustrations 
+<a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html" > is also available.  </a> 
 
 
 # References 

@@ -30,6 +30,9 @@ maternfun <- function(d, phi, nu) {
 #' USA.
 #' @export
 fnc.delete.map.XYZ <- function(xyz){
+  if (!is.list(xyz)) {
+    stop("The xyz argument must be a list with named components x, y, and z\n")
+  }
   x <- xyz$x
   y <- xyz$y
   z <- xyz$z
@@ -67,6 +70,22 @@ fnc.delete.map.XYZ <- function(xyz){
 #' @export
 #'
 fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
+  if (!is.vector(yobs)) {
+    stop("The yobs argument must be a vector\n")
+  }
+  if (!is.vector(ylow)) {
+    stop("The ylow argument must be a vector\n")
+  }
+  if (!is.vector(ymed)) {
+    stop("The ymed argument must be a vector\n")
+  }
+  if (!is.vector(yup)) {
+    stop("The yup argument must be a vector\n")
+  }
+  if (!is.vector(misst)) {
+    stop("The misst argument must be a vector\n")
+  }
+  
   tn <- length(yobs)
   yr <- range(c(yobs, ylow, yup), na.rm=T)
   ymiss <- rep(1, tn)
@@ -76,7 +95,6 @@ fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
                       labels = c("Observation", "Prediction"))
   obs <- adt[-misst, ]
   preds <- adt[misst, ]
-  # library(ggplot2)
   p <- ggplot() +
     geom_point(data = obs, aes(x =x, y = yobs, shape=ymiss), col="red", size = 3) +
     geom_point(data = preds, aes(x =x, y = ymed, shape=ymiss), col ="blue", size = 3) +
@@ -109,6 +127,16 @@ fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
 #' @export
 getvalidrows <- function(sn, tn, valids, validt=NULL, allt=FALSE) {
   # Assumes data are sorted first by site and then by time
+  if (!is.vector(valids)) {
+    stop("The valids argument must be a vector\n")
+  }
+  if (!is.null(validt)) {
+    if (!is.vector(validt)) {
+    stop("The validt argument must be a vector\n")
+    }
+  }
+  
+  
   if (allt) {
     validt <- 1:tn
   } else {
@@ -132,8 +160,17 @@ getvalidrows <- function(sn, tn, valids, validt=NULL, allt=FALSE) {
 #' @export
 hitandfalsealarm <- function(thresh, yobs, ypred) {
   # thresh is threshold value
-  # yobs : observaytions may include missing
+  # yobs : observations may include missing
   # ypred: predictions
+  if (!is.vector(yobs)) {
+    stop("The yobs argument must be a vector\n")
+  }
+  if (!is.vector(ypred)) {
+    stop("The ypred argument must be a vector\n")
+  }
+  if (length(ypred) != length(yobs)) {
+    stop("The numbers of observations and predictions do not match.\n")
+  }
   dat <- na.omit(data.frame(yobs=yobs, ypred=ypred))
   m <- nrow(dat)
   dat <- dat - thresh

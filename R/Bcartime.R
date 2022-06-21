@@ -133,7 +133,10 @@
 #'    This is present only if model validation has been performed.  
 #'    \item valpreds -   A matrix containing the MCMC samples of the validation predictions. 
 #'    The dimension of this matrix is the number of validations times the number of retained 
-#'    MCMC samples. This is present only if model validation has been performed.   
+#'    MCMC samples. This is present only if model validation has been performed. 
+#'    \item validationplots - Present only if validation has been performed. 
+#'    Contains three validation plots with or without segment and 
+#'    an ordinary plot.  See \code{\link{obs_v_pred_plot}} for more.   
 #'    \item sn -   The number of areal units used in fitting.   
 #'    \item tn -  The number of time points used in fitting.  
 #'    \item formula - The input formula for the regression part of the model.   
@@ -182,7 +185,6 @@ Bcartime <- function(formula,
                    prior.nu2 =c(2,1),
                    epsilon=0,   G=NULL, 
                    ind.area =NULL, 
-                   ind.re = NULL, 
                    trends = NULL, 
                    rho.T =NULL, rho.S=NULL, rho = NULL, rho.slo=NULL, rho.int=NULL, 
                    MALA = FALSE, 
@@ -193,10 +195,12 @@ Bcartime <- function(formula,
  set.seed(rseed)
  start.time<-proc.time()[3]
  data <- as.data.frame(data)
+ if (!is.data.frame(data)) stop("Need a data frame in the data argument")
+ if (!inherits(formula, "formula")) stop("Need a valid formula")
+ 
+ 
  s1 <- length(scol)
  t1 <- length(tcol)
- 
- # message("in Bcartime N=", N, " burn in=", burn.in, " thin =", thin, "\n")
  indep <- F
  spatialonly <- F
  sptemporal <- F 
@@ -330,7 +334,7 @@ if (indep ==T) {
     prior.sigma2=prior.sigma2, prior.mean.delta=prior.mean.delta, 
    prior.var.delta=prior.var.delta, 
    prior.nu2 =prior.nu2, rho=rho, 
-   ind.area=ind.area, ind.re=ind.re,
+   ind.area=ind.area,
    MALA=MALA, N=N, burn.in=burn.in, thin=thin,  
    verbose=verbose)
  } else if (package=="inla")  { 
@@ -439,8 +443,13 @@ if (indep ==T) {
    newresults$stats <- bstat$stats
    newresults$yobs_preds <- yvalids 
    newresults$valpreds <- yits
+   
+   allvplots <- obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   newresults$validationplots <- allvplots
+   if (plotit)  plot(allvplots$pwithseg)
+   
    if (verbose) print(newresults$stats)
-   if (plotit) obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   # if (plotit) obs_v_pred_plot(yobs=yholdout, predsums = psums)
  }
  
  newresults$sn <- sn
@@ -482,7 +491,6 @@ BcarBayes <- function(formula,  data,
                       prior.nu2 = NULL,
                       rho=NULL, 
                       ind.area=NULL,
-                      ind.re=NULL,
                       MALA=FALSE,
                       N=2000, burn.in=1000, thin=10, rseed =44, 
                       verbose=TRUE, plotit=TRUE) {
@@ -540,7 +548,7 @@ BcarBayes <- function(formula,  data,
     } else if (model=="multilevel") {
       results <- CARBayes::S.CARmultilevel(formula=formula, family=family, 
                     data=data, trials=trials, W=W, ind.area=ind.area,
-                    ind.re=ind.re, burnin=burn.in, 
+                     burnin=burn.in, 
                     n.sample=N, thin=thin, 
                     prior.mean.beta=prior.mean.beta, 
                     prior.var.beta=prior.var.beta,
@@ -581,7 +589,6 @@ BcarBayesST <- function(formula, data, family,
                       prior.mean.alpha=NULL,  prior.var.alpha=NULL, 
                       rho=NULL, 
                       ind.area=NULL,
-                      ind.re=NULL, 
                       trends=NULL,  
                       changepoint =NULL, 
                       knots = NULL, 
