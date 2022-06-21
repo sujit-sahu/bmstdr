@@ -1328,7 +1328,7 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
  
 
   newformula <- update(formula, ynavec ~ .)
-  # library(spTDyn)
+
   fit <- spTDyn::GibbsDyn(formula=newformula, data=data,
                                model=model, coords=coords, time.data=time.data, 
                                nItr =N, nBurn=burn.in, distance.method=distance.method,

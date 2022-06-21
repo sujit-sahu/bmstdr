@@ -233,7 +233,6 @@ message("\n Note that the residuals are provided on the transformed scale. Pleas
      geom_abline(intercept = 0, slope = 0, col="red") + 
      labs(title= "Plot of residuals against observation numbers", x="Observation number", 
           y = "Residuals", size=2.5) 
-   #library(ggplot2)
    plot(rplot)  
  }
  a 

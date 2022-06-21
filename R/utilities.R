@@ -15,6 +15,7 @@
 #' @importFrom rstan sampling 
 #' @importFrom Rdpack reprompt
 #' @importFrom inlabru bru_safe_inla
+#' @importFrom ggpubr ggarrange
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)
@@ -248,8 +249,7 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
 #' a <- bmstdr_variogram(data=nyspatial, formula = yo3~utmx + utmy, 
 #' coordtype="utm", nb=50)
 #' names(a)
-#' library(ggpubr)
-#' ggarrange(a$cloudplot, a$variogramplot, legend = "none", nrow = 1, ncol = 2)
+#' if (require(ggpubr)) ggarrange(a$cloudplot, a$variogramplot, nrow=1, ncol=2)
 #' @export
 bmstdr_variogram <- function(formula=yo3 ~ utmx + utmy, coordtype="utm", data=nyspatial, nbins=30)
 {

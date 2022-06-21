@@ -95,7 +95,6 @@ fig11.13.plot <- function(yobs, ylow, ymed, yup, misst) {
                       labels = c("Observation", "Prediction"))
   obs <- adt[-misst, ]
   preds <- adt[misst, ]
-  # library(ggplot2)
   p <- ggplot() +
     geom_point(data = obs, aes(x =x, y = yobs, shape=ymiss), col="red", size = 3) +
     geom_point(data = preds, aes(x =x, y = ymed, shape=ymiss), col ="blue", size = 3) +

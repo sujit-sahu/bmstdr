@@ -7,8 +7,6 @@
 #'  in parts per billion (ppb) at each of the
 #'  28 sites. The daily values are for the month of July and August in 2006.
 #' @format A vector with 28 real values.
-## library(spTimer)
-## attach(NYdata)
 ## ydata <- as.vector(tapply(o8hrmax, INDEX=s.index,  FUN=mean, na.rm=TRUE))
 ydata <- c(45.08065,  48.34758,  54.65677,  44.95774,  43.92903,  55.37726,  51.08589,
 44.13661,  44.82355,  41.24903,  45.86645,  45.88557,  48.93226,  46.31767,  49.96500,
