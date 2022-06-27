@@ -193,7 +193,7 @@ Bcartime <- function(formula,
                    verbose=TRUE, plotit=TRUE){
   
  set.seed(rseed)
- start.time<-proc.time()[3]
+# start.time<-proc.time()[3]
  data <- as.data.frame(data)
  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
  if (!inherits(formula, "formula")) stop("Need a valid formula")
@@ -461,11 +461,11 @@ if (indep ==T) {
  newresults$call <- match.call()
  
  class(newresults) <- "bmstdr"
- end.time <- proc.time()[3]
- comp.time<-end.time-start.time
- comp.time<-fancy.time(comp.time)
- newresults$computation.time <- comp.time
- message(comp.time)
+# end.time <- proc.time()[3]
+# comp.time<-end.time-start.time
+# comp.time<-fancy.time(comp.time)
+# newresults$computation.time <- comp.time
+# message(comp.time)
  
  newresults 
 }
