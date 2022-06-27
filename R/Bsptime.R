@@ -240,7 +240,7 @@ Bsptime <- function(formula,
                    verbose=FALSE, plotit=TRUE, mchoice=FALSE, ...){
   
  set.seed(rseed)
-# start.time<-proc.time()[3]
+ start.time<-proc.time()[3]
  data <- as.data.frame(data)
 # Error checking 
  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
@@ -408,11 +408,11 @@ Bsptime <- function(formula,
  results$call <- match.call()
  colnames(results$params) <- c("mean", "sd", "2.5%", "97.5%")
  
-# end.time <- proc.time()[3]
-# comp.time<-end.time-start.time
-# comp.time<-fancy.time(comp.time)
-# results$computation.time <- comp.time
-# message(comp.time)
+ end.time <- proc.time()[3]
+ comp.time<-end.time-start.time
+ comp.time<-fancy.time(comp.time)
+ results$computation.time <- comp.time
+ message(comp.time)
  class(results) <- "bmstdr"
  results 
   

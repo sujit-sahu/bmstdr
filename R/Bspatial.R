@@ -144,7 +144,7 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                    no.chains =1, ad.delta = 0.99, s.size=0.01,  t.depth=15, 
                    verbose=TRUE, plotit=TRUE, mchoice=FALSE, ...){
   
-# start.time<-proc.time()[3]
+ start.time<-proc.time()[3]
  set.seed(rseed)
  data <- as.data.frame(data)
  
@@ -269,11 +269,11 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
  results$call <- match.call()
  colnames(results$params) <- c("mean", "sd", "2.5%", "97.5%")
  
-# end.time <- proc.time()[3]
-# comp.time<-end.time-start.time
-# comp.time<-fancy.time(comp.time)
-# results$computation.time <- comp.time
-# message(comp.time)
+ end.time <- proc.time()[3]
+ comp.time<-end.time-start.time
+ comp.time<-fancy.time(comp.time)
+ results$computation.time <- comp.time
+ message(comp.time)
  class(results) <- "bmstdr"
  results 
 }
