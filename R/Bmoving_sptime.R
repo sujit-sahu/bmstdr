@@ -72,7 +72,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
                         mchoice=TRUE,   plotit=FALSE,   rseed=44,   verbose=TRUE, 
                         knots.coords = NULL,  g_size = 5)
 {
-  start.time<-proc.time()[3]
+#  start.time<-proc.time()[3]
   set.seed(rseed)
   
   data <- as.data.frame(data)
@@ -403,11 +403,11 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   colnames(allres$params) <- c("mean", "sd", "2.5%", "97.5%")
   class(allres) <- "bmstdr"
   
-  end.time <- proc.time()[3]
-  comp.time<-end.time-start.time
-  comp.time<-fancy.time(comp.time)
-  allres$computation.time<-comp.time
-  message(comp.time)
+#  end.time <- proc.time()[3]
+#  comp.time<-end.time-start.time
+#  comp.time<-fancy.time(comp.time)
+#  allres$computation.time<-comp.time
+#  message(comp.time)
   
   allres
 }
