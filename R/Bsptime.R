@@ -235,9 +235,9 @@ Bsptime <- function(formula,
                    newcoords = NULL, newdata = NULL, annual.aggrn = "NONE",
                    cov.model = "exponential",  g_size = NULL, knots.coords = NULL,
                    tol.dist = 0.005, 
-                   N=2000, burn.in=1000, rseed =44, n.report = 2, 
-                   no.chains =1, ad.delta = 0.80, t.depth=15, s.size=0.01, 
-                   verbose=FALSE, plotit=TRUE, mchoice=FALSE, ...){
+                   N = 2000, burn.in = 1000, rseed = 44, n.report = 2, 
+                   no.chains = 1, ad.delta = 0.80, t.depth = 15, s.size = 0.01, 
+                   verbose = FALSE, plotit = TRUE, mchoice = FALSE, repeats.nonsolutution = 5, ...){
   
  set.seed(rseed)
  start.time<-proc.time()[3]
@@ -358,7 +358,8 @@ Bsptime <- function(formula,
                # fitted.values=fitted.values, 
                N=N, burn.in=burn.in, plotit=plotit,
                mchoice=mchoice, verbose=verbose, rseed=rseed,
-               g_size =g_size, knots.coords = knots.coords, n.report=n.report) 
+               g_size =g_size, knots.coords = knots.coords, n.report=n.report,
+               repeats.nonsolutution = repeats.nonsolutution) 
   } else if (package=="spTDyn") { 
      results <- BspTDyn_sptime(data=data, formula=formula, model=model,
                                 coordtype=coordtype, coords=coords, time.data=time.data, 

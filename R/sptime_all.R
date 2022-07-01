@@ -1419,19 +1419,19 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
 
 ##
 
-BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, model="GP",
-                            coordtype="utm", coords=4:5,
-                            validrows=NULL,   scale.transform ="SQRT",
-                            prior.beta0=0, prior.M=0.001, prior.sigma2 =c(2, 1),
-                            prior.phi="Gamm",
-                            prior.phi.param =NULL, 
-                            phi.tuning=NULL, phi.npoints=NULL,
-                            cov.fnc="exponential",  tol.dist=0.005, 
-                            time.data = NULL, newcoords = NULL, newdata =NULL,
+BspTimer_sptime <- function(data = nysptime, formula = y8hrmax~xmaxtemp+xwdsp+xrh, model = "GP",
+                            coordtype = "utm", coords = 4:5,
+                            validrows = NULL,   scale.transform ="SQRT",
+                            prior.beta0 = 0, prior.M = 0.001, prior.sigma2 = c(2, 1),
+                            prior.phi = "Gamm",
+                            prior.phi.param = NULL, 
+                            phi.tuning = NULL, phi.npoints = NULL,
+                            cov.fnc = "exponential",  tol.dist = 0.005, 
+                            time.data = NULL, newcoords = NULL, newdata = NULL,
                             truncation.para = NULL, annual.aggrn = "NONE",
-                            N=5000, burn.in=1000, plotit=TRUE,
-                            mchoice=TRUE, verbose=TRUE, rseed=44,
-                            g_size = NULL, knots.coords = NULL, n.report=10) {
+                            N = 5000, burn.in = 1000, plotit = TRUE,
+                            mchoice = TRUE, verbose = TRUE, rseed = 44,
+                            g_size = NULL, knots.coords = NULL, n.report = 10, repeats.nonsolutution = 5) {
   ###
   ###
 
@@ -1539,7 +1539,7 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   
   # while loop for the repeated execution of the regression function if it does not find a solution at the first time
   number <- 0
-  while(number < 5){
+  while(number < repeats.nonsolutution){
     
     if ((model == "GPP") || (model == "truncatedGPP")) {
       gp_fit <- spTimer::spT.Gibbs(formula = newformula, data = data, 
@@ -1566,11 +1566,11 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
       break
     }else{
       number <- number + 1
-      message(paste0("\nModel does not find a solution. Repeat: ", number,"/5\n"))
+      message(paste0("\nModel does not find a solution. Repeat: ", number,"/",repeats.nonsolutution,"\n"))
       model_solution <- F
     }
     
-    if(number == 5 & isFALSE(model_solution))
+    if(number == repeats.nonsolutution & isFALSE(model_solution))
       message("The model could not find a final solution...\n")
   }
 
