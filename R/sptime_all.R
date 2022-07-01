@@ -1537,27 +1537,43 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   data$ynavec <- ynavec
   newformula <- update(formula, ynavec ~ . )
   
-  if ( (model=="GPP") || (model=="truncatedGPP") ) { 
-    gp_fit <- spTimer::spT.Gibbs(formula=newformula, data=data,
-                                 model=model, coords=coords,
-                                 nItr =N, nBurn=burn.in, distance.method=distance.method,
-                                 priors=priors, spatial.decay=spatial.decay,
-                                 scale.transform=scale.transform, knots.coords=knots.coords, 
-                                 cov.fnc=cov.fnc,  tol.dist = tol.dist, 
-                                 time.data = time.data, newcoords = newcoords, newdata =newdata,
-                                 truncation.para = truncation.para, annual.aggrn = annual.aggrn,
-                                 report=n.report)
-  } else { 
-    gp_fit <- spTimer::spT.Gibbs(formula=newformula, data=data,
-                                 model=model, coords=coords,
-                                 nItr =N, nBurn=burn.in, distance.method=distance.method,
-                                 priors=priors, spatial.decay=spatial.decay, tol.dist = tol.dist, 
-                                 scale.transform=scale.transform,   cov.fnc=cov.fnc, 
-                                 time.data = time.data, newcoords = newcoords, newdata =newdata,
-                                 truncation.para = truncation.para, annual.aggrn = annual.aggrn,
-                                 report=n.report)
+  # while loop for the repeated execution of the regression function if it does not find a solution at the first time
+  number <- 0
+  while(number < 5){
+    
+    if ((model == "GPP") || (model == "truncatedGPP")) {
+      gp_fit <- spTimer::spT.Gibbs(formula = newformula, data = data, 
+                                   model = model, coords = coords, nItr = N, nBurn = burn.in, 
+                                   distance.method = distance.method, priors = priors, 
+                                   spatial.decay = spatial.decay, scale.transform = scale.transform, 
+                                   knots.coords = knots.coords, cov.fnc = cov.fnc, 
+                                   tol.dist = tol.dist, time.data = time.data, newcoords = newcoords, 
+                                   newdata = newdata, truncation.para = truncation.para, 
+                                   annual.aggrn = annual.aggrn, report = n.report)
+    }else {
+      gp_fit <- spTimer::spT.Gibbs(formula = newformula, data = data, 
+                                   model = model, coords = coords, nItr = N, nBurn = burn.in, 
+                                   distance.method = distance.method, priors = priors, 
+                                   spatial.decay = spatial.decay, tol.dist = tol.dist, 
+                                   scale.transform = scale.transform, cov.fnc = cov.fnc, 
+                                   time.data = time.data, newcoords = newcoords, newdata = newdata, 
+                                   truncation.para = truncation.para, annual.aggrn = annual.aggrn, 
+                                   report = n.report)
+    }
+    
+    if(all(!is.na(gp_fit$PMCC))){
+      model_solution <- T
+      break
+    }else{
+      number <- number + 1
+      message(paste0("\nModel does not find a solution. Repeat: ", number,"/5\n"))
+      model_solution <- F
+    }
+    
+    if(number == 5 & isFALSE(model_solution))
+      message("The model could not find a final solution...\n")
   }
-  
+
   allres <- list(params=gp_fit$parameter[,-2], fit=gp_fit, max.d=max.d)
   if ( (model=="GPP") || (model=="truncatedGPP") ) allres$knots.coords <- knots.coords
   if (verbose) print(round(allres$params, 3))
@@ -1622,24 +1638,37 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     if (scale.transform == "SQRT")  ypreds <-  (ypreds)^2
     if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
     
-    predsums <- get_validation_summaries(t(ypreds))
-    b <- calculate_validation_statistics(vdaty, ypreds)
-    ##
-    yvalidrows <- data.frame(vdat, predsums)
-    allres$stats  <- b$stats
-    allres$yobs_preds <- yvalidrows
-    allres$valpreds <- t(ypreds)
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
-    allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
-    if (verbose) print(round(unlist(allres$stats), 3))
+    if(model_solution){
+      predsums <- get_validation_summaries(t(ypreds))
+      b <- calculate_validation_statistics(vdaty, ypreds)
+      yvalidrows <- data.frame(vdat, predsums)
+      allres$stats <- b$stats
+      allres$yobs_preds <- yvalidrows
+      allres$valpreds <- t(ypreds)
+      allvplots <- obs_v_pred_plot(vdaty, predsums)
+      allres$validationplots <- allvplots
+      
+      if(plotit) 
+        plot(allvplots$pwithseg)
+      if (verbose) 
+        print(round(unlist(allres$stats), 3))
+
+    }else{
+      predsums <- data.frame(meanpred = NA, sdpred = NA, medianpred = NA, low = NA, up = NA)
+      b <- list(stats = list(rmse = NA, mae = NA, crps = NA, cvg = NA))
+      yvalidrows <- data.frame(vdat, predsums)
+      allres$stats <- b$stats
+      allres$yobs_preds <- yvalidrows
+      allres$valpreds <- t(ypreds)
+      allvplots <- list(pwithseg = NA, pwithoutseg = NA, pordinary = NA)
+      allres$validationplots <- allvplots
+      if (verbose) 
+        print(round(unlist(allres$stats), 3))
+    }
   }
  
   allres$prior.phi.param <- prior.phi.param
   allres$prior.phi <- prior.phi
   allres
-  
 }
 
