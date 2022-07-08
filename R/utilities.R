@@ -57,66 +57,73 @@ obs_v_pred_plot <- function(yobs, predsums, segments=TRUE, summarystat="median")
   if (length(yobs) != nrow(predsums)) {
     stop("Number of observed data is not the same as the number of predictions\n")
   }
-  needs <- c("meanpred", "medianpred", "low", "up")
-  pnames <- colnames(predsums)
-  # pnames <- c("meanpred", "medianpred", "low", "up")
-  a <- match(x=needs, table=pnames)
-  k <- sum(is.na(a))
-  if (k>0) stop("Some required prediction summaries are missing from obs_v_pred_plot")
-  
-  adat <- data.frame(yobs=as.numeric(yobs), predsums)
-  adat <- adat[!is.na(adat$yobs), ]
-  
-  if (summarystat=="median") {
-    adat$preds <- adat$medianpred
-  } else { 
-    adat$preds <- adat$meanpred
-  }
-  adat$inornot <- 1
-  adat$inornot[adat$yobs >= adat$low & adat$yobs <= adat$up] <- 8
-  coverage <- round(100*length(adat$inornot[adat$inornot=="8"])/length(adat$inornot), 1)
-  
-  # adat$inornot <- factor(adat$inornot)
-  adat$cols <-"red4"
-  adat$cols[adat$inornot>1] <-"grey1"
-  adat$inornot <- factor(adat$inornot, levels=c("1", "8"), labels=c("out", "in"))
-  
-  # First draw a simple plot 
-  yr <- range(c(adat$yobs, adat$preds))
-  x1 <- seq(from=yr[1], to=yr[2], length=100)
+
+  if(nrow(na.omit(predsums)) != 0){
+    needs <- c("meanpred", "medianpred", "low", "up")
+    pnames <- colnames(predsums)
+    # pnames <- c("meanpred", "medianpred", "low", "up")
+    a <- match(x=needs, table=pnames)
+    k <- sum(is.na(a))
+    if (k>0) stop("Some required prediction summaries are missing from obs_v_pred_plot")
+    
+    adat <- data.frame(yobs=as.numeric(yobs), predsums)
+    adat <- adat[!is.na(adat$yobs), ]
+    
+    if (summarystat=="median") {
+      adat$preds <- adat$medianpred
+    } else { 
+      adat$preds <- adat$meanpred
+    }
+    adat$inornot <- 1
+    adat$inornot[adat$yobs >= adat$low & adat$yobs <= adat$up] <- 8
+    coverage <- round(100*length(adat$inornot[adat$inornot=="8"])/length(adat$inornot), 1)
+    
+    # adat$inornot <- factor(adat$inornot)
+    adat$cols <-"red4"
+    adat$cols[adat$inornot>1] <-"grey1"
+    adat$inornot <- factor(adat$inornot, levels=c("1", "8"), labels=c("out", "in"))
+    
+    # First draw a simple plot 
+    yr <- range(c(adat$yobs, adat$preds))
+    x1 <- seq(from=yr[1], to=yr[2], length=100)
+    ddat <- data.frame(x=x1, y=x1)
+    p1 <- ggplot() + 
+      xlim(yr) + 
+      ylim(yr) + 
+      geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot), col=adat$cols,  size=1) + 
+      #geom_abline(intercept=0, slope=1, col="blue") +
+      geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
+      labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
+      theme(legend.position=c(0.05, 0.9)) 
+    # plot(p1)
+    
+  yfullr <- range(c(adat$yobs, adat$preds, adat$low, adat$up))
+  arrow <- arrow(length = unit(0.03, "npc"))
+  x1 <- seq(from=yfullr[1], to=yfullr[2], length=100)
   ddat <- data.frame(x=x1, y=x1)
-  p1 <- ggplot() + 
-    xlim(yr) + 
-    ylim(yr) + 
-    geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot), col=adat$cols,  size=1) + 
-    #geom_abline(intercept=0, slope=1, col="blue") +
+  
+  p2 <- ggplot() + 
+    xlim(yfullr) + 
+    ylim(yfullr) + 
+    geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot),  col=adat$cols, size=3) + 
     geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
+    #geom_abline(intercept=0, slope=1, col="blue") +
+    scale_shape_manual(values=c(1,8), guide = guide_legend(reverse=TRUE)) +
+    scale_color_manual(values=c("red4", "grey1")) +
     labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
     theme(legend.position=c(0.05, 0.9)) 
-  # plot(p1)
   
- yfullr <- range(c(adat$yobs, adat$preds, adat$low, adat$up))
- arrow <- arrow(length = unit(0.03, "npc"))
- x1 <- seq(from=yfullr[1], to=yfullr[2], length=100)
- ddat <- data.frame(x=x1, y=x1)
- 
- p2 <- ggplot() + 
-  xlim(yfullr) + 
-  ylim(yfullr) + 
-  geom_point(data=adat, aes(x=yobs, y=preds, shape=inornot),  col=adat$cols, size=3) + 
-  geom_line(data=ddat, aes(x=x, y=y), col="blue") + 
-  #geom_abline(intercept=0, slope=1, col="blue") +
-  scale_shape_manual(values=c(1,8), guide = guide_legend(reverse=TRUE)) +
-  scale_color_manual(values=c("red4", "grey1")) +
-  labs(x="Observation", y="Prediction", title=paste("Coverage percentage=", coverage)) + 
-  theme(legend.position=c(0.05, 0.9)) 
- 
-  p3 <- p2 + geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=up), col=adat$cols,  linetype=1, arrow=arrow) +
-    geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=low), col=adat$cols, linetype=1, arrow=arrow) 
-  if (segments) { 
-    plot(p3)    
-  } else plot(p2)
- return(list(pwithseg=p3, pwithoutseg=p2, pordinary=p1))
+    p3 <- p2 + geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=up), col=adat$cols,  linetype=1, arrow=arrow) +
+      geom_segment(data=adat, aes(x=yobs, y=preds, xend=yobs, yend=low), col=adat$cols, linetype=1, arrow=arrow) 
+    if (segments) { 
+      plot(p3)    
+    } else plot(p2)
+    return(list(pwithseg=p3, pwithoutseg=p2, pordinary=p1))
+  }else{
+    return(list(pwithseg=NA, pwithoutseg=NA, pordinary=NA))
+  }
+
+  
 }
 #'  Obtains parameter estimates from MCMC samples 
 #' @param samps A matrix of N by p samples for the p parameters 
@@ -136,10 +143,10 @@ get_parameter_estimates <- function(samps, level=95) {
 ## Returns the parameter estimates from the samples
   lowcut <- (1 - level/100)/2
   upcut <- 1 - lowcut
-  means <- apply(samps, 2, mean)
-  sds <- apply(samps, 2, sd)
-  low <- apply(samps, 2, quantile, probs=lowcut)
-  up <- apply(samps, 2, quantile, probs=upcut)
+  means <- apply(samps, 2, mean, na.rm = T)
+  sds <- apply(samps, 2, sd, na.rm = T)
+  low <- apply(samps, 2, quantile, probs=lowcut, na.rm = T)
+  up <- apply(samps, 2, quantile, probs=upcut, na.rm = T)
   paramstable <- data.frame(mean=means, sd=sds, low=low, up=up)
  paramstable
 }
@@ -165,11 +172,11 @@ get_validation_summaries <- function(samps, level=95) {
   ## Returns the parameter estimates from the samples
   lowcut <- (1 - level/100)/2
   upcut <- 1 - lowcut
-  means <- apply(samps, 2, mean)
-  sds <- apply(samps, 2, sd)
-  medians <- apply(samps, 2, median)
-  low <- apply(samps, 2, quantile, probs=lowcut)
-  up <- apply(samps, 2, quantile, probs=upcut)
+  means <- apply(samps, 2, mean, na.rm = T)
+  sds <- apply(samps, 2, sd, na.rm = T)
+  medians <- apply(samps, 2, median, na.rm = T)
+  low <- apply(samps, 2, quantile, probs=lowcut, na.rm = T)
+  up <- apply(samps, 2, quantile, probs=upcut, na.rm = T)
   psums <- data.frame(meanpred=means,  sdpred=sds, medianpred=medians, low=low, up=up)
   psums
 }
@@ -212,8 +219,8 @@ calculate_validation_statistics <- function(yval, yits, level=95, summarystat="m
   meanpred <- apply(X=yits, 1, summarystat)
   rmse  <- sqrt(mean((yval - meanpred)^2, na.rm=TRUE))
   mae <- mean(abs(yval - meanpred), na.rm=TRUE)
-  zup <- apply(yits, 1, quantile, probs=up)
-  zlow <- apply(yits, 1, quantile, probs=low)
+  zup <- apply(yits, 1, quantile, probs=up, na.rm = T)
+  zlow <- apply(yits, 1, quantile, probs=low, na.rm = T)
   cvg <- cal_cvg(vdaty=yval, ylow=zlow, yup=zup)
   # crpsres <- crpsR(yval, yits) ## crps can accept NA's
    tmp <- cbind(yval,yits)
@@ -493,9 +500,13 @@ cal_cvg <- function(vdaty, ylow, yup) {
   ## Remove the NA's
   u <- data.frame(vdaty=vdaty, low=ylow, up=yup)
   u <- na.omit(u)
-  u$inornot <- 0
-  u$inornot[u$vdaty >= u$low & u$vdaty <= u$up] <- 1
-  100*sum(u$inornot)/length(u$inornot)
+  if(nrow(u) != 0){
+    u$inornot <- 0
+    u$inornot[u$vdaty >= u$low & u$vdaty <= u$up] <- 1
+    100*sum(u$inornot)/length(u$inornot)
+  }else{
+    NA
+  }
 }
 
 ##
@@ -538,10 +549,10 @@ calculate_dic <- function(loglikatthetahat, logliks) {
   if (!is.vector(logliks)) {
     stop("The logliks argument must be a vector\n")
   }
-  expected_log_lik <- mean(logliks)
+  expected_log_lik <- mean(logliks, na.rm = TRUE)
  # expected_log_lik
   pdic <- 2 * (loglikatthetahat -  expected_log_lik)
-  pdicalt <- 2 * var(logliks)
+  pdicalt <- 2 * var(logliks, na.rm = TRUE)
   dicorig <- -2 * loglikatthetahat + 2*pdic
   dicalt <- -2 * loglikatthetahat + 2*pdicalt
   dicresults <- list(pdic=pdic, pdicalt=pdicalt, dicorig=dicorig, dicalt=dicalt)
@@ -563,15 +574,15 @@ calculate_waic <- function(v) {
          N (MCMC) by n (data) sample size matrix\n")
   }
   
-  var_log_liks <-  apply(v, 2, var) ## Estimate of Var log( f(y_i| theta) from MCMC
-  pwaic2 <- sum(var_log_liks)
-  logmin <- min(v)  ## Remember the minimum
+  var_log_liks <-  apply(v, 2, var, na.rm = TRUE) ## Estimate of Var log( f(y_i| theta) from MCMC
+  pwaic2 <- sum(var_log_liks, na.rm = TRUE)
+  logmin <- min(v, na.rm = TRUE)  ## Remember the minimum
   liks <- exp(v - logmin)  # Evaluate likelihood values upto the constant to avoid numerical problems
-  av_liks <- apply(liks, 2, mean) ## Estimate of f(y_i| y) from MCMC
+  av_liks <- apply(liks, 2, mean, na.rm = TRUE) ## Estimate of f(y_i| y) from MCMC
   log_av_liks <- log(av_liks) + logmin
-  sum_log_av_liks <-  sum(log_av_liks)
-  expected_log_liks <- apply(v, 2, mean) ## Estimate of Expected log f(y_i| theta) from MCMC
-  pwaic1 <- 2 * sum_log_av_liks - 2 * sum(expected_log_liks)
+  sum_log_av_liks <-  sum(log_av_liks, na.rm = TRUE)
+  expected_log_liks <- apply(v, 2, mean, na.rm = TRUE) ## Estimate of Expected log f(y_i| theta) from MCMC
+  pwaic1 <- 2 * sum_log_av_liks - 2 * sum(expected_log_liks, na.rm = TRUE)
   waic1 <- -2 * sum_log_av_liks + 2 * pwaic1
   waic2 <- -2 * sum_log_av_liks + 2 * pwaic2
   waic_results <- list(pwaic1=pwaic1, pwaic2=pwaic2, waic1=waic1, waic2=waic2)

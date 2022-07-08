@@ -1607,8 +1607,7 @@ BspTimer_sptime <- function(data = nysptime, formula = y8hrmax~xmaxtemp+xwdsp+xr
  
     itmax <- gp_fit$iterations-gp_fit$nBurn
     if (verbose) message("validating ", nvalid, " space time observations", "\n")
-    
-    
+     
     a <- matrix(rnorm(nvalid*itmax), nrow=nvalid, ncol=itmax)
     if  (model=="truncatedGP") { 
       ovalues <- gp_fit$op[val_flag>0, ]
@@ -1623,7 +1622,7 @@ BspTimer_sptime <- function(data = nysptime, formula = y8hrmax~xmaxtemp+xwdsp+xr
       sigemat <- matrix(rep(v$SD, each=itmax), byrow=TRUE, ncol=itmax) 
       ypreds <- meanmat + a * sigemat
     } else {
-      ovalues <- gp_fit$op
+      ovalues <- gp_fit$op  # error not avilible -> return NULL
       sig2eps <-  gp_fit$sig2ep
       meanmat <- ovalues[val_flag>0, ]
       dim(meanmat)
@@ -1638,33 +1637,20 @@ BspTimer_sptime <- function(data = nysptime, formula = y8hrmax~xmaxtemp+xwdsp+xr
     if (scale.transform == "SQRT")  ypreds <-  (ypreds)^2
     if (scale.transform == "LOG")  ypreds <-  exp(ypreds)
     
-    if(model_solution){
-      predsums <- get_validation_summaries(t(ypreds))
-      b <- calculate_validation_statistics(vdaty, ypreds)
-      yvalidrows <- data.frame(vdat, predsums)
-      allres$stats <- b$stats
-      allres$yobs_preds <- yvalidrows
-      allres$valpreds <- t(ypreds)
-      allvplots <- obs_v_pred_plot(vdaty, predsums)
-      allres$validationplots <- allvplots
+    predsums <- get_validation_summaries(t(ypreds))
+    b <- calculate_validation_statistics(vdaty, ypreds)
+    yvalidrows <- data.frame(vdat, predsums)
+    allres$stats <- b$stats
+    allres$yobs_preds <- yvalidrows
+    allres$valpreds <- t(ypreds)
+    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allres$validationplots <- allvplots
       
-      if(plotit) 
+    if(plotit)
+      if(!is.na(allvplots$pwithseg)) 
         plot(allvplots$pwithseg)
-      if (verbose) 
-        print(round(unlist(allres$stats), 3))
-
-    }else{
-      predsums <- data.frame(meanpred = NA, sdpred = NA, medianpred = NA, low = NA, up = NA)
-      b <- list(stats = list(rmse = NA, mae = NA, crps = NA, cvg = NA))
-      yvalidrows <- data.frame(vdat, predsums)
-      allres$stats <- b$stats
-      allres$yobs_preds <- yvalidrows
-      allres$valpreds <- t(ypreds)
-      allvplots <- list(pwithseg = NA, pwithoutseg = NA, pordinary = NA)
-      allres$validationplots <- allvplots
-      if (verbose) 
-        print(round(unlist(allres$stats), 3))
-    }
+    if (verbose) 
+      print(round(unlist(allres$stats), 3))
   }
  
   allres$prior.phi.param <- prior.phi.param
