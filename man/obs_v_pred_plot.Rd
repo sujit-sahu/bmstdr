@@ -4,7 +4,13 @@
 \alias{obs_v_pred_plot}
 \title{Observed against predicted plot}
 \usage{
-obs_v_pred_plot(yobs, predsums, segments = TRUE, summarystat = "median")
+obs_v_pred_plot(
+  yobs,
+  predsums,
+  segments = TRUE,
+  summarystat = "median",
+  plotit = TRUE
+)
 }
 \arguments{
 \item{yobs}{A vector containing the actual observations}
@@ -19,6 +25,8 @@ Ideally this argument should be the output of the command
 
 \item{summarystat}{Can take one of two values "median" (default) or "mean" 
 indicating which one to use for the plot.}
+
+\item{plotit}{Logical scalar value: whether to plot the predictions against the observed values.}
 }
 \value{
 Draws a plot only after removing the missing observations.  It also returns a list of two ggplot2 

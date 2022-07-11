@@ -444,12 +444,10 @@ if (indep ==T) {
    newresults$yobs_preds <- yvalids 
    newresults$valpreds <- yits
    
-   allvplots <- obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   allvplots <- obs_v_pred_plot(yobs=yholdout, predsums = psums, plotit=plotit)
    newresults$validationplots <- allvplots
-   if (plotit)  plot(allvplots$pwithseg)
-   
    if (verbose) print(newresults$stats)
-   # if (plotit) obs_v_pred_plot(yobs=yholdout, predsums = psums)
+   
  }
  
  newresults$sn <- sn

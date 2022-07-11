@@ -196,11 +196,9 @@ Blm_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
     
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
+  
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Validation complete
@@ -429,11 +427,9 @@ Bsp_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,validrows=NULL
   allres$stats <- results$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
-  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
   allres$validationplots <- allvplots
-  if (plotit)  plot(allvplots$pwithseg)
-  
-  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
+ 
   if (verbose) print(round(unlist(allres$stats), 3))
   }
 
@@ -616,11 +612,8 @@ BspBayes_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   allres$stats <- b$stats
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
-  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
   allres$validationplots <- allvplots
-  if (plotit)  plot(allvplots$pwithseg)
-  
-  # if (plotit)   obs_v_pred_plot(vdaty, predsums)
   }
   
 allres$prior.phi.param <- prior.phi.param
@@ -838,11 +831,9 @@ Bstan_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- ypreds
     
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)   obs_v_pred_plot(vdaty, predsums)
+   
   } # Else returning the fitted model
 
   
@@ -907,7 +898,8 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
   if (scale.transform == "LOG")  newy <- log(y)
 
   mesh <- INLA::inla.mesh.2d(loc=fcoords, offset=offset, max.edge=max.edge)
-
+  if (plotit) plot(mesh)
+  
   spde		<- INLA::inla.spde2.pcmatern(mesh = mesh, alpha = 1.5,
                                prior.range = prior.range, prior.sigma = prior.sigma)
 
@@ -1018,10 +1010,9 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
     allres$stats <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    # if (plotit)   obs_v_pred_plot(vdaty, predsums)
+    
     if (verbose) print(allres$stats)
   } # Else returning the fitted model
 
