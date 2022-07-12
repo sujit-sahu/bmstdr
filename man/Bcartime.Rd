@@ -405,7 +405,6 @@ M3.leroux.v <- Bcartime(formula = f3, data = engtotals, scol = "spaceid",
 summary(M3.leroux.v)
 
 \donttest{
-
 ## Spatio-temporal modeling ##################################################
 head(engdeaths)
 dim(engdeaths)
@@ -507,141 +506,7 @@ M3st_ar <- Bcartime(formula = f3, data = engdeaths, scol = "spaceid",
     verbose = FALSE)
 summary(M3st_ar)
 
-# Execute the following examples if INLA is available
-if (require(INLA)) {
-    N <- 55
-    burn.in <- 5
-    thin <- 1
-    vs <- sample(nrow(engtotals), 5)
-    nweek <- engtotals$nweek
-
-    # Spatial Binomial GLM
-
-    f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +
-        sqrt(no2)
-
-    M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
-        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "binomial", trials = nweek, N = N, burn.in = burn.in,
-        thin = thin)
-    summary(M1.inla.bym)
-
-
-
-    ## Spatial only Poisson
-
-    f2inla <- covid ~ jsa + log10(houseprice) + log(popdensity) +
-        sqrt(no2)
-
-    M2.inla.bym <- Bcartime(data = engtotals, formula = f2inla,
-        W = Weng, scol = "spaceid", offsetcol = "logEdeaths",
-        model = c("bym"), package = "inla", link = "log",
-        family = "poisson", N = N, burn.in = burn.in, thin = thin)
-    summary(M2.inla.bym)
-
-
-
-    ## Normal models
-
-    f3 <- sqrt(no2) ~ jsa + log10(houseprice) + log(popdensity)
-
-    ## Fit BYM with iid random effect
-    M3.inla.bym <- Bcartime(data = engtotals, formula = f3,
-        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "gaussian", N = N, burn.in = burn.in, thin = thin)
-    summary(M3.inla.bym)
-
-    # validation
-    M3.inla.bym.v <- Bcartime(data = engtotals, formula = f3,
-        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "gaussian", validrows = vs, N = N, burn.in = burn.in,
-        thin = thin)
-
-    summary(M3.inla.bym.v)
-
-
-    ###### Spatio-temporal INLA models
-
-
-    f1 <- highdeathsmr ~ jsa + log10(houseprice) + log(popdensity)
-    nweek <- rep(1, nrow(engdeaths))
-
-
-    ## INLA Binomial
-
-    model <- c("bym", "ar1")
-    M1st_inla.bym <- Bcartime(data = engdeaths, formula = f1,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
-        package = "inla", N = N, burn.in = burn.in, thin = thin)
-    summary(M1st_inla.bym)
-
-    M1st_inla_v <- Bcartime(data = engdeaths, formula = f1,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        offsetcol = "logEdeaths", model = model, trials = nweek,
-        family = "binomial", package = "inla", validrow = vs,
-        N = N, burn.in = burn.in, thin = thin)
-    summary(M1st_inla_v)
-
-
-    model <- c("bym", "none")
-    M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
-        package = "inla", N = N, burn.in = burn.in, thin = thin)
-    summary(M1st_inla.bym.none)
-
-
-    model <- c("bym")
-    M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
-        package = "inla", N = N, burn.in = burn.in, thin = thin)
-    summary(M1st_inla.bym.none)
-
-
-    ## Poisson models
-    f2inla <- covid ~ jsa + log10(houseprice) + log(popdensity) +
-        n0 + n1 + n2 + n3
-
-    model <- c("bym", "ar1")
-    M2stinla <- Bcartime(data = engdeaths, formula = f2inla,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        offsetcol = "logEdeaths", model = model, link = "log",
-        family = "poisson", package = "inla", N = N, burn.in = burn.in,
-        thin = thin)
-
-    summary(M2stinla)
-
-    M2stinla.v <- Bcartime(data = engdeaths, formula = f2inla,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        offsetcol = "logEdeaths", model = model, link = "log",
-        family = "poisson", package = "inla", validrows = vs,
-        N = N, burn.in = burn.in, thin = thin)
-
-    summary(M2stinla.v)
-
-    ## Normal models
-
-    f3 <- sqrt(no2) ~ jsa + log10(houseprice) + log(popdensity)
-
-    model <- c("bym", "iid")
-    M3inla.bym.iid <- Bcartime(data = engdeaths, formula = f3,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, family = "gaussian", package = "inla",
-        validrows = vs, N = N, burn.in = burn.in, thin = thin)
-    summary(M3inla.bym.iid)
-
-    model <- c("bym", "ar1")
-    M3inla.bym.ar1 <- Bcartime(data = engdeaths, formula = f3,
-        W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, family = "gaussian", package = "inla",
-        validrows = vs, N = N, burn.in = burn.in, thin = thin)
-    summary(M3inla.bym.ar1)
-
 }
-}
-
 }
 \references{
 \insertAllCited{}

@@ -719,7 +719,7 @@ Bcarinla <- function(
   if (family=="gaussian") hyper 	<- list(prec = list(prior = "loggamma", param = c(prior.nu2[1], prior.nu2[2])))
   else hyper <- NULL
   
-  newformula <- update(formula, . ~ . + f(spaceid, model=model[1],graph=inla.adj, constr=TRUE))
+  newformula <- update(formula, . ~ . + f(spaceid, model=eval(model[1]),graph=inla.adj, constr=TRUE))
   ## base spatial model 
   
   if (sptemporal) {  
@@ -736,7 +736,7 @@ Bcarinla <- function(
       message("since the model argument does not contain a temporal model. \n")
    } else { 
     if (model[2] !="none") 
-       newformula <- update(newformula, . ~ . + f(timeids, model=model[2],constr=TRUE)) 
+       newformula <- update(newformula, . ~ . + f(timeids, model=eval(model[2]),constr=TRUE)) 
   }
   }
 
@@ -749,13 +749,13 @@ Bcarinla <- function(
   # is.null(offsetcol)
   if (!is.null(offsetcol)) {   
    ifit <- INLA::inla(newformula,family=family,data=data, 
-               offset = data[, offsetcol] , Ntrials = Ntrials, 
+               offset = data[, offsetcol] , Ntrials = eval(data[, Ntrials]), 
                  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
   } else { 
     ifit <- INLA::inla(newformula,family=family,data=data, 
-                Ntrials = Ntrials,  control.family=list(link=link, hyper=hyper),
+                Ntrials = eval(data[, Ntrials]),  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
     }
@@ -849,7 +849,7 @@ Bcarinla <- function(
   if (verbose) print(round(allres$params, 3))
   n <- nrow(data)
   allres$fitteds  <- ifit$summary.fitted.values$mean[1:n]
-  if (family=="binomial")  allres$fitteds <- allres$fitteds * Ntrials
+  if (family=="binomial")  allres$fitteds <- allres$fitteds * trials)
   u <- getXy(formula=formula, data=data)
   y <- u$y
   allres$residuals <- y - allres$fitteds  
