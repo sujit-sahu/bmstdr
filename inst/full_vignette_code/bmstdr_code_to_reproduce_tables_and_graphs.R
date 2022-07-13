@@ -912,18 +912,18 @@ thin <- 10
 f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
 
 M1 <- Bcartime(formula=f1,   data=engtotals, family="binomial",
-               trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin) 
+               trials="nweek", N=Ncar, burn.in=burn.in.car, thin=thin) 
 
 M1.leroux <- Bcartime(formula=f1, data=engtotals, scol="spaceid", 
-                      model="leroux", W=Weng, family="binomial", trials=engtotals$nweek, 
+                      model="leroux", W=Weng, family="binomial", trials="nweek", 
                       N=Ncar, burn.in=burn.in.car, thin=thin)
 
 M1.bym <- Bcartime(formula=f1, data=engtotals, 
                    scol="spaceid", model="bym", W=Weng, family="binomial", 
-                   trials=engtotals$nweek, N=Ncar, burn.in=burn.in.car, thin=thin)
+                   trials="nweek", N=Ncar, burn.in=burn.in.car, thin=thin)
 
 M1.inla.bym <- Bcartime(formula=f1, data=engtotals, scol ="spaceid", 
-                        model=c("bym"),  W=Weng, family="binomial", trials=engtotals$nweek,
+                        model=c("bym"),  W=Weng, family="binomial", trials="nweek",
                         package="inla", N=Ncar, burn.in=burn.in.car, thin=thin) 
 
 a <- rbind(M1$mchoice, M1.leroux$mchoice, M1.bym$mchoice)
@@ -1028,35 +1028,35 @@ oldtable4.3 <- structure(c(5.01545172916434, 141.392412442474, 119.355981097098,
 
 ## Spatio-temporal areal models 
 ##
-nweek <- rep(1, nrow(engdeaths))
 scol <- "spaceid"
 tcol <-  "Weeknumber"
-
+engdeaths$nweek <- rep(1, nrow(engdeaths))
 f10 <- highdeathsmr ~  jsa + log10(houseprice) + log(popdensity) 
 
-M1st_linear <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+M1st_linear <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials="nweek", 
                         W=Weng, model="linear", family="binomial", package="CARBayesST", 
                         N=Ncar, burn.in=burn.in.car, thin=thin)
 
 
-M1st_anova_nointer <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+M1st_anova_nointer <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials="nweek", 
                                W=Weng, model="anova", interaction=FALSE,  family="binomial", 
                                package="CARBayesST", N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M1st_anova_nointer)
 
 
-M1st_sepspat <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+M1st_sepspat <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials="nweek", 
                          W=Weng, model="sepspatial", family="binomial", 
                          package="CARBayesST", N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M1st_sepspat)
 
 
-M1st_ar <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+M1st_ar <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, 
+                    trials="nweek", 
                     W=Weng, model="ar", AR=1, family="binomial", package="CARBayesST", 
                     N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M1st_ar)
 
-M1st_ar2 <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials=nweek, 
+M1st_ar2 <- Bcartime(formula=f10, data=engdeaths, scol=scol, tcol=tcol, trials="nweek", 
                      W=Weng, model="ar", AR=2, family="binomial", package="CARBayesST", 
                      N=Ncar, burn.in=burn.in.car, thin=thin)
 summary(M1st_ar2)
@@ -1064,7 +1064,7 @@ summary(M1st_ar2)
 
 model <- c("bym", "ar1")
 M1st_inla.bym <- Bcartime(data=engdeaths, formula=f10, W=Weng, 
-        scol =scol, tcol=tcol,  model=model,   trials=nweek, 
+        scol =scol, tcol=tcol,  model=model,   trials="nweek", 
         family="binomial", package="inla", N=N, burn.in=burn.in, thin=thin) 
 summary(M1st_inla.bym)
 names(M1st_inla.bym)

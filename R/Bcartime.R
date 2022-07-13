@@ -37,8 +37,11 @@
 #' which respectively specify a Gaussian, binomial likelihood model with the 
 #' logistic link function, a Poisson likelihood model with a log link function, 
 #' or a zero-inflated Poisson model with a log link function.
-#' @param trials	A vector the same length as the response containing the total number of trials 
-#' for each area. Only used if family="binomial".
+#' @param trials Only used if family="binomial". 
+#' Either the name (character) or number of the column in 
+#' the supplied data frame containing the total number of trials 
+#' The program will try to access data[, trials] to get 
+#' the binomial denominators. 
 #' @param residtype Residual type, either "response" or "pearson",  
 #' in GLM fitting with the packages CARBayes and CARBayesST.
 #' Default is "response" type observed minus fitted. The other option "pearson" is for 
@@ -200,7 +203,10 @@ Bcartime <- function(formula,
  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
  if (!inherits(formula, "formula")) stop("Need a valid formula")
  
- if (family=="binomial") { data$Ntrials <- trials
+ if (family=="binomial") { 
+   if (length(trials)<1) stop("Need number of trials for binomial family\n")
+   if (length(trials)>1) stop("Too many values to identify the number of trials for binomial family!\n")
+   data$Ntrials <- data[, trials]
  } else { 
    data$Ntrials <- 1
  }
@@ -922,16 +928,10 @@ Bcarinla <- function(
   }
     
  # print("Here are ntrials \n")
-  ntrials <- as.numeric(data$Ntrials)
+ #  ntrials <- as.numeric(data$Ntrials)
  # print(ntrials)
   
- if (min(data$Ntrials)>1) {
-   message("Here are ntrials \n")
-   print(ntrials)
- # stop("Sorry, I cannot pass the number of trials greater 
-# than 1 to INLA. \n Hence, this model cannot be fitted. \n
-  # Please try the CARBayes or the CARBayesST package instead. \n")
- } 
+ 
   if (!is.null(offsetcol)) {   
    ifit <- INLA::inla(newformula, family=family, data=data, 
                offset = data[, offsetcol], Ntrials = Ntrials, 
