@@ -26,11 +26,13 @@
 #' ignored for the CARBayes and   CARBayesST models. 
 #' @param model The specific spatio temporal model to be fitted. 
 #' If the package is "INLA" then the model argument should be a vector with two elements 
-#' giving the spatial model, e.g. "bym" as the first component and the temporal model which could be one of 
-#'  "iid", "ar1" or "none" as the second component. 
-#'  In case the second component is "none" then no temporal random effects 
+#' giving the spatial model as the first component. The alternatives for the 
+#' spatial model are: "bym", "bym2", "besag", "besag2", "besagproper", "besagproper2", "iid" 
+#' and "none". The temporal model as the second second component can  be one of 
+#'  "iid", "rw1",  "rw2", ar1" or "none". 
+#'  In case the model component is "none" then no spatial/temporal random effects 
 #'  will be fitted. No temporal random effects will be fitted in case \code{model} is
-#'  supplied as a  singleton.  
+#'  supplied as a  scalar, i.e. not a vector of two values. 
 #' @param family	One of either "gaussian", "binomial","poisson" or "zip", 
 #' which respectively specify a Gaussian, binomial likelihood model with the 
 #' logistic link function, a Poisson likelihood model with a log link function, 
@@ -198,6 +200,11 @@ Bcartime <- function(formula,
  if (!is.data.frame(data)) stop("Need a data frame in the data argument")
  if (!inherits(formula, "formula")) stop("Need a valid formula")
  
+ if (family=="binomial") { data$Ntrials <- trials
+ } else { 
+   data$Ntrials <- 1
+ }
+ 
  
  s1 <- length(scol)
  t1 <- length(tcol)
@@ -242,15 +249,23 @@ Bcartime <- function(formula,
    message("Spatio-temporal models will be fitted.\n")
    }
    sids <- data[, scol]
-   tids <- data[, tcol]
+   timeids <- data[, tcol]
    scode <- unique(sids)
-   tcode <- unique(tids)
+   tcode <- unique(timeids)
    tn <- length(tcode)
    implemented <- c("inla", "CARBayesST")
    a <- grepl(package, x=implemented, ignore.case = TRUE)
    if (any(a)) { 
      package <- implemented[which(a)]
    } else stop("Wrong package. Please see the helpfile.")
+   
+   if (!is.numeric(timeids)) {  
+     message("I am not fitting any temporal model using INLA\n")
+     message("since the tcol column is not numeric. \n") 
+     message("To fit temporal random effects please supply  \n
+          numerical values for the temporal identifier column tcol\n")
+   }   
+   data$timeids <- eval(data[, tcol])
  }
  
  if (package=="inla") {
@@ -287,11 +302,11 @@ Bcartime <- function(formula,
    # if (verbose) print(validsamongallmissings)
  }
  nmissing <- length(which(is.na(ynavec)))
+ # cat("Number missing:", nmissing, "\n")
  
 if (indep ==T) {
   results <- BcarBayes(formula=formula, formula.omega=formula.omega, 
                        family=family, data=data, 
-                       trials=trials, 
                        model = "glm", nmissing = nmissing, 
                        burn.in=burn.in, N=N,
                        thin=thin, 
@@ -328,7 +343,7 @@ if (indep ==T) {
     family=family, model=model,  W=W, Z =Z, 
     W.binary = W.binary, G = G, 
     nmissing = nmissing, 
-    formula.omega = formula.omega, trials=trials,
+    formula.omega = formula.omega, 
     prior.mean.beta=prior.mean.beta, 
     prior.var.beta=prior.var.beta, prior.tau2=prior.tau2,
     prior.sigma2=prior.sigma2, prior.mean.delta=prior.mean.delta, 
@@ -342,7 +357,6 @@ if (indep ==T) {
    newresults <- Bcarinla(data=data, formula=formula,  
                       scol = scol, W=W, adj.graph = adj.graph,
                       sptemporal=FALSE, offsetcol=offsetcol, 
-                      Ntrials=trials, 
                       family=family, link = link, 
                       prior.nu2 =prior.nu2, prior.tau2 =prior.tau2,
                        verbose=verbose, N=inlaN) 
@@ -355,7 +369,6 @@ if (indep ==T) {
                               data=data,
                               W= W, 
                               family=family, 
-                              trials=trials, 
                               model=model,
                               AR = AR, 
                               nmissing = nmissing, 
@@ -372,12 +385,12 @@ if (indep ==T) {
                               rho = rho,  rho.slo=rho.slo, rho.int=rho.int, 
                               rho.S = rho.S, rho.T=rho.T, 
                               N=N, burn.in=burn.in, thin=thin, 
-                              verbose=verbose, plotit=plotit)
+                              verbose=verbose)
      } else if (package=="inla") { 
        inlaN <- (N-burn.in)/thin
        newresults <- Bcarinla(data=data, formula=formula, sptemporal=TRUE, 
                            scol = scol, tcol=tcol, W=W,   offsetcol=offsetcol, 
-                           Ntrials=trials, adj.graph = adj.graph, 
+                           adj.graph = adj.graph, 
                            model=model, family=family, link = link, 
                            prior.nu2 =prior.nu2,  prior.tau2 =prior.tau2, 
                            N=inlaN,  verbose = verbose) 
@@ -421,7 +434,7 @@ if (indep ==T) {
        yits[i, ]  <- INLA::inla.rmarginal(N, modfit$marginals.fitted.values[[validrows[i]]]) 
      }
     if (family=="binomial")  {
-      ntrialsholdout <- trials[validrows]
+      ntrialsholdout <- data$Ntrials[validrows]
       for (j in 1:ncol(yits)) yits[,j] <- yits[,j] * ntrialsholdout
       for (j in 2:ncol(psums)) psums[,j] <- psums[,j] * ntrialsholdout
     }
@@ -446,6 +459,7 @@ if (indep ==T) {
    
    allvplots <- obs_v_pred_plot(yobs=yholdout, predsums = psums, plotit=plotit)
    newresults$validationplots <- allvplots
+  
    if (verbose) print(newresults$stats)
    
  }
@@ -477,7 +491,6 @@ BcarBayes <- function(formula,  data,
                       W.binary = NULL,
                       G = NULL, 
                       formula.omega=NULL,
-                      trials=NULL,
                       valids=NULL, 
                       prior.mean.beta=NULL, 
                       prior.var.beta=NULL, 
@@ -491,14 +504,15 @@ BcarBayes <- function(formula,  data,
                       ind.area=NULL,
                       MALA=FALSE,
                       N=2000, burn.in=1000, thin=10, rseed =44, 
-                      verbose=TRUE, plotit=TRUE) {
+                      verbose=TRUE) {
   ###
   ###
   # message("in BcarBayes N=", N, " burn in=", burn.in, " thin =", thin, "\n")
   if (model=="glm") {
+    if (family=="binomial") {
     results <-  CARBayes::S.glm(formula=formula, formula.omega=formula.omega, 
                       family=family, data=data, 
-                      trials=trials, 
+                      trials=data$Ntrials, 
                       burnin=burn.in, n.sample=N,
                       thin=thin, 
                       prior.mean.beta=prior.mean.beta, 
@@ -506,9 +520,22 @@ BcarBayes <- function(formula,  data,
                       prior.mean.delta=prior.mean.delta, 
                       prior.var.delta=prior.var.delta, MALA=MALA, 
                       verbose=verbose)
-  } else if (model=="bym") {
-    results <-  CARBayes::S.CARbym(formula = formula, formula.omega=formula.omega, 
-                family=family, data=data, trials=trials, W=W, burnin=burn.in,
+    } else { 
+      results <-  CARBayes::S.glm(formula=formula, formula.omega=formula.omega, 
+                                  family=family, data=data, 
+                                  burnin=burn.in, n.sample=N,
+                                  thin=thin, 
+                                  prior.mean.beta=prior.mean.beta, 
+                                  prior.var.beta=prior.var.beta, prior.nu2=prior.nu2,
+                                  prior.mean.delta=prior.mean.delta, 
+                                  prior.var.delta=prior.var.delta, MALA=MALA, 
+                                  verbose=verbose)
+    }
+    
+  } else if (model=="bym") { 
+    if (family=="binomial") {
+       results <-  CARBayes::S.CARbym(formula = formula, formula.omega=formula.omega, 
+                family=family, data=data, trials=data$Ntrials, W=W, burnin=burn.in,
              n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
              prior.var.beta=prior.var.beta, 
              prior.tau2=prior.tau2,
@@ -517,35 +544,67 @@ BcarBayes <- function(formula,  data,
              prior.var.delta=prior.var.delta, 
              MALA=MALA,
              verbose=verbose)
+    } else {
+      results <-  CARBayes::S.CARbym(formula = formula, formula.omega=formula.omega, 
+                                     family=family, data=data,  W=W, burnin=burn.in,
+                                     n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
+                                     prior.var.beta=prior.var.beta, 
+                                     prior.tau2=prior.tau2,
+                                     prior.sigma2=prior.sigma2, 
+                                     prior.mean.delta=prior.mean.delta, 
+                                     prior.var.delta=prior.var.delta, 
+                                     MALA=MALA,
+                                     verbose=verbose)
+    }
   } else if (model=="dissimilarity") {
     results <-    CARBayes::S.CARdissimilarity(formula=formula, family=family, data=data, 
-                  trials=trials, W=W,
+                  trials=data$Ntrials, W=W,
                   Z=Z, W.binary=W.binary, 
                   burnin=burn.in, 
                   n.sample=N, thin=thin, 
                   prior.mean.beta=prior.mean.beta,
                   prior.var.beta=prior.var.beta, prior.nu2=prior.nu2, 
                   prior.tau2=prior.tau2, MALA=MALA, verbose=verbose)
-    } else if (model=="leroux") {
+    } else if (model=="leroux") { 
+      if (family=="binomial") {
       results <- CARBayes::S.CARleroux(formula=formula, formula.omega=formula.omega, 
-                family=family, data=data, trials=trials, W=W, burnin=burn.in,
+                family=family, data=data, trials=data$Ntrials, W=W, burnin=burn.in,
               n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
               prior.var.beta=prior.var.beta,
               prior.nu2= prior.nu2, prior.tau2=prior.tau2, 
               prior.mean.delta=prior.mean.delta, 
               prior.var.delta=prior.var.delta,
               rho=rho, MALA=MALA, verbose=verbose)
+      } else {
+        results <- CARBayes::S.CARleroux(formula=formula, formula.omega=formula.omega, 
+                                         family=family, data=data,  W=W, burnin=burn.in,
+                                         n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
+                                         prior.var.beta=prior.var.beta,
+                                         prior.nu2= prior.nu2, prior.tau2=prior.tau2, 
+                                         prior.mean.delta=prior.mean.delta, 
+                                         prior.var.delta=prior.var.delta,
+                                         rho=rho, MALA=MALA, verbose=verbose)
+      }
     } else if (model=="localised") {
        if (nmissing>0) stop("Validation and/or missing response values are not allowed for this model\n")
-       results <- CARBayes::S.CARlocalised(formula=formula, family=family, 
-                data=data, G=G, trials=trials, W=W,
+      if (family=="binomial") {
+      results <- CARBayes::S.CARlocalised(formula=formula, family=family, 
+                data=data, G=G, trials=data$Ntrials, W=W,
                    burnin=burn.in, n.sample=N, thin=thin, 
                 prior.mean.beta=prior.mean.beta, prior.var.beta=prior.var.beta,
                    prior.tau2=prior.tau2,prior.delta=prior.delta, MALA=MALA, 
                 verbose=verbose)
+      } else {
+        results <- CARBayes::S.CARlocalised(formula=formula, family=family, 
+                                            data=data, G=G,  W=W,
+                                            burnin=burn.in, n.sample=N, thin=thin, 
+                                            prior.mean.beta=prior.mean.beta, prior.var.beta=prior.var.beta,
+                                            prior.tau2=prior.tau2,prior.delta=prior.delta, MALA=MALA, 
+                                            verbose=verbose)
+      }
     } else if (model=="multilevel") {
       results <- CARBayes::S.CARmultilevel(formula=formula, family=family, 
-                    data=data, trials=trials, W=W, ind.area=ind.area,
+                    data=data, trials=data$Ntrials, W=W, ind.area=ind.area,
                      burnin=burn.in, 
                     n.sample=N, thin=thin, 
                     prior.mean.beta=prior.mean.beta, 
@@ -572,7 +631,6 @@ BcarBayesST <- function(formula, data, family,
                       interaction=TRUE, 
                       G = NULL, 
                       formula.omega=NULL,
-                      trials=NULL,
                       valids=NULL, 
                       prior.mean.beta=NULL, 
                       prior.var.beta=NULL, 
@@ -594,14 +652,15 @@ BcarBayesST <- function(formula, data, family,
                       prior.mean.gamma=NULL, prior.var.gamma=NULL, 
                       prior.lambda=NULL,Nchains=4,
                       N=2000, burn.in=1000, thin=10, rseed, 
-                      verbose=TRUE, plotit=TRUE) {
+                      verbose=TRUE) {
   ###
   ###
   if (model=="linear") {
+    if (family=="binomial") {
     results <-  CARBayesST::ST.CARlinear(formula=formula,
                       family=family, data=data, 
                       W=W, 
-                      trials=trials, 
+                      trials=data$Ntrials, 
                       burnin=burn.in, n.sample=N,
                       thin=thin, prior.mean.alpha=prior.mean.alpha, 
                       prior.mean.beta=prior.mean.beta, 
@@ -612,9 +671,25 @@ BcarBayesST <- function(formula, data, family,
                       rho.int=rho.int, 
                       MALA=MALA, 
                       verbose=verbose)
+    } else {
+      results <-  CARBayesST::ST.CARlinear(formula=formula,
+                                           family=family, data=data, 
+                                           W=W, 
+                                           burnin=burn.in, n.sample=N,
+                                           thin=thin, prior.mean.alpha=prior.mean.alpha, 
+                                           prior.mean.beta=prior.mean.beta, 
+                                           prior.var.beta=prior.var.beta,
+                                           prior.var.alpha = prior.var.alpha, 
+                                           prior.nu2 = prior.nu2, prior.tau2=prior.tau2, 
+                                           rho.slo=rho.slo, 
+                                           rho.int=rho.int, 
+                                           MALA=MALA, 
+                                           verbose=verbose)
+    }
   } else if (model=="anova") {
+    if (family=="binomial") {
     results <- CARBayesST::ST.CARanova(formula = formula, 
-                         family=family, data=data, trials=trials, W=W,
+                         family=family, data=data, trials=data$Ntrials, W=W,
                          interaction =interaction, 
                          burnin=burn.in,
                          n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
@@ -625,10 +700,25 @@ BcarBayesST <- function(formula, data, family,
                          rho.T = rho.T, 
                          MALA=MALA,
                          verbose=verbose)
+    } else {
+      results <- CARBayesST::ST.CARanova(formula = formula, 
+                                         family=family, data=data,  W=W,
+                                         interaction =interaction, 
+                                         burnin=burn.in,
+                                         n.sample=N, thin=thin, prior.mean.beta=prior.mean.beta, 
+                                         prior.var.beta=prior.var.beta, 
+                                         prior.tau2=prior.tau2,
+                                         prior.nu2 = prior.nu2, 
+                                         rho.S = rho.S, 
+                                         rho.T = rho.T, 
+                                         MALA=MALA,
+                                         verbose=verbose)
+    }
   } else if (model=="sepspatial") { 
     if (nmissing>0) stop("Validation and/or missing response values are not allowed")
-    results <-  CARBayesST::ST.CARsepspatial(formula=formula, family=family, data=data, 
-                                    trials=trials, W=W,
+    if (family=="binomial") {
+     results <-  CARBayesST::ST.CARsepspatial(formula=formula, family=family, data=data, 
+                                    trials=data$Ntrials, W=W,
                                     burnin=burn.in, 
                                     n.sample=N, thin=thin, 
                                     prior.mean.beta=prior.mean.beta,
@@ -637,28 +727,63 @@ BcarBayesST <- function(formula, data, family,
                                     rho.T=rho.T, 
                                     rho.S=rho.S, 
                                     MALA=MALA, verbose=verbose)
-  } else if (model=="ar") {
+    } else {
+      results <-  CARBayesST::ST.CARsepspatial(formula=formula, family=family, data=data, 
+                                                W=W,
+                                               burnin=burn.in, 
+                                               n.sample=N, thin=thin, 
+                                               prior.mean.beta=prior.mean.beta,
+                                               prior.var.beta=prior.var.beta, 
+                                               prior.tau2 = prior.tau2, 
+                                               rho.T=rho.T, 
+                                               rho.S=rho.S, 
+                                               MALA=MALA, verbose=verbose)
+    }
+  } else if (model=="ar") {  
+    if (family=="binomial") {
     results <- CARBayesST::ST.CARar(formula=formula, 
                         family=family, data=data,  
                         AR = AR, 
-                        trials=trials, W=W, burnin=burn.in, 
+                        trials=data$Ntrials, W=W, burnin=burn.in, 
                         n.sample=N, thin=thin, 
                       prior.mean.beta=prior.mean.beta, 
                       prior.var.beta=prior.var.beta, 
                       prior.nu2=prior.nu2, 
                       prior.tau2=prior.tau2,
                       rho.S=rho.S, rho.T=rho.T, MALA=MALA, verbose=verbose)
+    } else {
+      results <- CARBayesST::ST.CARar(formula=formula, 
+                                      family=family, data=data,  
+                                      AR = AR, 
+                                      W=W, burnin=burn.in, 
+                                      n.sample=N, thin=thin, 
+                                      prior.mean.beta=prior.mean.beta, 
+                                      prior.var.beta=prior.var.beta, 
+                                      prior.nu2=prior.nu2, 
+                                      prior.tau2=prior.tau2,
+                                      rho.S=rho.S, rho.T=rho.T, MALA=MALA, verbose=verbose)
+    }
   } else if (model=="localised") {  
     if (nmissing>0) stop("Validation and/or missing response values are not allowed for this model\n")
-    results <- CARBayesST::ST.CARlocalised(formula=formula, family=family, 
-                              data=data, G=G, trials=trials, W=W,
+    if (family=="binomial") {
+     results <- CARBayesST::ST.CARlocalised(formula=formula, family=family, 
+                              data=data, G=G, trials=data$Ntrials, W=W,
                               burnin=burn.in, n.sample=N, thin=thin, 
                               prior.mean.beta=prior.mean.beta, prior.var.beta=prior.var.beta,
                               prior.tau2=prior.tau2, prior.delta=prior.delta, MALA=MALA, 
                               verbose=verbose)
+    } else{
+      results <- CARBayesST::ST.CARlocalised(formula=formula, family=family, 
+                                             data=data, G=G,W=W,
+                                             burnin=burn.in, n.sample=N, thin=thin, 
+                                             prior.mean.beta=prior.mean.beta, prior.var.beta=prior.var.beta,
+                                             prior.tau2=prior.tau2, prior.delta=prior.delta, MALA=MALA, 
+                                             verbose=verbose)
+    }
   } else if (model=="adaptive") {
+    if (family=="binomial") {
     results <- CARBayesST::ST.CARadaptive(formula=formula, family=family, 
-                              data=data, trials=trials, W=W, 
+                              data=data, trials=data$Ntrials, W=W, 
                                burnin=burn.in, 
                               n.sample=N, thin=thin, 
                               prior.mean.beta=prior.mean.beta, 
@@ -669,9 +794,25 @@ BcarBayesST <- function(formula, data, family,
                               epsilon=epsilon, 
                               MALA=MALA,
                               verbose=verbose) 
+    } else {
+      results <- CARBayesST::ST.CARadaptive(formula=formula, family=family, 
+                                            data=data,  W=W, 
+                                            burnin=burn.in, 
+                                            n.sample=N, thin=thin, 
+                                            prior.mean.beta=prior.mean.beta, 
+                                            prior.var.beta=prior.var.beta,
+                                            prior.nu2=prior.nu2, 
+                                            prior.tau2=prior.tau2, 
+                                            rho=rho, 
+                                            epsilon=epsilon, 
+                                            MALA=MALA,
+                                            verbose=verbose) 
+    }
+    
   } else if (model=="clustertrends") {
+    if (family=="binomial") {
     results <- CARBayesST::ST.CARclustrends(formula=formula, family=family, 
-                                           data=data, trials=trials, W=W, 
+                                           data=data, trials=data$Ntrials, W=W, 
                                            burnin=burn.in, 
                                            n.sample=N, thin=thin, 
                                            trends=trends,  
@@ -685,6 +826,23 @@ BcarBayesST <- function(formula, data, family,
                                            prior.lambda=prior.lambda, 
                                            MALA=MALA,  Nchains = Nchains, 
                                            verbose=verbose)
+    } else {
+      results <- CARBayesST::ST.CARclustrends(formula=formula, family=family, 
+                                              data=data,  W=W, 
+                                              burnin=burn.in, 
+                                              n.sample=N, thin=thin, 
+                                              trends=trends,  
+                                              changepoint = changepoint,
+                                              knots = knots, 
+                                              prior.mean.beta=prior.mean.beta, 
+                                              prior.var.beta=prior.var.beta,
+                                              prior.tau2=prior.tau2, 
+                                              prior.mean.gamma=prior.mean.gamma, 
+                                              prior.var.gamma=prior.var.gamma,
+                                              prior.lambda=prior.lambda, 
+                                              MALA=MALA,  Nchains = Nchains, 
+                                              verbose=verbose)
+    }
   }  else { 
     message("Your model has not been implemented in the CARBayes package. \n")
     stop("Try some other model?")
@@ -696,77 +854,102 @@ BcarBayesST <- function(formula, data, family,
 
 Bcarinla <- function(
   formula, data, W=NULL, adj.graph=NULL,  scol ="spaceid", tcol=NULL, 
-  model=c("bym", "iid"),  sptemporal = FALSE, 
-  offsetcol=NULL, Ntrials=NULL, 
+  model=c("bym", "iid"),  sptemporal = FALSE,  offsetcol=NULL, 
   link="log",  family="poisson", prior.nu2 =c(2, 1), prior.tau2 =c(2, 1),
-  N=1000,   plotit=TRUE, verbose = TRUE) {
+  N=1000,  verbose = TRUE) {
   ###
-  
+
   if (is.null(W)) {
      if (is.null(adj.graph) ) stop("You must specify either the W matrix or the adjacency graph")
-     inla.adj <- adj.graph 
+     inla.adj <- adj.graph  
   } else {  
     a <- INLA::inla.read.graph(W)
     # INLA::inla.write.graph(a, filename ="inla.graph")
-    # inla.adj <- "inla.graph"
+    # file.path(tempdir(), 'inla.graph') <- "inla.graph"
     INLA::inla.write.graph(a, filename =file.path(tempdir(), 'inla.graph'))
     inla.adj <- file.path(tempdir(), 'inla.graph')
   }
   
   spaceid <- data[, scol]
+  data$spaceid <- data[, scol]
    # prior for random effect variance 
   prec.prior <- list(prec = list(prior = "loggamma", param = c(prior.tau2[1], prior.tau2[2])))
   if (family=="gaussian") hyper 	<- list(prec = list(prior = "loggamma", param = c(prior.nu2[1], prior.nu2[2])))
   else hyper <- NULL
   
-  newformula <- update(formula, . ~ . + f(spaceid, model=eval(model[1]),graph=inla.adj, constr=TRUE))
-  ## base spatial model 
-  
+  if (model[1]=="bym") {
+    newformula <- update(formula, . ~ . + f(spaceid, model="bym", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+  }  else  if (model[1]=="bym2") {
+    newformula <- update(formula, . ~ . + f(spaceid, model="bym2", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+} else  if (model[1]=="besag") {
+  newformula <- update(formula, . ~ . + f(spaceid, model="besag", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+} else  if (model[1]=="besag2") {
+  newformula <- update(formula, . ~ . + f(spaceid, model="besag2", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+} else  if (model[1]=="besagproper") {
+  newformula <- update(formula, . ~ . + f(spaceid, model="besagproper", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+}else  if (model[1]=="besagproper2") {
+  newformula <- update(formula, . ~ . + f(spaceid, model="besagproper2", graph=file.path(tempdir(), 'inla.graph'), constr=TRUE))
+  message("Your model has not been implemented in the CARBayes package. \n")
+} else  if (model[1]=="iid") {
+  newformula <- update(formula, . ~ . + f(spaceid, model="iid", constr=TRUE))
+} else  if (model[1]=="none") {
+  message("INLA is not fitting any spatial model\n")
+} else {
+  stop("Your spatial model has not been implemented. Try one of the alternatives?\n")
+ } 
+
+
   if (sptemporal) {  
-    timeids <- data[, tcol]
-    if (!is.numeric(timeids)) {  
-      message("I am not fitting any temporal model using INLA\n")
-      message("since the tcol column is not numeric. \n") 
-      message("To fit temporal random effects please supply  \n
-          numerical codes for the temporal identifier column tcol\n")
-    }  
     k <- length(model)
     if (k < 2) {
       message("I am not fitting any temporal model using INLA\n")
       message("since the model argument does not contain a temporal model. \n")
-   } else { 
-    if (model[2] !="none") 
-       newformula <- update(newformula, . ~ . + f(timeids, model=eval(model[2]),constr=TRUE)) 
+    } else { 
+      if (model[2] =="ar1") {
+       newformula <- update(newformula, . ~ . + f(timeids, model="ar1",constr=TRUE)) 
+      } else if (model[2] =="rw1") {
+          newformula <- update(newformula, . ~ . + f(timeids, model="rw1",constr=TRUE)) 
+      }  else if (model[2] =="rw2") {
+          newformula <- update(newformula, . ~ . + f(timeids, model="rw2",constr=TRUE)) 
+      } else if (model[2] =="iid") {
+          newformula <- update(newformula, . ~ . + f(timeids, model="iid",constr=TRUE)) 
+      }   else if (model[2] =="none") {
+        message("INLA is not fitting any temporal model\n")
+      } else {
+          stop("Your temporal model has not been implemented. Try some other alternatives model?\n")
+      }
+    }
   }
-  }
-
- # newformula 
- # data <- engdata
- # offsetcol <- NULL
-#   offsetvalues <- as.vector(data[, offsetcol])
-  # offsetvalues
-  # length(ofsetvalues)
-  # is.null(offsetcol)
+    
+ # print("Here are ntrials \n")
+  ntrials <- as.numeric(data$Ntrials)
+ # print(ntrials)
+  
+ if (min(data$Ntrials)>1) {
+   message("Here are ntrials \n")
+   print(ntrials)
+ stop("Sorry, I cannot pass the number of trials greater 
+  than 1 to INLA. \n Hence, this model cannot be fitted. \n
+  Please try the CARBayes or the CARBayesST package instead. \n")
+ } 
   if (!is.null(offsetcol)) {   
-   ifit <- INLA::inla(newformula,family=family,data=data, 
-               offset = data[, offsetcol] , Ntrials = eval(data[, Ntrials]), 
+   ifit <- INLA::inla(newformula, family=family, data=data, 
+               offset = data[, offsetcol], Ntrials = ntrials, 
                  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
-                 control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
+                 control.compute=list(dic=TRUE, waic=TRUE, config=TRUE, 
+                                      return.marginals.predictor=TRUE))
   } else { 
     ifit <- INLA::inla(newformula,family=family,data=data, 
-                Ntrials = eval(data[, Ntrials]),  control.family=list(link=link, hyper=hyper),
+                Ntrials =ntrials,  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
-                 control.compute=list(dic=TRUE, waic=TRUE, config=TRUE))
+                 control.compute=list(dic=TRUE, waic=TRUE, config=TRUE, 
+                return.marginals.predictor=TRUE))
     }
   
-  # control.compute=list(config=TRUE).
   
-  message("Finished INLA fitting \n")
- #  ifit <- c1$fit [1] 
-  # "Precision for spaceid (iid component)"     "Precision for spaceid (spatial component)"
-  # ifit <- c21$fit 
-  
+  # message("Finished INLA fitting \n")
+ 
   # Fixed effects betas
   fixed.out <- round(ifit$summary.fixed,3)
   if (verbose) print(fixed.out)
@@ -849,7 +1032,7 @@ Bcarinla <- function(
   if (verbose) print(round(allres$params, 3))
   n <- nrow(data)
   allres$fitteds  <- ifit$summary.fitted.values$mean[1:n]
-  if (family=="binomial")  allres$fitteds <- allres$fitteds * trials)
+  if (family=="binomial")  allres$fitteds <- allres$fitteds * data$Ntrials
   u <- getXy(formula=formula, data=data)
   y <- u$y
   allres$residuals <- y - allres$fitteds  
@@ -867,8 +1050,8 @@ Bcarinla <- function(
     
     if (verbose) print(round(allres$mchoice, 2))
   # }
+    
+ # message("All done here\n")  
   allres
-  
+
 }
-
-

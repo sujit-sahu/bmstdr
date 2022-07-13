@@ -1103,7 +1103,8 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   ifit <- INLA::inla(newformula, data=INLA::inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
                control.predictor=list(A=INLA::inla.stack.A(stack), compute=TRUE),
-               control.compute = list(config = TRUE, dic = mchoice, waic = mchoice))
+               control.compute = list(config = TRUE, dic = mchoice, waic = mchoice, 
+                                      return.marginals.predictor=TRUE))
   if (verbose) message("Finished INLA fitting. \n")
 
   # Fixed effects betas

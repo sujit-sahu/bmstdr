@@ -919,8 +919,9 @@ Binla_sp <- function(formula=yo3~xmaxtemp+xwdsp+xrh, data=nyspatial,
 
   ifit		<- INLA::inla(formula=newformula, data = INLA::inla.stack.data(stack),
                 family = "gaussian", control.family = list(hyper = hyper),
-                control.predictor = list(A = INLA::inla.stack.A(stack), compute = T),
-                control.compute = list(config = TRUE, dic = mchoice, waic = mchoice),
+                control.predictor = list(A = INLA::inla.stack.A(stack), compute = TRUE),
+                control.compute = list(config = TRUE, dic = mchoice, waic = mchoice,  
+                                       return.marginals.predictor=TRUE),
                 verbose = F)
   #summary(ifit)
 

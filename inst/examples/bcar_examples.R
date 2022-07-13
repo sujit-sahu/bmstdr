@@ -187,14 +187,13 @@ if (require(INLA)) {
 
     # Spatial Binomial GLM
 
-    f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +
-        sqrt(no2)
+   # f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +  sqrt(no2)
 
-    M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
-        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "binomial", link="logit",  trials = nweek, N = N, burn.in = burn.in,
-        thin = thin)
-    summary(M1.inla.bym)
+    # M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
+    #    W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
+    #    family = "binomial", link="logit",  trials = nweek, N = N, burn.in = burn.in,
+    #    thin = thin)
+    # summary(M1.inla.bym)
 
 
 
@@ -236,7 +235,7 @@ if (require(INLA)) {
     f1 <- highdeathsmr ~ jsa + log10(houseprice) + log(popdensity)
     nweek <- rep(1, nrow(engdeaths))
     engdeaths$nweek <- rep(1, nrow(engdeaths))
-    nweek <- ncol(engdeaths) # Which column number has the binomial denominator n
+  
 
     ## INLA Binomial
 
