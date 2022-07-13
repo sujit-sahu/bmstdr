@@ -1,7 +1,7 @@
 Package: bmstdr
 Type: Package
 Title: Bayesian Modeling of Spatio-Temporal Data with R
-Version: 0.2.2
+Version: 0.2.5
 Authors@R: c(person(given="Sujit K.", family="Sahu", email="S.K.Sahu@soton.ac.uk", role = c("aut", "cre"), 
     comment = c(ORCID = "0000-0003-2315-3598")), person(given="Duncan P.", family="Lee", 
     email="Duncan.Lee@glasgow.ac.uk", role="aut"),  person(given="K. Shuvo", family="Bakar", 
@@ -17,7 +17,7 @@ Description: Fits, validates and compares a number of Bayesian models for
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.0
 Imports: 
     methods,
     spTimer, 
@@ -37,7 +37,7 @@ Depends:
     R (>= 3.4.0), 
     Rcpp (>= 0.12.0)
 Suggests: 
-    INLA (>= 20.03.17), 
+    INLA (>= 22.5.7), 
     coda,
     extraDistr, 
     RcppParallel, 
@@ -70,4 +70,4 @@ LinkingTo:
     StanHeaders (>= 2.18.0)
 VignetteBuilder: knitr
 SystemRequirements: GNU make
-Additional_repositories: https://inla.r-inla-download.org/R/testing
+Additional_repositories: https://inla.r-inla-download.org/R/stable

@@ -116,11 +116,13 @@ Further details and more examples are provided in Chapters 10 and 11 of the book
 
 \item{model}{The specific spatio temporal model to be fitted. 
 If the package is "INLA" then the model argument should be a vector with two elements 
-giving the spatial model, e.g. "bym" as the first component and the temporal model which could be one of 
- "iid", "ar1" or "none" as the second component. 
- In case the second component is "none" then no temporal random effects 
+giving the spatial model as the first component. The alternatives for the 
+spatial model are: "bym", "bym2", "besag", "besag2", "besagproper", "besagproper2", "iid" 
+and "none". The temporal model as the second second component can  be one of 
+ "iid", "rw1",  "rw2", ar1" or "none". 
+ In case the model component is "none" then no spatial/temporal random effects 
  will be fitted. No temporal random effects will be fitted in case \code{model} is
- supplied as a  singleton.}
+ supplied as a  scalar, i.e. not a vector of two values.}
 
 \item{AR}{
 The order of the autoregressive time series process that must be either 1 or 2. 
@@ -517,14 +519,13 @@ if (require(INLA)) {
 
     # Spatial Binomial GLM
 
-    f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +
-        sqrt(no2)
+   # f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +  sqrt(no2)
 
-    M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
-        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "binomial", trials = nweek, N = N, burn.in = burn.in,
-        thin = thin)
-    summary(M1.inla.bym)
+    # M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
+    #    W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
+    #    family = "binomial", link="logit",  trials = nweek, N = N, burn.in = burn.in,
+    #    thin = thin)
+    # summary(M1.inla.bym)
 
 
 
@@ -554,7 +555,7 @@ if (require(INLA)) {
     # validation
     M3.inla.bym.v <- Bcartime(data = engtotals, formula = f3,
         W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-        family = "gaussian", validrows = vs, N = N, burn.in = burn.in,
+        family = "gaussian",  validrows = vs, N = N, burn.in = burn.in,
         thin = thin)
 
     summary(M3.inla.bym.v)
@@ -562,24 +563,25 @@ if (require(INLA)) {
 
     ###### Spatio-temporal INLA models
 
-
+    nweek <- rep(1, nrow(engdeaths))
     f1 <- highdeathsmr ~ jsa + log10(houseprice) + log(popdensity)
     nweek <- rep(1, nrow(engdeaths))
-
+    engdeaths$nweek <- rep(1, nrow(engdeaths))
+  
 
     ## INLA Binomial
 
     model <- c("bym", "ar1")
     M1st_inla.bym <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
+        model = model, trials = nweek, family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym)
 
     M1st_inla_v <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
         offsetcol = "logEdeaths", model = model, trials = nweek,
-        family = "binomial", package = "inla", validrow = vs,
+        family = "binomial",  link="logit", package = "inla", validrow = vs,
         N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla_v)
 
@@ -587,7 +589,7 @@ if (require(INLA)) {
     model <- c("bym", "none")
     M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
+        model = model, trials = nweek, family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym.none)
 
@@ -595,7 +597,7 @@ if (require(INLA)) {
     model <- c("bym")
     M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial",
+        model = model, trials = nweek, family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym.none)
 

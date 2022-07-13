@@ -220,11 +220,10 @@ Blm_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
     # Added May 17 2022
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
+    # if (plotit)  plot(allvplots$pwithseg)
     
-    #if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Validation complete
@@ -583,11 +582,9 @@ Bsp_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime, coordt
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
   # Added May 17 2022
-  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
   allres$validationplots <- allvplots
-  if (plotit)  plot(allvplots$pwithseg)
   
-  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
   if (verbose) print(round(unlist(allres$stats), 3))
 
 
@@ -773,11 +770,10 @@ BspBayes_sptime <- function(formula=y8hrmax~xmaxtemp+xwdsp+xrh, data=nysptime,
     allres$valpreds <- t(ypreds)
     
     # Added May 17 2022
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
     
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
+    
     if (verbose) print(round(unlist(allres$stats), 3))
 
   } # Finished validation
@@ -970,11 +966,9 @@ if (nvalid>0) {
   allres$yobs_preds <- yvalidrows
   allres$valpreds <- t(ypreds)
   # Added May 17 2022
-  allvplots <- obs_v_pred_plot(vdaty, predsums)
+  allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
   allres$validationplots <- allvplots
-  if (plotit)  plot(allvplots$pwithseg)
-  
-  # if (plotit)  obs_v_pred_plot(vdaty, predsums)
+
   if (verbose) print(allres$stats)
 
 }
@@ -1063,7 +1057,7 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
  
  if (plotit)  { 
    par(mfrow=c(1, 1))
-   plot(mesh)
+   if (plotit) plot(mesh)
    points(coords[,1], coords[,2], pch=20, cex=2)
  }
 
@@ -1109,7 +1103,8 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
   ifit <- INLA::inla(newformula, data=INLA::inla.stack.data(stack, spde=spde), family="gaussian",
                control.family = list(hyper = hyper),
                control.predictor=list(A=INLA::inla.stack.A(stack), compute=TRUE),
-               control.compute = list(config = TRUE, dic = mchoice, waic = mchoice))
+               control.compute = list(config = TRUE, dic = mchoice, waic = mchoice, 
+                                      return.marginals.predictor=TRUE))
   if (verbose) message("Finished INLA fitting. \n")
 
   # Fixed effects betas
@@ -1220,11 +1215,8 @@ Binla_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh,
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
     
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
 
   }
@@ -1402,11 +1394,8 @@ BspTDyn_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+sp(xmaxtemp)+
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
     
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
   }
  
@@ -1532,6 +1521,9 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     val_flag[validrows] <- 1
     vdaty <- y[val_flag>0]
     vdat <- data[val_flag>0, ]
+    if (model=="truncatedGPP") {
+      stop("It is not possible to validate with the truncated GPP model. Please try fitting some other model.\n")
+    }
   }
   
   data$ynavec <- ynavec
@@ -1557,12 +1549,9 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
                                  truncation.para = truncation.para, annual.aggrn = annual.aggrn,
                                  report=n.report)
   }
-  
   allres <- list(params=gp_fit$parameter[,-2], fit=gp_fit, max.d=max.d)
   if ( (model=="GPP") || (model=="truncatedGPP") ) allres$knots.coords <- knots.coords
   if (verbose) print(round(allres$params, 3))
-  
-  
   if  (model=="truncatedGP") { ## Fitteds at the transformed scale
     ovalues <- gp_fit$op
     fits <- get_parameter_estimates(t(ovalues))
@@ -1571,7 +1560,25 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
   }
   allres$fitteds <- fits[,1] 
   
-  if (mchoice) {
+  
+  if(all(is.na(gp_fit$PMCC))){  #If spTimer failed then do not do anything 
+    sptimerfitok <- F
+    message(paste0("\nThe PMCC value from spTimer is NA. Please check the model \n"))
+    allres$mchoice <- NA
+    if (nvalid>0) {
+    predsums <- data.frame(meanpred = NA, sdpred = NA, medianpred = NA, low = NA, up = NA)
+    b <- list(stats = list(rmse = NA, mae = NA, crps = NA, cvg = NA))
+    yvalidrows <- data.frame(vdat, predsums)
+    allres$stats <- b$stats
+    allres$yobs_preds <- yvalidrows
+    allres$valpreds <- t(ypreds)
+    allvplots <- list(pwithseg = NA, pwithoutseg = NA, pordinary = NA)
+    allres$validationplots <- allvplots
+    }
+    
+  } else { # spTimer found a fit 
+   sptimerfitok <- T
+   if (mchoice) {
     if (verbose) message("Calculating model choice statistics\n")
     pmcc_results <- list(gof=gp_fit$PMCC[1], penalty=gp_fit$PMCC[2], pmcc=gp_fit$PMCC[3])
     
@@ -1585,7 +1592,6 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     allres$mchoice <-  sptimermod
     if (verbose) print(round(allres$mchoice, 2))
   }
-  
   
   if (nvalid>0) {
  
@@ -1629,14 +1635,12 @@ BspTimer_sptime <- function(data=nysptime, formula=y8hrmax~xmaxtemp+xwdsp+xrh, m
     allres$stats  <- b$stats
     allres$yobs_preds <- yvalidrows
     allres$valpreds <- t(ypreds)
-    allvplots <- obs_v_pred_plot(vdaty, predsums)
+    allvplots <- obs_v_pred_plot(vdaty, predsums, plotit=plotit)
     allres$validationplots <- allvplots
-    if (plotit)  plot(allvplots$pwithseg)
-    
-    # if (plotit)  obs_v_pred_plot(vdaty, predsums)
     if (verbose) print(round(unlist(allres$stats), 3))
   }
- 
+  } 
+  
   allres$prior.phi.param <- prior.phi.param
   allres$prior.phi <- prior.phi
   allres
