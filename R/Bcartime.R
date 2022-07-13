@@ -928,20 +928,20 @@ Bcarinla <- function(
  if (min(data$Ntrials)>1) {
    message("Here are ntrials \n")
    print(ntrials)
- stop("Sorry, I cannot pass the number of trials greater 
-  than 1 to INLA. \n Hence, this model cannot be fitted. \n
-  Please try the CARBayes or the CARBayesST package instead. \n")
+ # stop("Sorry, I cannot pass the number of trials greater 
+# than 1 to INLA. \n Hence, this model cannot be fitted. \n
+  # Please try the CARBayes or the CARBayesST package instead. \n")
  } 
   if (!is.null(offsetcol)) {   
    ifit <- INLA::inla(newformula, family=family, data=data, 
-               offset = data[, offsetcol], Ntrials = ntrials, 
+               offset = data[, offsetcol], Ntrials = Ntrials, 
                  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE, 
                                       return.marginals.predictor=TRUE))
   } else { 
     ifit <- INLA::inla(newformula,family=family,data=data, 
-                Ntrials =ntrials,  control.family=list(link=link, hyper=hyper),
+                Ntrials =Ntrials,  control.family=list(link=link, hyper=hyper),
                  control.predictor=list(link=1, compute=TRUE), 
                  control.compute=list(dic=TRUE, waic=TRUE, config=TRUE, 
                 return.marginals.predictor=TRUE))

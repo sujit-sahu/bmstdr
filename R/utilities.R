@@ -23,6 +23,7 @@ utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residval
 utils::globalVariables(c("distance", "variogram", "preds", "inornot", "Time", "s.index", "x", "y", "f2"))
 NULL
 
+
 #' Observed against predicted plot 
 #' @param yobs A vector containing the actual observations 
 #' @param predsums A data frame containing predictive summary 

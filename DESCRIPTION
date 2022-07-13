@@ -71,3 +71,4 @@ LinkingTo:
 VignetteBuilder: knitr
 SystemRequirements: GNU make
 Additional_repositories: https://inla.r-inla-download.org/R/stable
+BugReports: https://github.com/sujit-sahu/bmstdr/issues

@@ -16,4 +16,7 @@ output:
   Point referenced data are modeled using the Gaussian error distribution only but a top level  generalized linear model is used for areal data modeling. The user of `r BiocStyle::CRANpkg("bmstdr")` is afforded the flexibility to choose an appropriate package and is also free to name the rows of their input data frame for validation  purposes. The package  incorporates a range of prior distributions allowable in the nominated  packages with default hyper-parameter values.   The package allows quick comparison of models using both model choice criteria,  such as DIC  and WAIC,  and facilitates K-fold cross-validation without much programming effort. Familiar diagnostic plots and model fit exploration using the S3 methods such as  `summary`, `residuals` and `plot` are included so that a beginner user  confident in model fitting using the base `R` function  `lm` can quickly learn to analyzing data by fitting  a range of appropriate spatial and spatio-temporal models.  <a href="https://www.sujitsahu.com/bmbook/bmstdr-full_vignette.html"> The full vignette </a> illustrates the package using five built-in data sets.  Three of these are on point referenced data on air pollution and temperature at the deep ocean,  and the other two are areal unit data on Covid-19 mortality in England. 
 <p> 
 
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/sujit-sahu/bmstdr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sujit-sahu/bmstdr/actions/workflows/R-CMD-check.yaml)
+  <!-- badges: end -->
   
