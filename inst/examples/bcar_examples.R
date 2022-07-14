@@ -13,23 +13,23 @@ thin <- 1
 f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) + sqrt(no2)
 ## Independent error logistic regression
 M1 <- Bcartime(formula = f1, data = engtotals, family = "binomial",
-    trials = engtotals$nweek, N = N, burn.in = burn.in, thin = thin,
+    trials = "nweek", N = N, burn.in = burn.in, thin = thin,
     verbose = TRUE)
 summary(M1)
 # Leroux model
 M1.leroux <- Bcartime(formula = f1, data = engtotals, scol = "spaceid",
-    model = "leroux", W = Weng, family = "binomial", trials = engtotals$nweek,
+    model = "leroux", W = Weng, family = "binomial", trials = "nweek",
     N = N, burn.in = burn.in, thin = thin)
 summary(M1.leroux)
 # BYM model
 M1.bym <- Bcartime(formula = f1, data = engtotals, scol = "spaceid",
-    model = "bym", W = Weng, family = "binomial", trials = engtotals$nweek,
+    model = "bym", W = Weng, family = "binomial", trials = "nweek",
     N = N, burn.in = burn.in, thin = thin, verbose = FALSE)
 summary(M1.bym)
 
 # Validation for the Leroux model
 M1.leroux.v <- Bcartime(formula = f1, data = engtotals, scol = "spaceid",
-    model = "leroux", W = Weng, family = "binomial", trials = engtotals$nweek,
+    model = "leroux", W = Weng, family = "binomial", trials = "nweek",
     validrows = vs, N = N, burn.in = burn.in, thin = thin, verbose = FALSE)
 summary(M1.leroux.v)
 
@@ -84,27 +84,27 @@ vs <- sample(nrow(engdeaths), 5)
 
 
 ## Binomial distribution
-nweek <- rep(1, nrow(engdeaths))
+engdeaths$nweek <- rep(1, nrow(engdeaths))
 f1 <- highdeathsmr ~ jsa + log10(houseprice) + log(popdensity)
 
 M1st_linear <- Bcartime(formula = f1, data = engdeaths, scol = "spaceid",
-    tcol = "Weeknumber", trials = nweek, W = Weng, model = "linear",
+    tcol = "Weeknumber", trials = "nweek", W = Weng, model = "linear",
     family = "binomial", package = "CARBayesST", N = N, burn.in = burn.in,
     thin = thin, verbose = TRUE)
 summary(M1st_linear)
 M1st_sepspat <- Bcartime(formula = f1, data = engdeaths, scol = "spaceid",
-    tcol = "Weeknumber", trials = nweek, W = Weng, model = "sepspatial",
+    tcol = "Weeknumber", trials = "nweek", W = Weng, model = "sepspatial",
     family = "binomial", package = "CARBayesST", N = N, burn.in = burn.in,
     thin = thin, verbose = FALSE)
 summary(M1st_sepspat)
 M1st_ar <- Bcartime(formula = f1, data = engdeaths, scol = "spaceid",
-    tcol = "Weeknumber", trials = nweek, W = Weng, model = "ar", AR = 1,
+    tcol = "Weeknumber", trials = "nweek", W = Weng, model = "ar", AR = 1,
     family = "binomial", package = "CARBayesST", N = N, burn.in = burn.in,
     thin = thin, verbose = FALSE)
 summary(M1st_ar)
 # Model validation
 M1st_ar.v <- Bcartime(formula = f1, data = engdeaths, scol = "spaceid",
-    tcol = "Weeknumber", trials = nweek, W = Weng, model = "ar", AR = 1,
+    tcol = "Weeknumber", trials = "nweek", W = Weng, model = "ar", AR = 1,
     family = "binomial", package = "CARBayesST", N = N, burn.in = burn.in,
     thin = thin, validrows = vs, verbose = FALSE)
 summary(M1st_ar.v)
@@ -183,17 +183,17 @@ if (require(INLA)) {
     burn.in <- 5
     thin <- 1
     vs <- sample(nrow(engtotals), 5)
-    nweek <- engtotals$nweek
+    
 
     # Spatial Binomial GLM
 
-   # f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +  sqrt(no2)
+    f1 <- noofhighweeks ~ jsa + log10(houseprice) + log(popdensity) +  sqrt(no2)
 
-    # M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
-    #    W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
-    #    family = "binomial", link="logit",  trials = nweek, N = N, burn.in = burn.in,
-    #    thin = thin)
-    # summary(M1.inla.bym)
+     M1.inla.bym <- Bcartime(data = engtotals, formula = f1,
+        W = Weng, scol = "spaceid", model = c("bym"), package = "inla",
+        family = "binomial", link="logit",  trials = "nweek", N = N, burn.in = burn.in,
+        thin = thin)
+     summary(M1.inla.bym)
 
 
 
@@ -231,24 +231,23 @@ if (require(INLA)) {
 
     ###### Spatio-temporal INLA models
 
-    nweek <- rep(1, nrow(engdeaths))
+   
     f1 <- highdeathsmr ~ jsa + log10(houseprice) + log(popdensity)
     nweek <- rep(1, nrow(engdeaths))
     engdeaths$nweek <- rep(1, nrow(engdeaths))
-  
 
     ## INLA Binomial
-
+  
     model <- c("bym", "ar1")
     M1st_inla.bym <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial", link="logit", 
+        model = model, trials = "nweek", family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym)
 
     M1st_inla_v <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        offsetcol = "logEdeaths", model = model, trials = nweek,
+        offsetcol = "logEdeaths", model = model, trials = "nweek",
         family = "binomial",  link="logit", package = "inla", validrow = vs,
         N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla_v)
@@ -257,7 +256,7 @@ if (require(INLA)) {
     model <- c("bym", "none")
     M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial", link="logit", 
+        model = model, trials = "nweek", family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym.none)
 
@@ -265,7 +264,7 @@ if (require(INLA)) {
     model <- c("bym")
     M1st_inla.bym.none <- Bcartime(data = engdeaths, formula = f1,
         W = Weng, scol = "spaceid", tcol = "Weeknumber",
-        model = model, trials = nweek, family = "binomial", link="logit", 
+        model = model, trials = "nweek", family = "binomial", link="logit", 
         package = "inla", N = N, burn.in = burn.in, thin = thin)
     summary(M1st_inla.bym.none)
 
