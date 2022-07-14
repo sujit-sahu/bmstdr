@@ -19,7 +19,7 @@
 #' @useDynLib bmstdr
 NULL
 #if(getRversion() >= "2.15.1")  utils::globalVariables(c("."), add=FALSE)
-utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residvals", "up", "low"))
+utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residvals", "up", "low", "Ntrials"))
 utils::globalVariables(c("distance", "variogram", "preds", "inornot", "Time", "s.index", "x", "y", "f2"))
 NULL
 
