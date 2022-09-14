@@ -57,6 +57,24 @@
 #' summary(M2)
 #' plot(M2)
 #' names(M2)
+#' # Testing for smaller data sets with different data pattern  
+#' d2 <- deep[1:25, ]
+#' d2$time <- 1:25 
+#' # Now there is no missing times 
+#' M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+#' N=11, burn.in=6,  mchoice = FALSE) 
+#' summary(M1)
+#' d2[26, ] <- d2[25, ]
+#' # With multiple observation at the same location and time 
+#' M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+#' N=11, burn.in=6,  mchoice = FALSE) 
+#' summary(M1)
+#' d2[27, ] <- d2[24, ]
+#' d2[27, 3] <- 25
+#' # With previous location re-sampled 
+#' M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+#' N=11, burn.in=6,  mchoice = FALSE) 
+#' summary(M1)
 #' }
 #' @export
 #'
@@ -169,11 +187,15 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   
   alltime <- 1:tn
   ontime <- length(k)
-  
   if (ontime<tn) { 
     message("There are missing times\n")
     misst <- alltime[-k]
-    } else misst <- NULL
+    n_misst <- length(misst)
+  } else {
+    misst <- NULL # Make it a scalar 
+    n_misst <- 0 
+    message("There are no missing times\n")
+  }  
   
   start_row <- rep(NA, ontime)
   fin_row <- rep(NA, ontime)
@@ -189,9 +211,11 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
   u$frow <- fin_row
   ots <- as.numeric(as.character(u[,1]))
   nts <- as.numeric(u[,2])
-  v <- sort(c(ots, misst)) 
-  summary(v-alltime)
- #  u
+  if (ontime<tn) { 
+    v <- sort(c(ots, misst)) 
+    print(summary(v-alltime))
+    message("Checked the times okay\n")
+  }
   
   sn <- nrow(unique(coords))
   n <- nrow(data)
@@ -286,7 +310,7 @@ Bmoving_sptime <-  function(formula,  data, coordtype,  coords,
                      missing=missing,  ntmiss=ntmiss, ntobs = ntobs, 
                      data_miss_idx=as.vector(data_miss_idx),  data_obs_idx =  as.vector(data_obs_idx), 
                      time =data$time, nots=length(ots),  ots = ots, nts=nts, start_row=start_row, fin_row=fin_row,  
-                     n_misst=length(misst), misst=misst,  
+                     n_misst=n_misst,  
                      Cdist=Cdist, dmat = dmat,  
                      yobs=yobs,  X=X,
                      sigma2_prior =prior.sigma2, 
