@@ -170,6 +170,24 @@ coords = 1:2, N=11, burn.in=6, validrows =NULL, mchoice = FALSE)
 summary(M2)
 plot(M2)
 names(M2)
+# Testing for smaller data sets with different data pattern  
+d2 <- deep[1:25, ]
+d2$time <- 1:25 
+# Now there is no missing times 
+M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+N=11, burn.in=6,  mchoice = FALSE) 
+summary(M1)
+d2[26, ] <- d2[25, ]
+# With multiple observation at the same location and time 
+M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+N=11, burn.in=6,  mchoice = FALSE) 
+summary(M1)
+d2[27, ] <- d2[24, ]
+d2[27, 3] <- 25
+# With previous location re-sampled 
+M1 <- Bmoving_sptime(formula=f2, data = d2, coordtype="lonlat", coords = 1:2, 
+N=11, burn.in=6,  mchoice = FALSE) 
+summary(M1)
 }
 }
 \seealso{

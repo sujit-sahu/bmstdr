@@ -23,23 +23,23 @@ utils::globalVariables(c("nyspatial", "nysptime",  "ydata", "fitvals", "residval
 utils::globalVariables(c("distance", "variogram", "preds", "inornot", "Time", "s.index", "x", "y", "f2"))
 NULL
 
-.onLoad <-
-  function(libname, pkgname)
-  {
-    library.dynam(pkgname, pkgname, lib.loc=libname)
-  }
+# .onLoad <-
+#  function(libname, pkgname)
+#  {
+#    library.dynam(pkgname, pkgname, lib.loc=libname)
+#  }
 
 
-.onAttach <-
-  function(libname, pkgname)
-  {
-    ## figureout the version automatically
-    library(help=bmstdr)$info[[1]] -> version
-    version <- version[pmatch("Version",version)]
-    um <- strsplit(version," ")[[1]]
-    version <- um[nchar(um)>0][2]
-    packageStartupMessage("\n## bmstdr version: ", version," \n")
-  }
+# .onAttach <-
+#  function(libname, pkgname)
+#  {
+#    ## figureout the version automatically
+#    library(help=bmstdr)$info[[1]] -> version
+#    version <- version[pmatch("Version",version)]
+#    um <- strsplit(version," ")[[1]]
+#    version <- um[nchar(um)>0][2]
+#    packageStartupMessage("\n## bmstdr version: ", version," \n")
+#  }
 
 #' Observed against predicted plot 
 #' @param yobs A vector containing the actual observations 

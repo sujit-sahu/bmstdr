@@ -1,9 +1,10 @@
+// Edited 14th September 2022 to solve missing time problems 
 /* 
   datatostan <- list(n=n, tn=tn, m2=nrow(knots.coords), p=p, 
                      missing=missing,  ntmiss=ntmiss, ntobs = ntobs, 
                      data_miss_idx=as.vector(data_miss_idx),  data_obs_idx =  as.vector(data_obs_idx), 
                      time =data$time, nots=length(ots),  ots = ots, nts=nts, start_row=start_row, fin_row=fin_row,  
-                     n_misst=length(misst), misst=misst,  
+                     n_misst=n_misst, 
                      Cdist=Cdist, dmat = dmat,  
                      yobs=yobs,  X=X,
                      sigma2_prior =prior.sigma2, 
@@ -26,8 +27,10 @@ int ots[nots]; // Observed times
 int nts[nots]; // Number of observations in time ots 
 int start_row[nots];  // Starting row minus 1 for the observations at t th time 
 int fin_row[nots];  // Finish row  for the observations at t th time 
+// blank line
 int n_misst;  // Number of time points without any observations  
-int misst[n_misst];  // Which times have missing observations 
+// int misst[n_misst];  // Which times have missing observations 
+// Do not need this here. 
 matrix[n, m2] Cdist; // to hold n by m2 distance matrix
 matrix[m2, m2] dmat; // to hold m2 by m2 distance matrix
 real yobs[ntobs];
@@ -106,7 +109,7 @@ for (i in 1:n) {
 }
 }
 }
-/* 
+ /*
  print("beta= ", beta); 
  print("sigma sq = ", sigma_sq); 
  print("tau sq = ", tau_sq); 

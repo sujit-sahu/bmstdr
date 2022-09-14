@@ -7,7 +7,7 @@ using namespace Rcpp ;
 RCPP_MODULE(stan_fit4gp_marginal_mod) {
 
 
-    class_<rstan::stan_fit<stan_model, boost::random::ecuyer1988> >("model_gp_marginal")
+    class_<rstan::stan_fit<stan_model, boost::random::ecuyer1988> >("rstantools_model_gp_marginal")
 
     .constructor<SEXP,SEXP,SEXP>()
 
