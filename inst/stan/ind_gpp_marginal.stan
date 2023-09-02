@@ -19,26 +19,26 @@ int<lower=0> p;
 int<lower = 0, upper = 1> missing;  // Is there any missing observation? 
 int<lower=0> ntmiss;
 int<lower=0> ntobs;
-int data_miss_idx[ntmiss];
-int data_obs_idx[ntobs];
-int time[n]; // gives the time t for a data row 
+array[ntmiss] int data_miss_idx;
+array[ntobs] int data_obs_idx;
+array[n] int time; // gives the time t for a data row 
 int nots;  // How many observed times 
-int ots[nots]; // Observed times 
-int nts[nots]; // Number of observations in time ots 
-int start_row[nots];  // Starting row minus 1 for the observations at t th time 
-int fin_row[nots];  // Finish row  for the observations at t th time 
+array[nots] int ots; // Observed times 
+array[nots] int nts; // Number of observations in time ots 
+array[nots] int start_row;  // Starting row minus 1 for the observations at t th time 
+array[nots] int fin_row;  // Finish row  for the observations at t th time 
 // blank line
 int n_misst;  // Number of time points without any observations  
 // int misst[n_misst];  // Which times have missing observations 
 // Do not need this here. 
 matrix[n, m2] Cdist; // to hold n by m2 distance matrix
 matrix[m2, m2] dmat; // to hold m2 by m2 distance matrix
-real yobs[ntobs];
+array[ntobs] real yobs;
 matrix[n, p] X;
-real<lower=0> sigma2_prior[2];
-real<lower=0> tau2_prior[2];
+array[2] real<lower=0> sigma2_prior;
+array[2] real<lower=0> tau2_prior;
 int<lower=0> phidist; 
-real <lower=0> prior_phi_param[2];
+array[2] real <lower=0> prior_phi_param;
 }
 
 transformed data { 
@@ -53,14 +53,14 @@ parameters {
   vector[p] beta;
   real<lower=0> phi;
   real<lower=0> sigma_sq;
-  real z_miss[missing ? ntmiss : 0];  // Only define z_miss if there is missing data 
+  array[missing ? ntmiss : 0] real z_miss;  // Only define z_miss if there is missing data 
   // vector[include_alpha ? N : 0] alpha;
   real<lower=0> tau_sq;
 }
 
 transformed parameters {
 vector[n] xbmodel;
-real bigS[sumnt2]; 
+array[sumnt2] real bigS; 
 { 
 matrix [m2, m2] Sigma;
 matrix [m2, m2] Swinv;
