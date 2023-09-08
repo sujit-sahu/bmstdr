@@ -1,6 +1,6 @@
 data {
 int<lower=0> n; // number of sites
-real y[n];
+array[n] real y;
 real mu;   // for the prior
 real mprior;  // for the prior
 real aprior; // for the prior
