@@ -9,6 +9,7 @@
 #' @import methods 
 #' @import graphics
 #' @import stats 
+#' @importFrom rstantools rstan_config
 #' @importFrom mnormt dmnorm
 #' @importFrom utils combn
 #' @importFrom utils head

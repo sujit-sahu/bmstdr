@@ -108,14 +108,15 @@ to identify the time points. If this is omitted, no temporal modeling will be pe
 \item{package}{Which package is to be used in model fitting? Currently available 
 packages are:
 \itemize{  
-\item{"inla"}{INLA model fitting for areal data.
- See \insertCite{gomezrubio;textual}{bmstdr}.}
-\item{"CARBayes"}{All possible models in this package can be fitted. 
-See \insertCite{LeeCARBayes2021;textual}{bmstdr}.}
-\item{"CARBayesST"}{All possible models in this package can be fitted.
-See \insertCite{CarBayesST;textual}{bmstdr}.}
+\item "inla": INLA model fitting for areal data.
+ See \insertCite{gomezrubio;textual}{bmstdr}.
+\item "CARBayes": All possible models in this package can be fitted. 
+See \insertCite{LeeCARBayes2021;textual}{bmstdr}.
+\item "CARBayesST": All possible models in this package can be fitted.
+See \insertCite{CarBayesST;textual}{bmstdr}.
 Further details and more examples are provided in Chapters 10 and 11 of the book 
-\insertCite{Sahubook;textual}{bmstdr}.}}
+\insertCite{Sahubook;textual}{bmstdr}.
+}}
 
 \item{model}{The specific spatio temporal model to be fitted. 
 If the package is "INLA" then the model argument should be a vector with two elements 

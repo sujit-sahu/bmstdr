@@ -42,7 +42,7 @@ knitr::opts_chunk$set(
 ```{r setup,  eval=TRUE, echo=FALSE, include=FALSE}
 library(bmstdr)
 library(ggplot2)
-require(ggsn)
+require(ggspatial)
 library(tidyr)
 library(huxtable)
 library(RColorBrewer)
@@ -146,9 +146,8 @@ vsites3 <- ggplot() +
    geom_text(aes(label=label, x=long, y=lat), data = label, vjust = "top", hjust = "right")  +
    # geom_rect(mapping=aes(xmin=-80.2, xmax=-77.3, ymin=41, ymax=41.6), color="black", fill=NA) + 
    geom_rect(mapping=aes(xmin=-78.7, xmax=-75.8, ymin=41, ymax=41.6), color="black", fill=NA) + 
-   ggsn::scalebar(data =nymap, dist = 100, location = "bottomleft", transform=T, dist_unit = "km",
-                  st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
-   ggsn::north(data=nymap, location="topleft", symbol=12) 
+  # annotation_scale(data =nymap,  location = "bl",  plot_unit = "km") +
+  annotation_north_arrow(data=nymap, location="tl") 
 vsites3
 ```
 
@@ -629,8 +628,8 @@ geom_point(data=coord, aes(x=Longitude,y=Latitude))  +
 stat_contour(data=na.omit(interp1), aes(x = long, y = lat,z = Predicted), colour = "black", binwidth =2) +
 scale_fill_gradientn(colours=colpalette, na.value="gray95", limits=zr) +
 theme(axis.text = element_blank(), axis.ticks = element_blank()) +
-ggsn::scalebar(data =interp1, dist = 100, location = "bottomleft", transform=T, dist_unit = "km", st.dist = .05, st.size = 5, height = .06, st.bottom=T, model="WGS84") +
-ggsn::north(data=interp1, location="topleft", symbol=12) +
+# annotation_scale(data =interp1,  location = "bl",  plot_unit = "km") +
+annotation_north_arrow(data=interp1, location="tl") +
 labs(x="Longitude", y = "Latitude", size=2.5) 
 ```
 ```{r, echo=F, eval=T, fig.height=6, fig.width=8, fig.cap="Predicted map of average ozone air pollution in New York"}
@@ -899,9 +898,8 @@ p <- ggplot() +
                color="black", size = 0.6, fill=NA) +
   geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
   labs( title= "Argo float locations in deep ocean in 2003", x="Longitude", y = "Latitude") +
-  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
-                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
-  ggsn::north(data=atlmap, location="topright", symbol=12)
+  # annotation_scale(data =atlmap,  location = "bl", plot_unit = "km") +
+  annotation_north_arrow(data=atlmap, location="tr")
 p
 ```
 This data set is included in the \pkg{bmstdr} package as the object `argo_floats_atlantic_2003`. In this section we model the temperature data only at the deep ocean using a marginalized Gaussian Process model 
@@ -1021,9 +1019,8 @@ patldeep <- ggplot() +
                color="black", size = 0.6, fill=NA) + 
     geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
   labs( title= "Annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
-  ggsn::scalebar(data =atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
-                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
-  ggsn::north(data=atlmap, location="topright", symbol=12) 
+ # annotation_scale(data =atlmap,location = "bl", plot_unit = "km") +
+  annotation_north_arrow(data=atlmap, location="tr") 
 
 # patldeep
 
@@ -1049,9 +1046,8 @@ patlsd <- ggplot() +
                color="black", size = 0.6, fill=NA) + 
   geom_point(data =deep, aes(x=lon, y=lat, colour=month), size=1) +
   labs( title= "sd of annual temperature in deep ocean in 2003", x="Longitude", y = "Latitude") +
-  ggsn::scalebar(data = atlmap, dist = 1000, location = "bottomleft", transform=T, dist_unit = "km",
-                 st.dist = .05, st.size =5, height = .05, st.bottom=T, model="WGS84") +
-  ggsn::north(data=atlmap, location="topright", symbol=12) 
+  # annotation_scale(data = atlmap,  location = "bl", plot_unit = "km") +
+  annotation_north_arrow(data=atlmap, location="tr") 
 
 ```
 

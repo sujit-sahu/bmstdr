@@ -7,10 +7,10 @@
 #' @param prior.sigma2 Shape and scale parameter value for the gamma prior on 1/sigma^2, the precision.
 #' @param package Which package (or method) to use. Possibilities are: 
 #' \itemize{  
-#' \item{"exact" }{Use exact theoretical calculation.}  
-#' \item{"RGibbs" }{Use Gibbs sampler using R code.}  
-#' \item{"stan" }{Use HMC by implementing in Stan.}
-#' \item{"inla" }{Use the INLA package.}
+#' \item "exact": Use exact theoretical calculation.  
+#' \item "RGibbs": Use Gibbs sampler using R code.  
+#' \item "stan": Use HMC by implementing in Stan.
+#' \item "inla": Use the INLA package.
 #' }
 #' @param N is the number of Gibbs sampling iterations
 #' @param burn.in is the number of initial iterations to discard before 

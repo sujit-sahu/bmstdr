@@ -46,10 +46,19 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _rcpp_module_boot_stan_fit4gp_marginal_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4ind_gpp_marginal_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4normal_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4spatial_model_mod();
+
 static const R_CallMethodDef CallEntries[] = {
     {"_bmstdr_gibbs_cpp", (DL_FUNC) &_bmstdr_gibbs_cpp, 2},
     {"_bmstdr_crps_one", (DL_FUNC) &_bmstdr_crps_one, 1},
     {"_bmstdr_crpscpp", (DL_FUNC) &_bmstdr_crpscpp, 1},
+    {"_rcpp_module_boot_stan_fit4gp_marginal_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4gp_marginal_mod, 0},
+    {"_rcpp_module_boot_stan_fit4ind_gpp_marginal_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4ind_gpp_marginal_mod, 0},
+    {"_rcpp_module_boot_stan_fit4normal_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4normal_mod, 0},
+    {"_rcpp_module_boot_stan_fit4spatial_model_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4spatial_model_mod, 0},
     {NULL, NULL, 0}
 };
 

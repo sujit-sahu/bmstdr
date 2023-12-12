@@ -16,12 +16,16 @@ BCauchy(
 \arguments{
 \item{method}{Which method or package to use. Possibilities are: 
 \itemize{  
-\item{"exact" }{Use exact numerical integration.}  
-\item{"importance" }{Use importance sampling with the prior distribution as the importance sampling distribution.}
-\item{"rejection" }{Use rejection sampling with the prior distribution as the importance sampling distribution.}
-\item{"independence" }{Use the Metropolis-Hastings independence sampler with the prior distribution as the proposal distribution.}
-\item{"randomwalk" }{Use the Metropolis-Hastings random-walk sampler with normal distribution 
-with mean 0 and variance (tuning.sd)^2 as the increment distribution.}
+\item "exact": Use exact numerical integration.  
+\item "importance": Use importance sampling with the prior distribution as 
+the importance sampling distribution.
+\item "rejection": Use rejection sampling with the prior distribution as 
+the importance sampling distribution.
+\item "independence": Use the Metropolis-Hastings independence sampler with 
+the prior distribution as the proposal distribution.
+\item "randomwalk": Use the Metropolis-Hastings random-walk sampler with 
+normal distribution with mean 0 and variance (tuning.sd)^2 as the 
+increment distribution.
 }}
 
 \item{true.theta}{True value of theta with a default value of 5.}

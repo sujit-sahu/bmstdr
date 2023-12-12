@@ -20,11 +20,11 @@ Bmchoice(
 \arguments{
 \item{case}{One of the three cases: 
 \itemize{  
-\item{"Exact.sigma2.known" }{Use exact theoretical calculation.}  
-\item{"MC.sigma2.known" }{Use Monte Carlo methods for drawing samples from the 
-posterior assuming known sigma2.}  
-\item{"MC.sigma2.unknown" }{Use the Gibbs sampler to generate samples 
-from the joint posterior distribution of theta and sigma^2.}
+\item "Exact.sigma2.known": Use exact theoretical calculation.  
+\item "MC.sigma2.known": Use Monte Carlo methods for drawing samples from the 
+posterior assuming known sigma2.  
+\item "MC.sigma2.unknown": Use the Gibbs sampler to generate samples 
+from the joint posterior distribution of theta and sigma^2.
 }}
 
 \item{y}{A vector of data values. Default is 28 ydata values from the package bmstdr}

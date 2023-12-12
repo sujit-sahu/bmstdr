@@ -70,14 +70,15 @@ locations for spatio temporal model fitting.}
 \item{package}{Which package is to be used in model fitting? Currently available 
 packages are:
 \itemize{  
-\item{"spBayes" }{The model implemented is the dynamic spatio-temporal 
-model fitted using the \code{\link{spDynLM}} function in the \code{spBayes} package.}  
-\item{"stan" }{The model implemented is the marginal independent GP model.}
-\item{"inla" }{The only model implemented is the AR model.}
-\item{"spTimer" }{All possible models in this package can be fitted.}
-\item{"sptDyn" }{All possible models in this package can be fitted.}
-\item{"none". } {In this case case, the argument  \code{model} must be 
-specified either as "lm" or "separable". See below}
+\item "spBayes": The model implemented is the dynamic spatio-temporal 
+model fitted using the \code{\link{spDynLM}} function in the \code{spBayes} 
+package.  
+\item "stan": The model implemented is the marginal independent GP model.
+\item "inla" The only model implemented is the AR model.
+\item "spTimer": All possible models in this package can be fitted.
+\item "sptDyn": All possible models in this package can be fitted.
+\item "none".: In this case case, the argument  \code{model} must be 
+specified either as "lm" or "separable". See below.
 }
 Further details and more examples are provided in Chapters 7-9 of the book 
 \insertCite{Sahubook;textual}{bmstdr}.}
@@ -106,14 +107,15 @@ must include all the time points for the sites to be validated.  Otherwise, the
 user is allowed to select the row numbers of the data frame validation as they wish. 
 The default NULL value instructs that validation will not be performed. 
 \itemize{ 
-\item{lm model:} {If package is "none" and the model is "lm", this argument is 
-a vector of row indices of the data frame which should be used for validation. }
-\item{separable model:} {If package is "none" and the model is "separable" this argument is 
+\item lm model: If package is "none" and the model is "lm", this argument is 
+a vector of row indices of the data frame which should be used for validation. 
+\item separable model: If package is "none" and the model is "separable" this argument is 
  a vector of site indices which should be used for validation. The "separable" 
  model  does not allow some sites to be used for both fitting and validation.
  Thus it is not possible to validate at selected time points using the separable model.
- Further details are provided in Chapter 7 of \insertCite{Sahubook;textual}{bmstdr}.}
- }}
+ Further details are provided in Chapter 7 of 
+ \insertCite{Sahubook;textual}{bmstdr}.
+}}
 
 \item{scale.transform}{Transformation of the response variable. It can take three values: SQRT, LOG or NONE.
 Default value is "NONE".}

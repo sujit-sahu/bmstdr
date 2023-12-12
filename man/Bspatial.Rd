@@ -51,13 +51,14 @@ two columns containing the locations of the coordinates. See the \code{coords} a
 \item{package}{Which package is to be used in model fitting? Currently available 
 packages are:
 \itemize{  
-\item{"spBayes" }{The model implemented is the marginal model with 
-nugget effect using the \code{spLM} function.}  
-\item{"stan" }{The model implemented is the full spatial random effect model 
-with nugget effect where the decay parameter has been assumed to be fixed. }
-\item{"inla" }{The model fitted is the spatial random effect model with the nugget effect.}
-\item{"none". } {In this case case, the argument  \code{model} must be 
-specified either as "lm" or "spat". See below}
+\item "spBayes": The model implemented is the marginal model with 
+nugget effect using the \code{spLM} function.  
+\item "stan": The model implemented is the full spatial random effect model 
+with nugget effect where the decay parameter has been assumed to be fixed. 
+\item "inla": The model fitted is the spatial random effect model with the 
+nugget effect.
+\item "none":  In this case case, the argument  \code{model} must be 
+specified either as "lm" or "spat". See below.
 }
  Further details and more examples are provided in Chapter 6 of the book 
 \insertCite{Sahubook;textual}{bmstdr}.}

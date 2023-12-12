@@ -19,10 +19,10 @@ Bnormal(
 \arguments{
 \item{package}{Which package (or method) to use. Possibilities are: 
 \itemize{  
-\item{"exact" }{Use exact theoretical calculation.}  
-\item{"RGibbs" }{Use Gibbs sampler using R code.}  
-\item{"stan" }{Use HMC by implementing in Stan.}
-\item{"inla" }{Use the INLA package.}
+\item "exact": Use exact theoretical calculation.  
+\item "RGibbs": Use Gibbs sampler using R code.  
+\item "stan": Use HMC by implementing in Stan.
+\item "inla": Use the INLA package.
 }}
 
 \item{y}{A vector of data values. Default is 28 ydata values from the package bmstdr}
