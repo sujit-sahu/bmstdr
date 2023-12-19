@@ -241,8 +241,8 @@ Bspatial <- function(formula, # =yo3~xmaxtemp+xwdsp+xrh,
                            offset = offset, max.edge=max.edge,  
                            N=N, burn.in=burn.in, rseed=rseed,  plotit=plotit)
     } else { 
-      cat("Implemented packages are none,", implemented, "\n")
-      cat("\n If package is none then the implemented models are lm and spat\n")
+      message("Implemented packages are none,", implemented, "\n")
+      message("\n If package is none then the implemented models are lm and spat\n")
       stop("But, sorry, the package or model opted for has not been implemented yet!")
     } 
  
