@@ -17,14 +17,14 @@ int<lower=0> p;
 int<lower=0> ntmiss;
 int<lower=0> ntobs;
 int <lower=0, upper=1> missing;
-int data_miss_idx[ntmiss];
-int data_obs_idx[ntobs];
-real yobs[ntobs];
+array[ntmiss] int data_miss_idx;
+array[ntobs] int data_obs_idx;
+array[ntobs] real yobs;
 matrix[nT, p] X;
-real<lower=0> sigma2_prior[2];
-real<lower=0> tau2_prior[2];
+array[2] real<lower=0> sigma2_prior;
+array[2] real<lower=0> tau2_prior;
 int<lower=0> phidist; 
-real <lower=0> prior_phi_param[2];
+array[2] real <lower=0> prior_phi_param;
 matrix[sn, sn] dist; // to hold sn by sn distance matrix
 int <lower=0> verbose;
 }
@@ -38,7 +38,7 @@ parameters {
   real<lower=0> phi;
   real<lower=0> sigma_sq;
   real<lower=0> tau_sq;
-  real z_miss[missing ? ntmiss : 0];  // Only define z_miss if there is missing data 
+  array[missing ? ntmiss : 0] real z_miss;  // Only define z_miss if there is missing data 
 }
 
 
@@ -46,7 +46,7 @@ model {
 vector[nT] xbmodel;
 matrix[tn, sn] mus;
 matrix[tn, sn] dats;
-real z1[nT];
+array[nT] real z1;
 matrix [sn, sn] L;
 matrix [sn, sn] Sigma;
 real u;
