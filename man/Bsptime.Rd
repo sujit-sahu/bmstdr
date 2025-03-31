@@ -71,7 +71,7 @@ locations for spatio temporal model fitting.}
 packages are:
 \itemize{  
 \item "spBayes": The model implemented is the dynamic spatio-temporal 
-model fitted using the \code{\link{spDynLM}} function in the \code{spBayes} 
+model fitted using the spDynLM function in the \code{spBayes} 
 package.  
 \item "stan": The model implemented is the marginal independent GP model.
 \item "inla" The only model implemented is the AR model.
@@ -187,8 +187,8 @@ The default is rhotp=0 for which  parameters are sampled from the full condition
 via MCMC with initial value 0.
 If rhotp=1,parameters are not sampled and fixed at value 1.}
 
-\item{time.data}{Defining the segments of the time-series set up using the function \code{\link{spT.time}}.
-Only used with the spTimer package.}
+\item{time.data}{Defining the segments of the time-series set up using the function 
+spT.time in the spTimer package. Only used with the spTimer package.}
 
 \item{truncation.para}{Provides truncation parameter lambda and truncation point "at" using list.
 Only used with the spTimer package for a truncated model.}
@@ -208,7 +208,7 @@ Only applicable if spT.time inputs more than one segment and
 when fit and predict are done simultaneously. Only used in the spTimer package.}
 
 \item{cov.model}{Model for the covariance function. Only relevant for the spBayes, spTimer and the spTDyn packages.  Default is the exponential model. 
-See the documentation for \code{\link{spLM}} in the package spBayes.}
+See the documentation for spLM in the package spBayes.}
 
 \item{g_size}{Only relevant for GPP models fitted by either spTimer or spTDyn. 
 The grid size c(m, n) for the knots for the GPP model. A square grid is assumed 

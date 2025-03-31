@@ -244,6 +244,7 @@ message("\n Note that the residuals are provided on the transformed scale. Pleas
 ## ## \link{\code{fitted}} for extracting the fitted values, 
 ## ## \link{\code{plot}} for plotting.  
 # ## @method resid bmstdr
+#' @export
 resid.bmstdr <- function(x)
 {
  if (x$scale.transform !="NONE") {  

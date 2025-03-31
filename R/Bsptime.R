@@ -15,7 +15,7 @@
 #' packages are:
 #' \itemize{  
 #' \item "spBayes": The model implemented is the dynamic spatio-temporal 
-#' model fitted using the [spDynLM][spBayes::spDynLM()] function in the \code{spBayes} 
+#' model fitted using the spDynLM function in the \code{spBayes} 
 #' package.  
 #' \item "stan": The model implemented is the marginal independent GP model.
 #' \item "inla" The only model implemented is the AR model.
@@ -100,8 +100,7 @@
 #' Optional two column matrix of UTM-X and UTM-Y coordinates of the knots in kilometers.
 #' It is preferable to specify the g_size parameter instead.
 #' @param time.data	Defining the segments of the time-series set up using the function 
-#' [spT.time][spTimer::spT.time()].
-#' Only used with the spTimer package. 
+#' spT.time in the spTimer package. Only used with the spTimer package. 
 #' @param truncation.para	Provides truncation parameter lambda and truncation point "at" using list.
 #' Only used with the spTimer package for a truncated model. 
 #' @param newcoords	The locations of the prediction sites in similar format to the \code{coords} argument, 
@@ -137,7 +136,7 @@
 #' @param offset Only used in INLA based modeling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
 #' @param max.edge Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Model for the covariance function. Only relevant for the spBayes, spTimer and the spTDyn packages.  Default is the exponential model. 
-#' See the documentation for [spLM][spBayes::spLM()] in the package spBayes. 
+#' See the documentation for spLM in the package spBayes. 
 #' @param tol.dist	Minimum separation distance between any two locations out of those specified by 
 #' coords, knots.coords and pred.coords. The default is 0.005. The program 
 #' will exit if the minimum distance is less than the non-zero specified value. 

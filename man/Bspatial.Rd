@@ -118,7 +118,7 @@ standard deviation of the field. If Psigma is NA, then sigma0 is used as a fixed
 \item{max.edge}{Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.}
 
 \item{cov.model}{Only relevant for the spBayes package.  Default is the exponential model. 
-See the documentation for \code{\link{spLM}} in the package spBayes.}
+See the documentation for spLM in the package spBayes.}
 
 \item{N}{MCMC sample size. Default value 5000.}
 
