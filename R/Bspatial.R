@@ -63,7 +63,7 @@
 #' @param offset Only used in INLA based modeling.  Offset parameter. See documentation for \code{inla.mesh.2d}.
 #' @param max.edge Only used in INLA based modeling. See documentation for \code{inla.mesh.2d}.
 #' @param cov.model Only relevant for the spBayes package.  Default is the exponential model. 
-#' See the documentation for \code{\link{spLM}} in the package spBayes. 
+#' See the documentation for [spLM][spBayes::spLM()] in the package spBayes. 
 #' @param N MCMC sample size. Default value 5000. 
 #' @param burn.in How many initial iterations to discard. Default value 1000. 
 #' Only relevant for MCMC based model fitting, i.e., when package is spBayes or Stan.  
